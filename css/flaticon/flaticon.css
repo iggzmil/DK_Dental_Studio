@@ -1,0 +1,89 @@
+	/*
+  	Flaticon icon font: Flaticon
+  	Creation date: 05/09/2020 07:36
+  	*/
+
+@font-face {
+  font-family: "Flaticon";
+  src: url("../../fonts/Flaticon.eot");
+  src: url("../../fonts/Flaticond41d.eot?#iefix") format("embedded-opentype"),
+       url("../../fonts/Flaticon.woff2") format("woff2"),
+       url("../../fonts/Flaticon.woff") format("woff"),
+       url("../../fonts/Flaticon.ttf") format("truetype"),
+       url("../../fonts/Flaticon.svg#Flaticon") format("svg");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  @font-face {
+    font-family: "Flaticon";
+    src: url("../../fonts/Flaticon.svg#Flaticon") format("svg");
+  }
+}
+
+[class^="flaticon-"]:before, [class*=" flaticon-"]:before,
+[class^="flaticon-"]:after, [class*=" flaticon-"]:after {   
+  font-family: Flaticon;
+font-style: normal;
+}
+
+.flaticon-ambulance:before { content: "\f100"; }
+.flaticon-tooth:before { content: "\f101"; }
+.flaticon-microscope:before { content: "\f102"; }
+.flaticon-baby-boy:before { content: "\f103"; }
+.flaticon-transfusion:before { content: "\f104"; }
+.flaticon-liquid-soap:before { content: "\f105"; }
+.flaticon-hospital-bed:before { content: "\f106"; }
+.flaticon-electrocardiogram:before { content: "\f107"; }
+.flaticon-hospital:before { content: "\f108"; }
+.flaticon-electrocardiogram-1:before { content: "\f109"; }
+.flaticon-right-quote:before { content: "\f10a"; }
+.flaticon-left-quote:before { content: "\f10b"; }
+.flaticon-placeholder:before { content: "\f10c"; }
+.flaticon-location:before { content: "\f10d"; }
+.flaticon-email:before { content: "\f10e"; }
+.flaticon-email-1:before { content: "\f10f"; }
+.flaticon-wheelchair:before { content: "\f110"; }
+.flaticon-pregnant:before { content: "\f111"; }
+.flaticon-injection:before { content: "\f112"; }
+.flaticon-brain:before { content: "\f113"; }
+.flaticon-brain-1:before { content: "\f114"; }
+.flaticon-eye:before { content: "\f115"; }
+.flaticon-medicine:before { content: "\f116"; }
+.flaticon-tooth-1:before { content: "\f117"; }
+.flaticon-dental-checkup:before { content: "\f118"; }
+.flaticon-headphones:before { content: "\f119"; }
+.flaticon-support:before { content: "\f11a"; }
+.flaticon-call:before { content: "\f11b"; }
+.flaticon-medical-report:before { content: "\f11c"; }
+.flaticon-kidneys:before { content: "\f11d"; }
+.flaticon-cardiology:before { content: "\f11e"; }
+.flaticon-insurance:before { content: "\f11f"; }
+.flaticon-24-hours:before { content: "\f120"; }
+.flaticon-stethoscope:before { content: "\f121"; }
+.flaticon-emergency-call:before { content: "\f122"; }
+.flaticon-wheelchair-1:before { content: "\f123"; }
+.flaticon-nurse:before { content: "\f124"; }
+.flaticon-medical-record:before { content: "\f125"; }
+.flaticon-lung:before { content: "\f126"; }
+.flaticon-hospital-1:before { content: "\f127"; }
+.flaticon-clock:before { content: "\f128"; }
+.flaticon-calendar:before { content: "\f129"; }
+.flaticon-next:before { content: "\f12a"; }
+.flaticon-back:before { content: "\f12b"; }
+.flaticon-search:before { content: "\f12c"; }
+.flaticon-calculating:before { content: "\f12d"; }
+.flaticon-taxi:before { content: "\f12e"; }
+.flaticon-calendar-1:before { content: "\f12f"; }
+.flaticon-clock-1:before { content: "\f130"; }
+.flaticon-happy:before { content: "\f131"; }
+.flaticon-cart:before { content: "\f132"; }
+.flaticon-shopping-bag:before { content: "\f133"; }
+.flaticon-heart:before { content: "\f134"; }
+.flaticon-random:before { content: "\f135"; }
+.flaticon-joint:before { content: "\f136"; }
+.flaticon-phone-call:before { content: "\f137"; }
+.flaticon-placeholder-1:before { content: "\f138"; }
+.flaticon-clock-2:before { content: "\f139"; }
+.flaticon-email-2:before { content: "\f13a"; }

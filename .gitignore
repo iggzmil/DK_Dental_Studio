@@ -1,0 +1,25 @@
+# OAuth token files
+deploy-oauth-minimal/secure/google_refresh_token.json
+secure/google_refresh_token.json
+
+# Cache files
+cache/
+*.cache
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Editor directories and files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# System Files
+.DS_Store
+Thumbs.db

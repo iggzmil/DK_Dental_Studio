@@ -1,0 +1,31 @@
+/* Footer styles */
+.footer {
+  background-color: #000f2d;
+  padding-top: 15px;
+  padding-bottom: 15px;
+}
+
+.footer a {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: #0576ee;
+}
+
+.footer .list-inline-item:not(:last-child) {
+  margin-right: 15px;
+}
+
+/* Adjust spacing for mobile */
+@media (max-width: 767px) {
+  .footer {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .footer .list-inline-item {
+    margin-bottom: 5px;
+  }
+}

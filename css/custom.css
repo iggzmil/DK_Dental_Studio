@@ -1,0 +1,11 @@
+/* Custom styles to override default theme */
+
+/* Increase logo size in the navigation menu */
+.navbar-brand img {
+  height: 60px !important; /* Increased from 40px to 60px */
+}
+
+/* Adjust navbar padding to accommodate larger logo */
+.navbar-brand {
+  padding: 20px 0px !important;
+}

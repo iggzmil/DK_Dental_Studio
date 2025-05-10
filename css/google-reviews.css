@@ -1,0 +1,97 @@
+/**
+ * Google Reviews Widget Styling
+ */
+
+/* Star rating styles */
+.review-stars {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.review-stars i {
+  margin: 0 2px;
+  font-size: 18px;
+}
+
+/* Review content styles */
+.testimonial-item {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.testimonial-item:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-5px);
+}
+
+.testimonial-content {
+  margin-bottom: 15px;
+}
+
+.testimonial-content p {
+  font-style: italic;
+  color: #ffffff;
+  line-height: 1.6;
+}
+
+/* Author styles */
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.testimonial-name h6 {
+  color: #ffffff;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.testimonial-name span {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+/* Carousel navigation styles */
+.owl-nav {
+  margin-top: 20px;
+}
+
+.owl-nav button {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  width: 40px;
+  height: 40px;
+  border-radius: 50% !important;
+  margin: 0 5px;
+  transition: all 0.3s ease;
+}
+
+.owl-nav button:hover {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.owl-nav button i {
+  font-size: 16px;
+}
+
+/* Write a review button */
+.btn-outline-light {
+  border: 2px solid #ffffff;
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 30px;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-light:hover {
+  background-color: #ffffff;
+  color: #0d6efd;
+}
+
+.btn-outline-light i {
+  margin-right: 8px;
+}

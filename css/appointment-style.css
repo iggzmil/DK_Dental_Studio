@@ -1,0 +1,33 @@
+/* Appointment section styling */
+.space-ptb {
+  padding-top: 80px;
+  padding-bottom: 80px;
+}
+
+.space-pt {
+  padding-top: 80px;
+}
+
+/* Make the iframe taller and add rounded corners */
+.conatct-map iframe {
+  height: 400px !important;
+  border-radius: 8px !important;
+}
+
+/* Add spacing between text and map on mobile */
+@media (max-width: 991px) {
+  .conatct-map {
+    margin-top: 30px !important;
+  }
+}
+
+/* Ensure the columns are equal height in the appointment section */
+.appointment-section .row.align-items-center > div {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Add some right padding to the text column in the appointment section */
+.appointment-section .col-lg-6:first-child {
+  padding-right: 30px;
+}
