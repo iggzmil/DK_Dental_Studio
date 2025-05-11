@@ -14,8 +14,8 @@ echo "<h1>Testing Google Client Credentials</h1>";
 
 try {
     // HARDCODED CLIENT CREDENTIALS
-    $clientId = '593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com';
-    $clientSecret = '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';
+    $clientId = '976666616562-c4s3nfesuu7drrt6nmghnb6qc6cteers.apps.googleusercontent.com';
+    $clientSecret = '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';
     
     echo "<p>Using Client ID: $clientId</p>";
     
