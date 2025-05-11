@@ -32,16 +32,27 @@ if (!interface_exists('Google\Auth\GetUniverseDomainInterface')) {
 }
 
 try {
-    // Create Google client
-    $client = new Google\Client();
-    
-    // HARDCODED CLIENT CREDENTIALS
+    // HARDCODED CLIENT CREDENTIALS - Define these before creating the client
     $clientId = '593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com';
     $clientSecret = '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';
     
-    // Set client credentials explicitly
+    // Debug output
+    echo "<!-- Debug: Setting up Google Client for callback -->\n";
+    echo "<!-- Client ID: " . $clientId . " -->\n";
+    
+    // Create Google client with configuration options directly
+    $client = new Google\Client([
+        'client_id' => $clientId,
+        'client_secret' => $clientSecret
+    ]);
+    
+    // Double check client ID is set by explicitly calling setter methods
     $client->setClientId($clientId);
     $client->setClientSecret($clientSecret);
+    
+    // Debug check if client ID was properly set
+    $configClientId = $client->getClientId();
+    echo "<!-- Confirmed Client ID: " . $configClientId . " -->\n";
     
     // Set redirect URI - make sure this is the correct path on your server
     $redirectUri = 'https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php';

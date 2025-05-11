@@ -130,11 +130,17 @@ class OAuth2 implements GetUniverseDomainInterface
     public function buildFullAuthorizationUri(array $config = [])
     {
         if (empty($this->clientId)) {
-            // Add debugging for the client ID
-            $debug = "Client ID is empty. ";
+            // Add detailed debugging information
+            $debug = "Client ID is empty. Debug trace: ";
+            $debug .= "clientId property: '" . $this->clientId . "'; ";
             $debug .= "scopes: " . json_encode($this->scopes) . "; ";
             $debug .= "redirectUri: " . $this->redirectUri;
             error_log($debug);
+            
+            // Save to a file for easier debugging
+            file_put_contents(dirname(dirname(dirname(dirname(__DIR__)))) . '/oauth_debug.log', 
+                date('Y-m-d H:i:s') . ' - ' . $debug . PHP_EOL, 
+                FILE_APPEND);
             
             throw new GoogleException('Missing Client ID');
         }

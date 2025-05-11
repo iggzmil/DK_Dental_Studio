@@ -1122,17 +1122,22 @@ class Client
      */
     protected function createOAuth2Service()
     {
-        $auth = new OAuth2([
-            'clientId'          => $this->getClientId(),
-            'clientSecret'      => $this->getClientSecret(),
-            'authorizationUri'   => self::OAUTH2_AUTH_URL,
-            'tokenCredentialUri' => self::OAUTH2_TOKEN_URI,
-            'redirectUri'       => $this->getRedirectUri(),
-            'issuer'            => $this->config['client_id'],
-            'signingKey'        => $this->config['signing_key'],
-            'signingAlgorithm'  => $this->config['signing_algorithm'],
-        ]);
-
+        // Debug the client credentials
+        $debugMsg = "Creating OAuth2 service with clientId: " . $this->getClientId();
+        error_log($debugMsg);
+        
+        // Write to debug file
+        file_put_contents(dirname(dirname(__DIR__)) . '/oauth_debug.log', 
+            date('Y-m-d H:i:s') . ' - ' . $debugMsg . PHP_EOL, 
+            FILE_APPEND);
+        
+        $auth = new OAuth2();
+        
+        // Explicitly set the required properties
+        $auth->setClientId($this->getClientId());
+        $auth->setClientSecret($this->getClientSecret());
+        $auth->setRedirectUri($this->getRedirectUri());
+        
         return $auth;
     }
 
