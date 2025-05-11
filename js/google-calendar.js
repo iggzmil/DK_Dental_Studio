@@ -3,7 +3,7 @@
  */
 
 // Google API credentials
-const GOOGLE_API_KEY = 'AIzaSyDFoNqB7BIuoZrUQDRVhnpVLjXsUgT-6Ow'; // Replace with your API key
+// const GOOGLE_API_KEY = 'AIzaSyDFoNqB7BIuoZrUQDRVhnpVLjXsUgT-6Ow'; // Replace with your API key - Not used with server-side OAuth
 const GOOGLE_CLIENT_ID = '593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com';
 const CALENDAR_ID = {
   'dentures': 'primary', // Replace with actual calendar ID for dentures
@@ -27,6 +27,7 @@ let selectedService = null;
 let selectedDateTime = null;
 let gapi = null;
 let tokenClient = null;
+let serverAccessToken = null;
 
 /**
  * On page load, initialize Google API client
@@ -35,6 +36,34 @@ document.addEventListener('DOMContentLoaded', function() {
   // Load the Google API client
   loadGoogleAPI();
 });
+
+/**
+ * Fetch access token from server
+ * This function gets the OAuth token from the server instead of using client-side auth
+ */
+function fetchServerAccessToken() {
+  return new Promise((resolve, reject) => {
+    fetch('/api/get-access-token.php')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to fetch access token from server');
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.access_token) {
+          serverAccessToken = data.access_token;
+          resolve(serverAccessToken);
+        } else {
+          throw new Error('No access token in response');
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching server access token:', error);
+        reject(error);
+      });
+  });
+}
 
 /**
  * Load the Google API client and auth2 library
@@ -58,67 +87,34 @@ function loadGoogleAPI() {
  * Initialize the Google API client
  */
 function initClient() {
+  // Initialize the client without an API key
   gapi.client.init({
-    apiKey: GOOGLE_API_KEY,
     discoveryDocs: DISCOVERY_DOCS,
   }).then(() => {
     console.log('Google API client initialized');
     
-    // Check if we're in a browser environment that supports Google Identity Services
-    if (typeof google !== 'undefined' && google.accounts) {
-      // Load the identity services client
-      loadIdentityServices();
-    } else {
-      console.warn('Google Identity Services not available');
-      // We can still show the calendar UI without authentication
-      // Users will be prompted to authenticate when they try to book
-      if (selectedService) {
-        loadCalendar(selectedService);
-      }
-    }
+    // Fetch token from server instead of using client-side auth
+    fetchServerAccessToken()
+      .then(token => {
+        // Set the access token for all future requests
+        gapi.client.setToken({ access_token: token });
+        console.log('Server access token applied to gapi client');
+        
+        // If a service is already selected, load it
+        if (selectedService) {
+          loadCalendar(selectedService);
+        }
+      })
+      .catch(error => {
+        console.error('Failed to set server access token:', error);
+        showError("Failed to authorize access to Google Calendar. Using fallback calendar.");
+        showFallbackCalendar();
+      });
   }).catch(error => {
     console.error('Error initializing Google API client', error);
     showError("Failed to initialize Google Calendar. Using fallback calendar.");
     showFallbackCalendar();
   });
-}
-
-/**
- * Load the Identity Services client
- */
-function loadIdentityServices() {
-  try {
-    // Load the Identity Services client library
-    google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleCredentialResponse
-    });
-    
-    // Initialize the token client
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: GOOGLE_CLIENT_ID,
-      scope: SCOPES,
-      callback: tokenResponse => {
-        if (tokenResponse && !tokenResponse.error) {
-          // Token received, now we can access the calendar
-          console.log('OAuth token received');
-          
-          // If a service is already selected, load it
-          if (selectedService) {
-            loadCalendar(selectedService);
-          }
-        } else {
-          console.error('Error getting OAuth token', tokenResponse);
-          showError("Failed to authorize access to Google Calendar. Using fallback calendar.");
-          showFallbackCalendar();
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Error initializing Google Identity Services', error);
-    showError("Failed to initialize authentication. Using fallback calendar.");
-    showFallbackCalendar();
-  }
 }
 
 /**
@@ -130,13 +126,6 @@ function showFallbackCalendar() {
   if (selectedService) {
     loadCalendar(selectedService);
   }
-}
-
-/**
- * Handle credential response from Google Identity Services
- */
-function handleCredentialResponse(response) {
-  console.log('Credential response received', response);
 }
 
 /**
@@ -609,11 +598,108 @@ function setupCalendarInteraction() {
       ]
     };
     
-    // In a production environment, you would use the Google Calendar API to create the event
-    // For this demo, we'll just simulate the booking process
-    console.log('Creating event:', eventData);
-    
-    // Show a success message
+    // Show loading state
+    const bookingFormContainer = document.getElementById('booking-form-container');
+    bookingFormContainer.innerHTML = `
+      <div class="booking-processing">
+        <div class="text-center mb-4">
+          <div class="spinner"></div>
+        </div>
+        <h4 class="text-center">Processing Your Booking...</h4>
+        <p class="text-center">Please wait while we confirm your appointment.</p>
+      </div>
+    `;
+
+    // Check if we have Google Calendar API access
+    if (gapi && gapi.client && gapi.client.calendar && serverAccessToken) {
+      // Use the Google Calendar API to create the event
+      gapi.client.calendar.events.insert({
+        calendarId: CALENDAR_ID[selectedService],
+        resource: eventData
+      }).then(response => {
+        console.log('Event created: ', response);
+        showBookingSuccess(firstName, lastName, email);
+      }).catch(error => {
+        console.error('Error creating event:', error);
+        // Fall back to server-side booking if client-side fails
+        createEventServerSide(eventData, firstName, lastName, email);
+      });
+    } else {
+      // Use server-side booking
+      createEventServerSide(eventData, firstName, lastName, email);
+    }
+  };
+  
+  /**
+   * Create event using server-side API
+   */
+  function createEventServerSide(eventData, firstName, lastName, email) {
+    // Send the booking data to the server
+    fetch('/api/create-event.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        event: eventData,
+        service: selectedService
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        showBookingSuccess(firstName, lastName, email);
+      } else {
+        // If server-side booking fails, use fallback booking
+        console.error('Server-side booking failed:', data.error);
+        useFallbackBooking(eventData, firstName, lastName, email);
+      }
+    })
+    .catch(error => {
+      console.error('Error with server-side booking:', error);
+      useFallbackBooking(eventData, firstName, lastName, email);
+    });
+  }
+
+  /**
+   * Use fallback booking method (email)
+   */
+  function useFallbackBooking(eventData, firstName, lastName, email) {
+    // Send the booking data to the fallback PHP handler
+    fetch('/api/booking-fallback.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        phone: eventData.description.match(/Phone: (.*)/)[1],
+        notes: eventData.description.match(/Notes: (.*)/)[1] || '',
+        service: selectedService,
+        date: selectedDateTime.date,
+        time: selectedDateTime.time
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        showBookingSuccess(firstName, lastName, email);
+      } else {
+        showBookingError();
+      }
+    })
+    .catch(error => {
+      console.error('Error with fallback booking:', error);
+      showBookingError();
+    });
+  }
+
+  /**
+   * Show booking success message
+   */
+  function showBookingSuccess(firstName, lastName, email) {
     const bookingFormContainer = document.getElementById('booking-form-container');
     bookingFormContainer.innerHTML = `
       <div class="booking-success">
@@ -628,7 +714,26 @@ function setupCalendarInteraction() {
         </div>
       </div>
     `;
-  };
+  }
+
+  /**
+   * Show booking error message
+   */
+  function showBookingError() {
+    const bookingFormContainer = document.getElementById('booking-form-container');
+    bookingFormContainer.innerHTML = `
+      <div class="booking-error">
+        <div class="text-center mb-4">
+          <i class="fas fa-exclamation-circle text-danger" style="font-size: 48px;"></i>
+        </div>
+        <h4 class="text-center">Booking Error</h4>
+        <p class="text-center">We encountered an issue while processing your booking. Please try again or contact us directly at (02) 9398 7578.</p>
+        <div class="text-center mt-4">
+          <button class="btn btn-primary" onclick="resetBookingForm()">Try Again</button>
+        </div>
+      </div>
+    `;
+  }
   
   // Define the function to reset the booking form
   window.resetBookingForm = function() {
