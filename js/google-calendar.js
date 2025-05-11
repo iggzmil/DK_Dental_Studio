@@ -519,7 +519,7 @@ function createCalendarHTML(month, year, service) {
   
   let html = `
     <div class="calendar-header">
-      <h3>${monthNames[month]} ${year}</h3>
+      <h3 class="text-center w-100">${monthNames[month]} ${year}</h3>
       <div class="calendar-navigation">
         <button class="btn btn-sm btn-outline-primary" onclick="prevMonth()"><i class="fas fa-chevron-left"></i></button>
         <button class="btn btn-sm btn-outline-primary" onclick="nextMonth()"><i class="fas fa-chevron-right"></i></button>
@@ -581,11 +581,24 @@ function createCalendarHTML(month, year, service) {
         padding: 15px;
         background-color: #f8f9fa;
         border-radius: 8px;
+        position: relative;
+      }
+      
+      .calendar-header h3 {
+        margin: 0;
+        text-align: center;
+        width: 100%;
+        position: absolute;
+        left: 0;
+        right: 0;
       }
       
       .calendar-navigation {
         display: flex;
         gap: 10px;
+        position: relative;
+        z-index: 1;
+        margin-left: auto;
       }
       
       .calendar-grid {
@@ -667,6 +680,11 @@ function createCalendarHTML(month, year, service) {
       
       .time-slots-container {
         margin-top: 30px;
+      }
+      
+      .time-slots-container h4 {
+        text-align: center;
+        margin-bottom: 20px;
       }
       
       .time-slots-grid {
@@ -1188,7 +1206,7 @@ function createTimeSlotsHTML(dateString) {
   
   // Show loading state
   let html = `
-    <h4 class="mb-4">Available Times for ${dayOfWeek}, ${formattedDate}</h4>
+    <h4 class="text-center mb-4">Available Times for ${dayOfWeek}, ${formattedDate}</h4>
     <div class="time-slots-loading">
       <div class="spinner" style="margin: 20px auto;"></div>
       <p class="text-center">Loading available time slots...</p>
@@ -1210,7 +1228,7 @@ function createTimeSlotsHTML(dateString) {
       if (!Array.isArray(timeSlots) || timeSlots.length === 0) {
         // No available slots
         html = `
-          <h4 class="mb-4">Available Times for ${dayOfWeek}, ${formattedDate}</h4>
+          <h4 class="text-center mb-4">Available Times for ${dayOfWeek}, ${formattedDate}</h4>
           <div class="alert alert-info">
             <p class="text-center mb-0">No available appointments for this date. Please select another date.</p>
           </div>
@@ -1218,7 +1236,7 @@ function createTimeSlotsHTML(dateString) {
       } else {
         // Show available slots
         html = `
-          <h4 class="mb-4">Available Times for ${dayOfWeek}, ${formattedDate}</h4>
+          <h4 class="text-center mb-4">Available Times for ${dayOfWeek}, ${formattedDate}</h4>
           <div class="time-slots-grid">
         `;
         
@@ -1240,7 +1258,7 @@ function createTimeSlotsHTML(dateString) {
       
       // Show error message
       html = `
-        <h4 class="mb-4">Available Times for ${dayOfWeek}, ${formattedDate}</h4>
+        <h4 class="text-center mb-4">Available Times for ${dayOfWeek}, ${formattedDate}</h4>
         <div class="alert alert-warning">
           <p class="text-center mb-0">We encountered an issue loading available times. Please try again or select another date.</p>
         </div>
