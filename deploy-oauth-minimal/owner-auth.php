@@ -30,64 +30,23 @@ if (!isset($_SESSION['authenticated'])) {
     }
 }
 
-// Load the minimal Google API Client
-require_once __DIR__ . '/vendor/autoload.php';
+// Define the client credentials
+$clientId = '976666616562-c4s3nfesuu7drrt6nmghnb6qc6cteers.apps.googleusercontent.com';
+$clientSecret = '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';
+$redirectUri = 'https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php';
+$scope = 'https://www.googleapis.com/auth/business.manage';
 
-// Check if our custom Auth interface exists before proceeding
-if (!interface_exists('Google\Auth\GetUniverseDomainInterface')) {
-    // Create a fallback
-    if (!file_exists(__DIR__ . '/vendor/google/apiclient/src/Auth/GetUniverseDomainInterface.php')) {
-        echo "Error: Required interface files are missing. Please check your installation.";
-        exit;
-    }
-}
+// Skip the Google API Client and create the auth URL directly
+$authUrl = 'https://accounts.google.com/o/oauth2/auth'
+    . '?response_type=code'
+    . '&client_id=' . urlencode($clientId)
+    . '&redirect_uri=' . urlencode($redirectUri)
+    . '&scope=' . urlencode($scope)
+    . '&access_type=offline'
+    . '&prompt=consent';
 
-try {
-    // Create Google client object with minimal required settings for OAuth flow
-    $client = new Google\Client();
-    
-    // Define the client credentials
-    $clientId = '976666616562-c4s3nfesuu7drrt6nmghnb6qc6cteers.apps.googleusercontent.com';
-    $clientSecret = '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';
-    
-    // Essential configuration options only
-    $client->setClientId($clientId);
-    $client->setClientSecret($clientSecret);
-    $client->setRedirectUri('https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php');
-    $client->setAccessType('offline');  // Request refresh token
-    $client->setApprovalPrompt('force'); // Force consent screen to get refresh token
-    
-    // Add scope - explicitly using addScope instead of setScopes
-    $client->addScope('https://www.googleapis.com/auth/business.manage');
-    
-    // Create the authorization URL
-    $authUrl = $client->createAuthUrl();
-    
-    // Verify the URL contains a scope parameter
-    if (strpos($authUrl, 'scope=') === false) {
-        // Log the issue
-        error_log('OAuth URL missing scope parameter: ' . $authUrl);
-        
-        // Try to manually construct a proper auth URL
-        $manualAuthUrl = 'https://accounts.google.com/o/oauth2/auth?'
-            . 'client_id=' . urlencode($clientId)
-            . '&redirect_uri=' . urlencode('https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php')
-            . '&response_type=code' 
-            . '&scope=' . urlencode('https://www.googleapis.com/auth/business.manage')
-            . '&access_type=offline'
-            . '&approval_prompt=force';
-        
-        $authUrl = $manualAuthUrl;
-    }
-    
-} catch (Exception $e) {
-    // Display detailed error message for debugging
-    echo "<h1>Error Details:</h1>";
-    echo "<p><strong>Error Message:</strong> " . $e->getMessage() . "</p>";
-    echo "<p><strong>Error Trace:</strong></p>";
-    echo "<pre>" . $e->getTraceAsString() . "</pre>";
-    exit;
-}
+// Log the URL for debugging
+error_log('Generated OAuth URL: ' . $authUrl);
 
 // Display authorization instructions
 ?>
@@ -114,7 +73,8 @@ try {
         <div class="debug">
             <p><strong>Debug Information:</strong></p>
             <p>Client ID: <?php echo htmlspecialchars(substr($clientId, 0, 10) . '...'); ?></p>
-            <p>Redirect URI: <?php echo htmlspecialchars('https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php'); ?></p>
+            <p>Redirect URI: <?php echo htmlspecialchars($redirectUri); ?></p>
+            <p>Scope: <?php echo htmlspecialchars($scope); ?></p>
             <p>Auth URL: <?php echo htmlspecialchars($authUrl); ?></p>
         </div>
     </div>

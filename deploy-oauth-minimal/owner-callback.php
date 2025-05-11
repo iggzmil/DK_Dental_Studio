@@ -3,7 +3,7 @@
  * OAuth Callback Handler for DK Dental Studio
  * 
  * This page handles the OAuth callback from Google and stores the refresh token
- * This version is designed to work with the minimal Google API Client package
+ * This version uses a simplified approach without the API Client library
  */
 
 // Start session for authentication
@@ -19,91 +19,107 @@ if (!isset($_SESSION['authenticated'])) {
     exit;
 }
 
-// Load the minimal Google API Client
-require_once __DIR__ . '/vendor/autoload.php';
+// Define client credentials
+$clientId = '976666616562-c4s3nfesuu7drrt6nmghnb6qc6cteers.apps.googleusercontent.com';
+$clientSecret = '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';
+$redirectUri = 'https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php';
 
-// Check if our custom Auth interface exists before proceeding
-if (!interface_exists('Google\Auth\GetUniverseDomainInterface')) {
-    // Create a fallback
-    if (!file_exists(__DIR__ . '/vendor/google/apiclient/src/Auth/GetUniverseDomainInterface.php')) {
-        echo "Error: Required interface files are missing. Please check your installation.";
-        exit;
-    }
+// Define token storage location
+$secureDir = __DIR__ . '/secure';
+if (!file_exists($secureDir)) {
+    mkdir($secureDir, 0700, true);
 }
+$tokenFile = $secureDir . '/google_refresh_token.json';
 
-try {
-    // Create Google client with minimal configuration
-    $client = new Google\Client();
-    
-    // Define client credentials
-    $clientId = '976666616562-c4s3nfesuu7drrt6nmghnb6qc6cteers.apps.googleusercontent.com';
-    $clientSecret = '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';
-    
-    // Configure client
-    $client->setClientId($clientId);
-    $client->setClientSecret($clientSecret);
-    $client->setRedirectUri('https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php');
-    $client->addScope('https://www.googleapis.com/auth/business.manage');
+$success = false;
+$message = "";
 
-    // Define token storage location
-    $secureDir = __DIR__ . '/secure';
-    if (!file_exists($secureDir)) {
-        mkdir($secureDir, 0700, true);
+// Process the authorization code
+if (isset($_GET['code'])) {
+    $code = $_GET['code'];
+    
+    // Log the received code (partial for security)
+    $codeLength = strlen($code);
+    error_log('Received authorization code: ' . substr($code, 0, 5) . '...' . substr($code, -5) . " (Length: $codeLength)");
+    
+    // Exchange authorization code for access token using cURL
+    $tokenUrl = 'https://oauth2.googleapis.com/token';
+    $postData = [
+        'code' => $code,
+        'client_id' => $clientId,
+        'client_secret' => $clientSecret,
+        'redirect_uri' => $redirectUri,
+        'grant_type' => 'authorization_code'
+    ];
+    
+    // Initialize cURL session
+    $ch = curl_init($tokenUrl);
+    
+    // Set cURL options
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
+    
+    // Execute cURL request
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    
+    // Close cURL session
+    curl_close($ch);
+    
+    // Log raw response for debugging
+    error_log("Token exchange HTTP code: $httpCode");
+    if ($curlError) {
+        error_log("cURL error: $curlError");
     }
-    $tokenFile = $secureDir . '/google_refresh_token.json';
-
-    // Process the authorization code
-    if (isset($_GET['code'])) {
-        try {
-            // Log the received code (partial for security)
-            $codeLength = strlen($_GET['code']);
-            error_log('Received authorization code: ' . substr($_GET['code'], 0, 5) . '...' . substr($_GET['code'], -5) . " (Length: $codeLength)");
+    
+    // Process the response
+    if ($httpCode == 200) {
+        $token = json_decode($response, true);
+        
+        // Debug token response
+        error_log('Token response keys: ' . implode(', ', array_keys($token)));
+        
+        if (isset($token['refresh_token'])) {
+            // Store the refresh token
+            file_put_contents($tokenFile, $response);
             
-            // Exchange authorization code for access token
-            $token = $client->fetchAccessTokenWithAuthCode($_GET['code']);
+            $success = true;
+            $message = "Authorization successful! Your website can now display your Google reviews.";
             
-            // Debug token response
-            error_log('Token response: ' . json_encode($token));
-
-            if (isset($token['refresh_token'])) {
-                // Store the refresh token
-                file_put_contents($tokenFile, json_encode($token));
-
-                // Test the token by making a simple API call
-                $client->setAccessToken($token);
-
-                $success = true;
-                $message = "Authorization successful! Your website can now display your Google reviews.";
-                
-                // Log success
-                error_log('OAuth flow completed successfully. Refresh token obtained.');
-            } else {
-                $success = false;
-                $message = "No refresh token was received. Please try again.";
-                
-                // Log error
-                error_log('OAuth token response did not contain refresh_token: ' . json_encode($token));
-            }
-        } catch (Exception $e) {
+            // Log success
+            error_log('OAuth flow completed successfully. Refresh token obtained.');
+        } else {
             $success = false;
-            $message = "Error during authorization: " . $e->getMessage();
+            $message = "No refresh token was received. Please try again.";
             
-            // Log detailed error
-            error_log('OAuth error: ' . $e->getMessage() . ' - ' . $e->getTraceAsString());
+            // Log error
+            error_log('OAuth token response did not contain refresh_token: ' . $response);
         }
     } else {
         $success = false;
-        $message = "No authorization code received.";
+        $message = "Error during token exchange (HTTP $httpCode). Please try again.";
         
         // Log error
-        error_log('No authorization code received in callback. Query string: ' . $_SERVER['QUERY_STRING']);
+        error_log('Token exchange error: ' . $response);
     }
-} catch (Exception $e) {
+} else if (isset($_GET['error'])) {
     $success = false;
-    $message = "Error initializing Google Client: " . $e->getMessage();
+    $message = "Authorization error: " . htmlspecialchars($_GET['error']);
+    if (isset($_GET['error_description'])) {
+        $message .= " - " . htmlspecialchars($_GET['error_description']);
+    }
     
     // Log error
-    error_log('Error initializing Google Client: ' . $e->getMessage() . ' - ' . $e->getTraceAsString());
+    error_log('OAuth error: ' . $_GET['error'] . (isset($_GET['error_description']) ? " - " . $_GET['error_description'] : ""));
+} else {
+    $success = false;
+    $message = "No authorization code received.";
+    
+    // Log error
+    error_log('No authorization code received in callback. Query string: ' . $_SERVER['QUERY_STRING']);
 }
 ?>
 <!DOCTYPE html>
