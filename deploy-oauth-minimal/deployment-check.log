@@ -1,0 +1,75 @@
+==================================================
+DK Dental Studio OAuth Deployment Verification
+==================================================
+
+✓ GetUniverseDomainInterface.php found
+✓ UniverseDomain.php found
+✓ Google Client.php found
+✓ owner-auth.php found
+✓ owner-callback.php found
+✓ autoload.php found
+✓ Secure directory exists
+✓ Secure directory is writable
+
+✓ Successfully loaded Google\Client class
+
+All checks passed! Your deployment is ready.
+
+Creating deployment archive...
+  Added: api\reviews.php
+  Added: copy-essential-files.ps1
+  Added: DEPENDENCIES.md
+  Added: DEPLOYMENT_INSTRUCTIONS.md
+  Added: FIXED_INTERFACE_INFO.md
+  Added: includes\GoogleTokenManager.php
+  Added: owner-auth.php
+  Added: owner-callback.php
+  Added: prepare-deployment.php
+  Added: README.md
+  Added: vendor\autoload.php
+  Added: vendor\google\apiclient\src\AccessToken\Revoke.php
+  Added: vendor\google\apiclient\src\AccessToken\Verify.php
+  Added: vendor\google\apiclient\src\Auth\GetUniverseDomainInterface.php
+  Added: vendor\google\apiclient\src\Auth\UniverseDomain.php
+  Added: vendor\google\apiclient\src\AuthHandler\AuthHandlerFactory.php
+  Added: vendor\google\apiclient\src\Client.php
+  Added: vendor\google\apiclient\src\Http\Batch.php
+  Added: vendor\google\apiclient\src\Http\REST.php
+  Added: vendor\google\apiclient\src\Service.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\AcceptInvitationRequest.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\Account.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\Admin.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\DeclineInvitationRequest.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\Invitation.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\ListAccountAdminsResponse.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\ListAccountsResponse.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\ListInvitationsResponse.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\ListLocationAdminsResponse.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\MybusinessaccountmanagementEmpty.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\OrganizationInfo.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\PostalAddress.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\Resource\Accounts.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\Resource\AccountsAdmins.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\Resource\AccountsInvitations.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\Resource\Locations.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\Resource\LocationsAdmins.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\TargetLocation.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement\TransferLocationRequest.php
+  Added: vendor\google\apiclient-services\src\MyBusinessAccountManagement.php
+  Added: vendor\google-api-php-client\src\Client.php
+  Added: vendor\guzzlehttp\guzzle\src\Client.php
+  Added: vendor\guzzlehttp\guzzle\src\ClientInterface.php
+  Added: vendor\guzzlehttp\guzzle\src\Handler\CurlFactory.php
+  Added: vendor\guzzlehttp\guzzle\src\Handler\CurlFactoryInterface.php
+  Added: vendor\guzzlehttp\guzzle\src\Handler\CurlHandler.php
+  Added: vendor\guzzlehttp\guzzle\src\Handler\EasyHandle.php
+  Added: vendor\guzzlehttp\guzzle\src\Handler\Proxy.php
+  Added: vendor\guzzlehttp\guzzle\src\Handler\StreamHandler.php
+  Added: vendor\psr\http-message\src\MessageInterface.php
+  Added: vendor\psr\http-message\src\RequestInterface.php
+  Added: vendor\psr\http-message\src\ResponseInterface.php
+  Added: vendor\psr\http-message\src\StreamInterface.php
+  Added: vendor\psr\http-message\src\UriInterface.php
+
+ZIP archive created successfully: dk-dental-oauth-deployment.zip
+Upload this file to your server and extract it into your web directory.
