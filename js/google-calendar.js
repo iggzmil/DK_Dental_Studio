@@ -100,7 +100,7 @@ function loadGoogleAPI() {
   // Set a timeout to ensure we don't wait forever
   const apiLoadTimeout = setTimeout(() => {
     debugLog('Google API client load timed out, using fallback calendar');
-    showError("Google Calendar API load timed out. Using basic calendar mode.");
+    showError("Google API client not loaded. Please check your internet connection and try again.");
     showFallbackCalendar();
   }, 10000); // 10 second timeout
   
@@ -164,16 +164,34 @@ function initClient() {
   // Initialize the client without an API key
   debugLog('Initializing Google API client...');
   
+  // Set a timeout to ensure we don't wait forever
+  const initTimeout = setTimeout(() => {
+    debugLog('Google API client initialization timed out, showing fallback calendar');
+    showError("Google Calendar API initialization timed out. Using basic calendar mode.");
+    showFallbackCalendar();
+  }, 7000); // 7 second timeout
+  
   try {
     gapi.client.init({
       discoveryDocs: DISCOVERY_DOCS,
     }).then(() => {
       debugLog('Google API client initialized');
+      clearTimeout(initTimeout);
       
       // Fetch token from server instead of using client-side auth
       debugLog('Fetching server access token...');
+      
+      // Set a timeout for token fetching
+      const tokenTimeout = setTimeout(() => {
+        debugLog('Token fetch timed out, showing fallback calendar');
+        showError("Token retrieval timed out. Using basic calendar mode.");
+        showFallbackCalendar();
+      }, 5000); // 5 second timeout
+      
       fetchServerAccessToken()
         .then(token => {
+          clearTimeout(tokenTimeout);
+          
           // Set the access token for all future requests
           debugLog('Setting access token on gapi client');
           gapi.client.setToken({ access_token: token });
@@ -181,9 +199,18 @@ function initClient() {
           
           // Test if the calendar API is available
           debugLog('Testing Google Calendar API access...');
+          
+          // Set a timeout for API test
+          const apiTestTimeout = setTimeout(() => {
+            debugLog('Calendar API test timed out, showing fallback calendar');
+            showError("Calendar API test timed out. Using basic calendar mode.");
+            showFallbackCalendar();
+          }, 5000); // 5 second timeout
+          
           return gapi.client.calendar.calendarList.list({
             maxResults: 1
           }).then(response => {
+            clearTimeout(apiTestTimeout);
             debugLog('Calendar API test successful:', response);
             
             // If a service is already selected, load it
@@ -192,23 +219,28 @@ function initClient() {
               loadCalendar(selectedService);
             }
           }).catch(error => {
+            clearTimeout(apiTestTimeout);
             debugLog('Calendar API test failed:', error);
-            throw new Error('Calendar API test failed: ' + error.message);
+            showError("Calendar API test failed. Using basic calendar mode.");
+            showFallbackCalendar();
           });
         })
         .catch(error => {
+          clearTimeout(tokenTimeout);
           console.error('Failed to set server access token:', error);
           debugLog('Token fetch failed, showing fallback calendar');
           showError("Failed to authorize access to Google Calendar. Using fallback calendar.");
           showFallbackCalendar();
         });
     }).catch(error => {
+      clearTimeout(initTimeout);
       console.error('Error initializing Google API client', error);
       debugLog('Google API client initialization failed:', error);
       showError("Failed to initialize Google Calendar. Using fallback calendar.");
       showFallbackCalendar();
     });
   } catch (error) {
+    clearTimeout(initTimeout);
     console.error('Exception during Google API client initialization', error);
     debugLog('Exception during Google API client initialization:', error);
     showError("Exception during Google Calendar initialization. Using fallback calendar.");
@@ -369,19 +401,30 @@ window.loadCalendarForService = function(service) {
     bookingFormContainer.style.display = 'none';
   }
   
+  // Set a timeout to ensure we don't wait forever
+  const loadingTimeout = setTimeout(() => {
+    debugLog('Calendar loading timed out, showing fallback calendar');
+    showFallbackCalendar();
+  }, 5000); // 5 second timeout
+  
   // Check if we're authorized and have the calendar API loaded
   if (!gapi) {
     // First load - initialize the API
     debugLog('gapi not loaded, initializing API');
     loadGoogleAPI();
+    // Clear the timeout when loadGoogleAPI completes (it has its own timeout)
+    clearTimeout(loadingTimeout);
   } else if (!gapi.client || !gapi.client.calendar) {
     // API loaded but calendar not initialized
     debugLog('gapi loaded but calendar not initialized');
     initClient();
+    // Clear the timeout when initClient completes (it has its own error handling)
+    clearTimeout(loadingTimeout);
   } else {
     // Proceed to load the calendar
     debugLog('gapi and calendar initialized, loading calendar');
     loadCalendar(service);
+    clearTimeout(loadingTimeout);
   }
 };
 
@@ -403,16 +446,16 @@ function requestAuthorization() {
 function loadCalendar(service) {
   debugLog('loadCalendar called for service:', service);
   
-  // Get the calendar container
-  const calendarContainer = document.getElementById('appointment-calendar');
-  if (!calendarContainer) {
-    debugLog('ERROR: Calendar container not found!');
-    return;
-  }
-  
-  debugLog('Calendar container found, rendering calendar');
-  
   try {
+    // Get the calendar container
+    const calendarContainer = document.getElementById('appointment-calendar');
+    if (!calendarContainer) {
+      debugLog('ERROR: Calendar container not found!');
+      return;
+    }
+    
+    debugLog('Calendar container found, rendering calendar');
+    
     // Get today's date
     const today = new Date();
     const month = today.getMonth();
@@ -443,23 +486,6 @@ function loadCalendar(service) {
     }
     
     debugLog('Calendar loaded and interactions set up');
-    
-    // Create an empty time slots container if it doesn't exist
-    if (!document.getElementById('time-slots-container')) {
-      const timeSlotsContainer = document.createElement('div');
-      timeSlotsContainer.id = 'time-slots-container';
-      timeSlotsContainer.className = 'time-slots-container';
-      calendarContainer.appendChild(timeSlotsContainer);
-    }
-    
-    // Create an empty booking form container if it doesn't exist
-    if (!document.getElementById('booking-form-container')) {
-      const bookingFormContainer = document.createElement('div');
-      bookingFormContainer.id = 'booking-form-container';
-      bookingFormContainer.className = 'booking-form-container';
-      bookingFormContainer.style.display = 'none';
-      calendarContainer.appendChild(bookingFormContainer);
-    }
   } catch (error) {
     debugLog('ERROR rendering calendar:', error);
     
@@ -532,7 +558,7 @@ function createCalendarHTML(month, year, service) {
       </div>
     </div>
     <div class="time-slots-container" id="time-slots-container"></div>
-    <div class="booking-form-container" id="booking-form-container"></div>
+    <div class="booking-form-container" id="booking-form-container" style="display:none;"></div>
   `;
   
   // Add custom styles for the calendar
@@ -666,7 +692,6 @@ function createCalendarHTML(month, year, service) {
         padding: 20px;
         background-color: #f8f9fa;
         border-radius: 8px;
-        display: none;
       }
       
       .booking-form {

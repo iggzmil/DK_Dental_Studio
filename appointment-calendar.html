@@ -485,7 +485,46 @@
         // Update calendar with selected service
         if (typeof loadCalendarForService === 'function') {
           loadCalendarForService(service);
+        } else {
+          // Fallback if loadCalendarForService is not available
+          const calendarContainer = document.getElementById('appointment-calendar');
+          if (calendarContainer) {
+            calendarContainer.innerHTML = `
+              <div class="alert alert-warning">
+                <p>The calendar module is not loaded properly. Please try refreshing the page.</p>
+              </div>
+              <div class="text-center">
+                <button class="btn btn-primary" onclick="window.location.reload()">Refresh Page</button>
+              </div>
+            `;
+          }
         }
+        
+        // Force calendar display after a short delay
+        setTimeout(() => {
+          const calendarContainer = document.getElementById('appointment-calendar');
+          if (calendarContainer) {
+            // If the calendar is still showing loading state after 3 seconds, force the fallback calendar
+            if (calendarContainer.querySelector('.calendar-loading')) {
+              console.log('Forcing fallback calendar display');
+              if (typeof showFallbackCalendar === 'function') {
+                showFallbackCalendar();
+              } else {
+                // Create a very simple calendar if the showFallbackCalendar function isn't available
+                const today = new Date();
+                calendarContainer.innerHTML = `
+                  <div class="alert alert-info mb-4">
+                    <p><strong>Note:</strong> The appointment calendar is currently in basic mode.</p>
+                    <p>Please contact us directly at (02) 9398 7578 to book an appointment.</p>
+                  </div>
+                  <div class="text-center mb-4">
+                    <a href="contact-us.html" class="btn btn-primary">Contact Us</a>
+                  </div>
+                `;
+              }
+            }
+          }
+        }, 3000);
       }
     </script>
   </body>
