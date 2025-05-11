@@ -29,18 +29,34 @@ if (!isset($_SESSION['authenticated'])) {
 // Load the minimal Google API Client
 require_once __DIR__ . '/vendor/autoload.php';
 
-// Create Google client
-$client = new Google\Client();
-$client->setClientId('593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com');
-$client->setClientSecret('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');
-$client->setRedirectUri('https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php');
-$client->setAccessType('offline');
-$client->setApprovalPrompt('force'); // Force to get refresh token
-$client->setIncludeGrantedScopes(true); // Enable incremental authorization
-$client->setScopes(['https://www.googleapis.com/auth/business.manage']);
+// Check if our custom Auth interface exists before proceeding
+if (!interface_exists('Google\Auth\GetUniverseDomainInterface')) {
+    // Create a fallback
+    if (!file_exists(__DIR__ . '/vendor/google/apiclient/src/Auth/GetUniverseDomainInterface.php')) {
+        echo "Error: Required interface files are missing. Please check your installation.";
+        exit;
+    }
+}
 
-// Generate authorization URL
-$authUrl = $client->createAuthUrl();
+try {
+    // Create Google client
+    $client = new Google\Client();
+    $client->setClientId('593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com');
+    $client->setClientSecret('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');
+    $client->setRedirectUri('https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php');
+    $client->setAccessType('offline');
+    $client->setApprovalPrompt('force'); // Force to get refresh token
+    $client->setIncludeGrantedScopes(true); // Enable incremental authorization
+    $client->setScopes(['https://www.googleapis.com/auth/business.manage']);
+
+    // Generate authorization URL
+    $authUrl = $client->createAuthUrl();
+} catch (Exception $e) {
+    // Display error message
+    echo "Error: " . $e->getMessage();
+    echo "<pre>" . $e->getTraceAsString() . "</pre>";
+    exit;
+}
 
 // Display authorization instructions
 ?>

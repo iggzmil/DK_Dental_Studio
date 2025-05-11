@@ -18,45 +18,59 @@ if (!isset($_SESSION['authenticated'])) {
 // Load the minimal Google API Client
 require_once __DIR__ . '/vendor/autoload.php';
 
-// Create Google client
-$client = new Google\Client();
-$client->setClientId('593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com');
-$client->setClientSecret('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');
-$client->setRedirectUri('https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php');
-
-// Define token storage location
-$secureDir = __DIR__ . '/secure';
-if (!file_exists($secureDir)) {
-    mkdir($secureDir, 0700, true);
-}
-$tokenFile = $secureDir . '/google_refresh_token.json';
-
-// Process the authorization code
-if (isset($_GET['code'])) {
-    try {
-        // Exchange authorization code for access token
-        $token = $client->fetchAccessTokenWithAuthCode($_GET['code']);
-
-        if (isset($token['refresh_token'])) {
-            // Store the refresh token
-            file_put_contents($tokenFile, json_encode($token));
-
-            // Test the token by making a simple API call
-            $client->setAccessToken($token);
-
-            $success = true;
-            $message = "Authorization successful! Your website can now display your Google reviews.";
-        } else {
-            $success = false;
-            $message = "No refresh token was received. Please try again.";
-        }
-    } catch (Exception $e) {
-        $success = false;
-        $message = "Error during authorization: " . $e->getMessage();
+// Check if our custom Auth interface exists before proceeding
+if (!interface_exists('Google\Auth\GetUniverseDomainInterface')) {
+    // Create a fallback
+    if (!file_exists(__DIR__ . '/vendor/google/apiclient/src/Auth/GetUniverseDomainInterface.php')) {
+        echo "Error: Required interface files are missing. Please check your installation.";
+        exit;
     }
-} else {
+}
+
+try {
+    // Create Google client
+    $client = new Google\Client();
+    $client->setClientId('593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com');
+    $client->setClientSecret('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');
+    $client->setRedirectUri('https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php');
+
+    // Define token storage location
+    $secureDir = __DIR__ . '/secure';
+    if (!file_exists($secureDir)) {
+        mkdir($secureDir, 0700, true);
+    }
+    $tokenFile = $secureDir . '/google_refresh_token.json';
+
+    // Process the authorization code
+    if (isset($_GET['code'])) {
+        try {
+            // Exchange authorization code for access token
+            $token = $client->fetchAccessTokenWithAuthCode($_GET['code']);
+
+            if (isset($token['refresh_token'])) {
+                // Store the refresh token
+                file_put_contents($tokenFile, json_encode($token));
+
+                // Test the token by making a simple API call
+                $client->setAccessToken($token);
+
+                $success = true;
+                $message = "Authorization successful! Your website can now display your Google reviews.";
+            } else {
+                $success = false;
+                $message = "No refresh token was received. Please try again.";
+            }
+        } catch (Exception $e) {
+            $success = false;
+            $message = "Error during authorization: " . $e->getMessage();
+        }
+    } else {
+        $success = false;
+        $message = "No authorization code received.";
+    }
+} catch (Exception $e) {
     $success = false;
-    $message = "No authorization code received.";
+    $message = "Error initializing Google Client: " . $e->getMessage();
 }
 ?>
 <!DOCTYPE html>
