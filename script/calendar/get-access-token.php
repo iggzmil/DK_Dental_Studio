@@ -16,7 +16,7 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Access-Control-Allow-Origin: *'); // Allow cross-origin requests
 
 // Define the exact path to the token file - only location on the web server
-$tokenFile = '/var/www/DK_Dental_Studio/vendor/google/oauth/secure/google_refresh_token.json';
+$tokenFile = __DIR__ . '/../../vendor/google/oauth/secure/google_refresh_token.json';
 $tokenExists = file_exists($tokenFile);
 
 // Log the token path for debugging

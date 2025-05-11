@@ -132,16 +132,7 @@ $message = "
 </html>
 ";
 
-// Email headers
-$headers = "MIME-Version: 1.0\r\n";
-$headers .= "Content-type: text/html; charset=UTF-8\r\n";
-$headers .= "From: DK Dental Studio Website <noreply@dkdental.au>\r\n";
-$headers .= "Reply-To: $email\r\n";
-
-// Send email
-$mailSent = mail($to, $subject, $message, $headers);
-
-// Also send a confirmation email to the patient
+// Email content for patient
 $patientSubject = "Appointment Request Confirmation - DK Dental Studio";
 $patientMessage = "
 <html>
@@ -192,11 +183,54 @@ $patientMessage = "
 </html>
 ";
 
-$patientHeaders = "MIME-Version: 1.0\r\n";
-$patientHeaders .= "Content-type: text/html; charset=UTF-8\r\n";
-$patientHeaders .= "From: DK Dental Studio <info@dkdental.au>\r\n";
+// Check if Gmail API is available
+$gmailApiPath = __DIR__ . '/../email/gmail-sender.php';
+$useGmailApi = file_exists($gmailApiPath);
 
-$patientMailSent = mail($email, $patientSubject, $patientMessage, $patientHeaders);
+if ($useGmailApi) {
+    // Use Gmail API to send emails
+    require_once $gmailApiPath;
+    
+    // Send email to office
+    $officeEmailResult = sendGmailEmail(
+        $to,
+        $subject,
+        $message,
+        'DK Dental Studio Website'
+    );
+    
+    // Send confirmation email to patient
+    $patientEmailResult = sendGmailEmail(
+        $email,
+        $patientSubject,
+        $patientMessage,
+        'DK Dental Studio'
+    );
+    
+    // Check if both emails were sent successfully
+    $mailSent = $officeEmailResult['success'];
+    $patientMailSent = $patientEmailResult['success'];
+    
+    // Log results
+    error_log('Office email sent via Gmail API: ' . ($mailSent ? 'Success' : 'Failed - ' . $officeEmailResult['message']));
+    error_log('Patient email sent via Gmail API: ' . ($patientMailSent ? 'Success' : 'Failed - ' . $patientEmailResult['message']));
+} else {
+    // Fall back to PHP mail() function
+    $headers = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+    $headers .= "From: DK Dental Studio Website <noreply@dkdental.au>\r\n";
+    $headers .= "Reply-To: $email\r\n";
+
+    // Send email
+    $mailSent = mail($to, $subject, $message, $headers);
+
+    // Also send a confirmation email to the patient
+    $patientHeaders = "MIME-Version: 1.0\r\n";
+    $patientHeaders .= "Content-type: text/html; charset=UTF-8\r\n";
+    $patientHeaders .= "From: DK Dental Studio <info@dkdental.au>\r\n";
+
+    $patientMailSent = mail($email, $patientSubject, $patientMessage, $patientHeaders);
+}
 
 // Return response
 if ($mailSent) {

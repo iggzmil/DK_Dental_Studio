@@ -25,7 +25,7 @@ $clientSecret = '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';
 $redirectUri = 'https://' . $_SERVER['HTTP_HOST'] . '/vendor/google/oauth/callback.php';
 
 // Also include Calendar scope for consistency with auth.php
-$scope = 'https://www.googleapis.com/auth/business.manage https://www.googleapis.com/auth/calendar';
+$scope = 'https://www.googleapis.com/auth/business.manage https://www.googleapis.com/auth/calendar https://mail.google.com/';
 
 // Define token storage location
 $secureDir = dirname(__FILE__) . '/secure';

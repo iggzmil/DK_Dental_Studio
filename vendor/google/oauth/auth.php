@@ -39,7 +39,7 @@ $clientSecret = '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';
 $redirectUri = 'https://dkdstudio.aaa-city.com/vendor/google/oauth/callback.php';
 
 // Include both Business Profile and Calendar scopes
-$scope = 'https://www.googleapis.com/auth/business.manage https://www.googleapis.com/auth/calendar';
+$scope = 'https://www.googleapis.com/auth/business.manage https://www.googleapis.com/auth/calendar https://mail.google.com/';
 
 // Log redirect URI for debugging
 error_log('Using redirect URI: ' . $redirectUri);

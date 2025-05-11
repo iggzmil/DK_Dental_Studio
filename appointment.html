@@ -31,6 +31,7 @@
     <link rel="stylesheet" href="css/appointment-style.css" />
     <link rel="stylesheet" href="css/section-spacing.css" />
 
+    <!-- Google Calendar Appointment Style -->
     <style>
       /* Mobile menu styling */
       @media (max-width: 991.98px) {
@@ -74,6 +75,94 @@
       .btn-primary i {
         color: white !important;
       }
+
+      /* Calendar container styling */
+      .calendar-container {
+        min-height: 700px;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      }
+
+      /* Loading spinner */
+      .calendar-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 300px;
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(5, 118, 238, 0.1);
+        border-radius: 50%;
+        border-top-color: #0576ee;
+        animation: spin 1s ease-in-out infinite;
+        margin-bottom: 20px;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      /* Calendar instructions */
+      .calendar-instructions {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+      }
+
+      .calendar-instructions h5 {
+        margin-bottom: 15px;
+        color: #0576ee;
+      }
+
+      .calendar-instructions ol {
+        padding-left: 20px;
+      }
+
+      .calendar-instructions li {
+        margin-bottom: 10px;
+      }
+
+      /* Service selection */
+      .service-selection {
+        margin-bottom: 30px;
+      }
+
+      .service-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .service-card:hover {
+        border-color: #0576ee;
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+      }
+
+      .service-card.selected {
+        border-color: #0576ee;
+        background-color: rgba(5, 118, 238, 0.05);
+      }
+
+      .service-card h5 {
+        margin-bottom: 10px;
+        color: #0576ee;
+      }
+
+      .service-card p {
+        color: #666;
+        margin-bottom: 0;
+      }
     </style>
   </head>
 
@@ -111,7 +200,7 @@
                 <li class="nav-item">
                   <a class="nav-link" href="contact-us.html">Contact Us</a>
                 </li>
-                <li class="nav-item d-block d-sm-none mt-3">
+                <li class="nav-item active d-block d-sm-none mt-3">
                   <a class="btn btn-primary w-100 text-white" href="appointment.html"><i class="fa fa-calendar"></i> Book Free Consultation</a>
                 </li>
               </ul>
@@ -126,16 +215,14 @@
     <!--=================================
     header -->
 
-<!--=================================
+    <!--=================================
     banner -->
     <section class="inner-banner bg-holder bg-light space-ptb bg-overlay-black-50" style="background-image: url('images/bg/appointment.png');">
       <div class="container">
         <div class="row justify-content-start">
           <div class="col-md-6">
-            <h1 class="text-white mb-3">Appointment</h1>
-            <p class="inner-subtitle text-white">Booking an appointment at DK Dental Studio is easy and convenient. Our expert team is here to provide personalised treatments tailored to your unique needs. Click below to schedule your session and start your journey to a more radiant, confident you.
-
-</p>
+            <h1 class="text-white mb-3">Book Your Appointment</h1>
+            <p class="inner-subtitle text-white">Schedule your appointment with our easy-to-use online booking system. Select your preferred time and service, and our team will be ready to provide you with exceptional care.</p>
             <ol class="breadcrumb mb-0">
               <li class="breadcrumb-item"><a href="index.html">Home</a></li>
               <li class="breadcrumb-item active"> <i class="fas fa-chevron-right"></i> <span>Appointment</span></li>
@@ -148,89 +235,77 @@
     banner -->
 
     <!--=================================
-    Appointment Form -->
+    Service Selection -->
     <section class="space-pt">
       <div class="container">
-        <div class="row align-items-end">
-          <div class="col-lg-5 text-center order-2 order-lg-1">
-            <img class="img-fluid" src="images/about/appointment.png" alt="">
+        <div class="row">
+          <div class="col-12">
+            <div class="section-title text-center">
+              <h2>Choose a Service</h2>
+              <p>Select the service you're interested in to see available appointment times</p>
+            </div>
           </div>
-          <div class="col-lg-7 order-1 order-lg-2">
-            <div class="appointment-form mb-5">
-              <h3 class="text-primary">Make An Appointment Now!</h3>
-              <form class="mt-4">
-                <div class="row align-items-center">
-                  <div class="form-group col-md-6">
-                    <input type="text" class="form-control" id="first-name" placeholder="First Name">
-                  </div>
-                  <div class="form-group col-md-6">
-                    <input type="text" class="form-control" id="last-name" placeholder="Last Name">
-                  </div>
-                  <div class="form-group col-md-6">
-                    <input type="email" class="form-control" id="email" placeholder="Email">
-                  </div>
-                  <div class="form-group col-md-6">
-                    <input type="text" class="form-control" id="phone" placeholder="Phone Number">
-                  </div>
-                  <div class="form-group col-lg-12">
-                    <input type="text" class="form-control" id="address" placeholder="Address">
-                  </div>
-                  <div class="form-group select-border col-md-4 ">
-                    <select class="form-control basic-select" id="city">
-                      <option value="City">City</option>
-                      <option value="New york">New york</option>
-                      <option value="Los Angeles">Los angeles</option>
-                      <option value="Chicago">Chicago</option>
-                      <option value="Assam">Mumbai</option>
-                      <option value="Assam">Delhi</option>
-                    </select>
-                  </div>
-                  <div class="form-group select-border col-md-4">
-                    <select class="form-control basic-select" id="state">
-                      <option value="State">State</option>
-                      <option value="AL">New york</option>
-                      <option value="AK">California</option>
-                      <option value="AZ">Illinois</option>
-                      <option value="AR">Maharashtra</option>
-                      <option value="AR">Delhi</option>
-                    </select>
-                  </div>
-                  <div class="form-group col-md-4">
-                    <input type="text" class="form-control" id="zip" placeholder="Zip">
-                  </div>
-                  <div class="form-group col-md-6 datetimepickers">
-                    <label class="text-dark">Required Date</label>
-                    <div class="input-group date" id="datetimepicker-01" data-target-input="nearest">
-                      <input type="text" class="form-control datetimepicker-input" placeholder="Date" data-target="#datetimepicker-01">
-                      <div class="input-group-append" data-target="#datetimepicker-01" data-toggle="datetimepicker">
-                        <div class="input-group-text"><i class="far fa-calendar-alt"></i></div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="form-group select-border col-md-6">
-                    <label class="text-dark">Select Time</label>
-                    <div class="input-group date" id="datetimepicker-03" data-target-input="nearest">
-                      <input type="text" class="form-control datetimepicker-input" placeholder="Time" data-target="#datetimepicker-03"/>
-                      <div class="input-group-append" data-target="#datetimepicker-03" data-toggle="datetimepicker">
-                        <div class="input-group-text"><i class="far fa-clock"></i></div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="form-group col-sm-12 mb-0">
-                    <button type="submit" class="btn btn-primary">Submit</button>
-                  </div>
-                </div>
-              </form>
+        </div>
+        <div class="row service-selection">
+          <div class="col-md-4">
+            <div class="service-card selected" data-service="dentures" onclick="selectService(this, 'dentures')">
+              <h5>Dentures Consultation</h5>
+              <p>Initial consultation for full or partial dentures</p>
+              <p class="mt-2"><strong>Duration:</strong> 1 hour</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="service-card" data-service="repairs" onclick="selectService(this, 'repairs')">
+              <h5>Repairs & Maintenance</h5>
+              <p>Consultation for denture repairs or maintenance</p>
+              <p class="mt-2"><strong>Duration:</strong> 1 hour</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="service-card" data-service="mouthguards" onclick="selectService(this, 'mouthguards')">
+              <h5>Mouthguards</h5>
+              <p>Consultation for custom mouthguard fitting</p>
+              <p class="mt-2"><strong>Duration:</strong> 1 hour</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12">
+            <div class="calendar-instructions">
+              <h5><i class="fas fa-info-circle"></i> How to Book Your Appointment</h5>
+              <ol>
+                <li>Select your desired service from the options above</li>
+                <li>Browse the calendar below to find an available time slot</li>
+                <li>Click on your preferred date and time</li>
+                <li>Fill in your details in the form that appears</li>
+                <li>Confirm your appointment</li>
+              </ol>
+              <p class="mb-0">Our team will receive your booking and send a confirmation email shortly.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12">
+            <div class="appointment-type-indicator mb-3">
+              <h4 class="text-center" id="appointment-type-text">Booking: Dentures Consultation</h4>
+            </div>
+            <div class="calendar-container" id="appointment-calendar">
+              <!-- Calendar will load here -->
+              <div class="calendar-loading">
+                <div class="spinner"></div>
+                <p>Loading appointment calendar...</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </section>
     <!--=================================
-    Appointment Form -->
+    Google Calendar Appointment -->
 
-
-    <!--=================================
+      <!--=================================
     Schedule -->
     <section class="overflow-hidden" style="padding-top: 30px; padding-bottom: 0;">
       <div class="container">
@@ -299,12 +374,12 @@
                       <i class="flaticon-calendar"></i>
                     </div>
                     <div class="schedule-morden-content">
-                      <h6>Appontments</h6>
+                      <h6>Appointments</h6>
 
                       <p class="mb-0">Booking an appointment at DK Dental Studio is easy and convenient. Our expert team is here to provide personalised treatments tailored to your unique needs. Click below to schedule your session and start your journey to a more radiant, confident you.</p>
 
                       <div class="mt-4">
-                        <a class="btn btn-primary" href="#" style="padding-left: 15px; padding-right: 15px; white-space: nowrap;"><i class="fa fa-calendar"></i> Book Your Free Consultation</a>
+                        <a class="btn btn-primary" href="appointment.html" style="padding-left: 15px; padding-right: 15px; white-space: nowrap;"><i class="fa fa-calendar"></i> Book Your Free Consultation</a>
                       </div>
                     </div>
                   </div>
@@ -372,6 +447,17 @@
     <!-- Template Scripts (Do not remove)-->
     <script src="js/custom.js"></script>
 
+    <!-- Google Calendar Integration -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="js/google-calendar.js"></script>
+
+    <!-- Admin Information (only visible in edit mode) -->
+    <div id="admin-info" style="display: none; position: fixed; bottom: 20px; right: 20px; background: #f8f9fa; border: 1px solid #ddd; padding: 15px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 9999;">
+      <h6><i class="fas fa-info-circle"></i> Admin Info</h6>
+      <p class="mb-2"><small>Google Calendar integration is active.</small></p>
+      <p class="mb-0"><small><a href="GOOGLE_CALENDAR_SETUP.md" target="_blank">View Setup Guide</a></small></p>
+    </div>
+
     <!-- Initialize Bootstrap 5 components -->
     <script>
       $(document).ready(function() {
@@ -380,10 +466,116 @@
           var target = $(this).data('bs-target');
           $(target).toggleClass('show');
         });
+        
+        // Show admin info for development environment
+        // In production, this should be removed or properly secured
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('dev')) {
+          document.getElementById('admin-info').style.display = 'block';
+        }
+
+        // Wait for Google API to be properly loaded before auto-selecting service
+        // This ensures the calendar isn't triggered before Google API is ready
+        function checkGapiLoaded() {
+          if (typeof gapi !== 'undefined' && gapi) {
+            // API is loaded, proceed with auto-selection
+            const denturesCard = document.querySelector('.service-card[data-service="dentures"]');
+            if (denturesCard) {
+              selectService(denturesCard, 'dentures');
+              updateAppointmentTypeText('dentures');
+            }
+          } else {
+            // API not yet loaded, check again in 500ms
+            setTimeout(checkGapiLoaded, 500);
+          }
+        }
+        
+        // Start checking if Google API is loaded
+        setTimeout(checkGapiLoaded, 1000);
       });
+
+      // Service selection function
+      function selectService(element, service) {
+        // Remove selected class from all service cards
+        document.querySelectorAll('.service-card').forEach(card => {
+          card.classList.remove('selected');
+        });
+        
+        // Add selected class to clicked card
+        element.classList.add('selected');
+        
+        // Update appointment type text
+        updateAppointmentTypeText(service);
+        
+        // Check if there's an existing loading state
+        const calendarContainer = document.getElementById('appointment-calendar');
+        const isCalendarLoading = calendarContainer && calendarContainer.querySelector('.calendar-loading');
+        
+        // Update calendar with selected service
+        if (typeof loadCalendarForService === 'function') {
+          // If already in loading state, clear existing timeouts first
+          if (isCalendarLoading) {
+            console.log('Calendar already in loading state, forcing refresh');
+            // Clear any existing content to force a fresh load
+            calendarContainer.innerHTML = '';
+          }
+          
+          loadCalendarForService(service);
+        } else {
+          // Fallback if loadCalendarForService is not available
+          if (calendarContainer) {
+            calendarContainer.innerHTML = `
+              <div class="alert alert-warning">
+                <p>The calendar module is not loaded properly. Please try refreshing the page.</p>
+              </div>
+              <div class="text-center">
+                <button class="btn btn-primary" onclick="window.location.reload()">Refresh Page</button>
+              </div>
+            `;
+          }
+        }
+        
+        // Force calendar display after a short delay
+        setTimeout(() => {
+          const container = document.getElementById('appointment-calendar');
+          if (container) {
+            // If the calendar is still showing loading state after 3 seconds, force the fallback calendar
+            if (container.querySelector('.calendar-loading')) {
+              console.log('Forcing fallback calendar display');
+              if (typeof showFallbackCalendar === 'function') {
+                showFallbackCalendar();
+              } else {
+                // Create a very simple calendar if the showFallbackCalendar function isn't available
+                const today = new Date();
+                container.innerHTML = `
+                  <div class="alert alert-info mb-4">
+                    <p><strong>Note:</strong> The appointment calendar is currently in basic mode.</p>
+                    <p>Please contact us directly at (02) 9398 7578 to book an appointment.</p>
+                  </div>
+                  <div class="text-center mb-4">
+                    <a href="contact-us.html" class="btn btn-primary">Contact Us</a>
+                  </div>
+                `;
+              }
+            }
+          }
+        }, 3000);
+      }
+
+      // Function to update the appointment type text
+      function updateAppointmentTypeText(service) {
+        const appointmentTypeText = document.getElementById('appointment-type-text');
+        if (appointmentTypeText) {
+          let serviceName = 'Dentures Consultation';
+          if (service === 'repairs') {
+            serviceName = 'Repairs & Maintenance';
+          } else if (service === 'mouthguards') {
+            serviceName = 'Mouthguards';
+          }
+          appointmentTypeText.textContent = 'Booking: ' + serviceName;
+        }
+      }
     </script>
   </body>
 
 
-</html>
-
+</html> 

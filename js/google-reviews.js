@@ -5,7 +5,7 @@
 
 class GoogleReviewsWidget {
   constructor(options) {
-    this.apiEndpoint = options.apiEndpoint || '/api/reviews.php';
+    this.apiEndpoint = options.apiEndpoint || '/script/reviews/reviews.php';
     this.containerSelector = options.containerSelector;
     this.maxReviews = options.maxReviews || 5;
     this.minRating = options.minRating || 4;

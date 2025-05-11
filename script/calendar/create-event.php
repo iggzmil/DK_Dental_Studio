@@ -50,7 +50,7 @@ if (!isset($data['event']) || !isset($data['service'])) {
 }
 
 // Use the absolute path based on the server environment
-$tokenFile = '/var/www/DK_Dental_Studio/vendor/google/oauth/secure/google_refresh_token.json';
+$tokenFile = __DIR__ . '/../../vendor/google/oauth/secure/google_refresh_token.json';
 $tokenExists = file_exists($tokenFile);
 
 // Log the token path for debugging
@@ -76,7 +76,7 @@ if (!$accessToken) {
     error_log('Direct token read failed, trying token helper');
     
     // Include the token helper
-    require_once __DIR__ . '/../vendor/google/oauth/token.php';
+    require_once __DIR__ . '/../../vendor/google/oauth/token.php';
     
     // Get a valid access token
     $accessToken = getGoogleAccessToken();

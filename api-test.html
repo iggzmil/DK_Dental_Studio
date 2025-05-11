@@ -61,7 +61,7 @@
             const resultDiv = document.getElementById('token-result');
             resultDiv.innerHTML = '<p>Testing token API...</p>';
             
-            fetch(window.location.origin + '/api/get-access-token.php')
+            fetch(window.location.origin + '/script/calendar/get-access-token.php')
                 .then(response => {
                     resultDiv.innerHTML += `<p>Response status: ${response.status} ${response.statusText}</p>`;
                     return response.json();
@@ -89,7 +89,7 @@
             resultDiv.innerHTML = '<p>Testing calendar API...</p>';
             
             // First get the token
-            fetch(window.location.origin + '/api/get-access-token.php')
+            fetch(window.location.origin + '/script/calendar/get-access-token.php')
                 .then(response => response.json())
                 .then(data => {
                     if (!data.success) {
@@ -117,7 +117,7 @@
                         service: 'dentures'
                     };
                     
-                    return fetch(window.location.origin + '/api/create-event.php', {
+                    return fetch(window.location.origin + '/script/calendar/create-event.php', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'

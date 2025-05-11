@@ -63,7 +63,7 @@ function fetchServerAccessToken() {
     debugLog('Fetching server access token...');
     
     // Use absolute path for production environment with proper protocol
-    const apiUrl = window.location.protocol + '//' + window.location.host + '/api/get-access-token.php';
+    const apiUrl = window.location.protocol + '//' + window.location.host + '/script/calendar/get-access-token.php';
     debugLog('API URL:', apiUrl);
     
     // Add a timestamp to prevent caching issues
@@ -984,7 +984,7 @@ function setupCalendarInteraction() {
    */
   function createEventServerSide(eventData, firstName, lastName, email) {
     // Send the booking data to the server
-    fetch('/api/create-event.php', {
+    fetch('/script/calendar/create-event.php', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -1015,7 +1015,7 @@ function setupCalendarInteraction() {
    */
   function useFallbackBooking(eventData, firstName, lastName, email) {
     // Send the booking data to the fallback PHP handler
-    fetch('/api/booking-fallback.php', {
+    fetch('/script/calendar/booking-fallback.php', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -1463,7 +1463,7 @@ window.showBookingFallback = function(eventData) {
   };
   
   // Send the booking data to our fallback PHP endpoint
-  fetch('api/booking-fallback.php', {
+  fetch('script/calendar/booking-fallback.php', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
