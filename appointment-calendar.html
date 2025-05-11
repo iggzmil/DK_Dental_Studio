@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="keywords" content="Dentures, Dental Prosthetist, DK Dental Studio" />
+    <meta name="description" content="DK Dental Studio - High-quality full and partial dentures crafted by an experienced dental prosthetist in Randwick, NSW" />
+    <meta name="author" content="aaa-city.com" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Appointment - DK Dental Studio</title>
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="images/DKD_logo_blue_favicon.png" />
+
+    <!-- Google Font -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;display=swap">
+
+    <!-- CSS Global Compulsory (Do not remove)-->
+    <link rel="stylesheet" href="css/font-awesome/all.min.css" />
+    <link rel="stylesheet" href="css/flaticon/flaticon.css" />
+
+    <!-- Page CSS Implementing Plugins (Remove the plugin CSS here if site does not use that feature)-->
+    <link rel="stylesheet" href="css/select2/select2.css" />
+    <link rel="stylesheet" href="css/datetimepicker/datetimepicker.min.css" />
+    <link rel="stylesheet" href="css/owl-carousel/owl.carousel.min.css" />
+
+    <!-- Template Style -->
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/counter-plus.css" />
+    <link rel="stylesheet" href="css/footer-style.css" />
+    <link rel="stylesheet" href="css/appointment-style.css" />
+    <link rel="stylesheet" href="css/section-spacing.css" />
+
+    <!-- Google Calendar Appointment Style -->
+    <style>
+      /* Mobile menu styling */
+      @media (max-width: 991.98px) {
+        .navbar-collapse.show {
+          display: block;
+          background-color: white;
+          padding: 15px;
+          margin-top: 10px;
+          border-radius: 5px;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          z-index: 1000;
+        }
+
+        .navbar-nav {
+          flex-direction: column;
+          width: 100%;
+        }
+
+        .navbar-nav .nav-item {
+          margin: 5px 0;
+          text-align: center;
+        }
+      }
+
+      /* Button styling */
+      .btn-primary {
+        color: white !important;
+      }
+
+      .btn-primary:hover,
+      .btn-primary:focus,
+      .btn-primary:active {
+        color: white !important;
+      }
+
+      /* Button icon styling */
+      .btn-primary i {
+        color: white !important;
+      }
+
+      /* Calendar container styling */
+      .calendar-container {
+        min-height: 700px;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      }
+
+      /* Loading spinner */
+      .calendar-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 300px;
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(5, 118, 238, 0.1);
+        border-radius: 50%;
+        border-top-color: #0576ee;
+        animation: spin 1s ease-in-out infinite;
+        margin-bottom: 20px;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      /* Calendar instructions */
+      .calendar-instructions {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+      }
+
+      .calendar-instructions h5 {
+        margin-bottom: 15px;
+        color: #0576ee;
+      }
+
+      .calendar-instructions ol {
+        padding-left: 20px;
+      }
+
+      .calendar-instructions li {
+        margin-bottom: 10px;
+      }
+
+      /* Service selection */
+      .service-selection {
+        margin-bottom: 30px;
+      }
+
+      .service-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .service-card:hover {
+        border-color: #0576ee;
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+      }
+
+      .service-card.selected {
+        border-color: #0576ee;
+        background-color: rgba(5, 118, 238, 0.05);
+      }
+
+      .service-card h5 {
+        margin-bottom: 10px;
+        color: #0576ee;
+      }
+
+      .service-card p {
+        color: #666;
+        margin-bottom: 0;
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <!--=================================
+    header -->
+    <header class="header header-01 header-sticky">
+      <div class="main-header">
+        <div class="container">
+          <nav class="navbar navbar-expand-lg">
+            <a class="navbar-brand" href="index.html">
+              <img class="img-fluid" src="images/DKD_logo_blue.png" alt="logo" style="transform: scale(1.2); transform-origin: left center;">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+              <i class="fas fa-align-left"></i>
+            </button>
+            <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+              <ul class="navbar-nav">
+                <li class="nav-item">
+                  <a class="nav-link" href="index.html">Home</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="dentures.html">Dentures</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="maintenance-repairs.html">Maintenance & Repairs</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="mouthguards.html">Mouthguards</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="faqs.html">FAQs</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="contact-us.html">Contact Us</a>
+                </li>
+                <li class="nav-item active d-block d-sm-none mt-3">
+                  <a class="btn btn-primary w-100 text-white" href="appointment-calendar.html"><i class="fa fa-calendar"></i> Book Free Consultation</a>
+                </li>
+              </ul>
+            </div>
+            <div class="add-listing d-none d-sm-block">
+              <a class="btn btn-primary text-white" href="appointment-calendar.html" style="padding-left: 15px; padding-right: 15px; white-space: nowrap;"><i class="fa fa-calendar"></i> Book Free Consultation</a>
+            </div>
+          </nav>
+        </div>
+      </div>
+    </header>
+    <!--=================================
+    header -->
+
+    <!--=================================
+    banner -->
+    <section class="inner-banner bg-holder bg-light space-ptb bg-overlay-black-50" style="background-image: url('images/bg/appointment.png');">
+      <div class="container">
+        <div class="row justify-content-start">
+          <div class="col-md-6">
+            <h1 class="text-white mb-3">Book Your Appointment</h1>
+            <p class="inner-subtitle text-white">Schedule your appointment with our easy-to-use online booking system. Select your preferred time and service, and our team will be ready to provide you with exceptional care.</p>
+            <ol class="breadcrumb mb-0">
+              <li class="breadcrumb-item"><a href="index.html">Home</a></li>
+              <li class="breadcrumb-item active"> <i class="fas fa-chevron-right"></i> <span>Appointment</span></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!--=================================
+    banner -->
+
+    <!--=================================
+    Service Selection -->
+    <section class="space-pt">
+      <div class="container">
+        <div class="row">
+          <div class="col-12">
+            <div class="section-title text-center">
+              <h2>Choose a Service</h2>
+              <p>Select the service you're interested in to see available appointment times</p>
+            </div>
+          </div>
+        </div>
+        <div class="row service-selection">
+          <div class="col-md-4">
+            <div class="service-card" data-service="dentures" onclick="selectService(this, 'dentures')">
+              <h5><i class="flaticon-dental-checkup text-primary"></i> Dentures Consultation</h5>
+              <p>Initial consultation for full or partial dentures</p>
+              <p class="mt-2"><strong>Duration:</strong> 45 minutes</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="service-card" data-service="repairs" onclick="selectService(this, 'repairs')">
+              <h5><i class="flaticon-dental-care text-primary"></i> Repairs & Maintenance</h5>
+              <p>Consultation for denture repairs or maintenance</p>
+              <p class="mt-2"><strong>Duration:</strong> 30 minutes</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="service-card" data-service="mouthguards" onclick="selectService(this, 'mouthguards')">
+              <h5><i class="flaticon-dental-insurance text-primary"></i> Mouthguards</h5>
+              <p>Consultation for custom mouthguard fitting</p>
+              <p class="mt-2"><strong>Duration:</strong> 30 minutes</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12">
+            <div class="calendar-instructions">
+              <h5><i class="fas fa-info-circle"></i> How to Book Your Appointment</h5>
+              <ol>
+                <li>Select your desired service from the options above</li>
+                <li>Browse the calendar below to find an available time slot</li>
+                <li>Click on your preferred date and time</li>
+                <li>Fill in your details in the form that appears</li>
+                <li>Confirm your appointment</li>
+              </ol>
+              <p class="mb-0">Our team will receive your booking and send a confirmation email shortly.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12">
+            <div class="calendar-container" id="appointment-calendar">
+              <!-- Calendar will load here -->
+              <div class="calendar-loading">
+                <div class="spinner"></div>
+                <p>Loading appointment calendar...</p>
+                <p>Please select a service to see available times</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!--=================================
+    Google Calendar Appointment -->
+
+    <!--=================================
+    Schedule -->
+    <section class="overflow-hidden" style="padding-top: 30px; padding-bottom: 0;">
+      <div class="container">
+        <div class="row">
+          <div class="col-sm-12">
+            <div class="schedule rounded bg-white mb-0">
+              <div class="row no-gutters">
+
+                <div class="col-md-4">
+                  <div class="schedule-morden">
+                    <div class="icon">
+                      <i class="flaticon-clock"></i>
+                    </div>
+                    <div class="schedule-morden-content">
+                      <h6>Opening Hours</h6>
+                      <div class="opening-hourse">
+                        <ul class="list-unstyled">
+                          <li>
+                            <span>Dentures (Mon–Fri)</span>
+                            <div class="time"> 10am–4pm </div>
+                          </li>
+                          <li>
+                            <span>Mouthguards (Mon-Wed)</span>
+                            <div class="time"> 10am-6pm </div>
+                          </li>
+                          <li>
+                            <span>Mouthguards (Thu-Fri)</span>
+                            <div class="time"> 10am-4pm </div>
+                          </li>
+                          <li>
+                            <span>Saturday</span>
+                            <div class="time"> CLOSED </div>
+                          </li>
+                          <li>
+                            <span>Sunday</span>
+                            <div class="time"> CLOSED </div>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-4">
+                  <div class="schedule-morden">
+                    <div class="icon">
+                      <i class="flaticon-location"></i>
+                    </div>
+                    <div class="schedule-morden-content">
+                      <h6>Location & Contact</h6>
+                      <ul class="list-unstyled mb-0">
+                        <li class="mb-3"><i class="fas fa-map-marker-alt pr-2"></i> <a href="https://www.google.com/maps/place/DK+Dental+Studio+(Denture+Clinic)/@-33.9132712,151.2417367,1640m/data=!3m1!1e3!4m6!3m5!1s0x6b12b21971d29285:0x9cb6683a3ef03ce0!8m2!3d-33.9132712!4d151.2417367!16s%2Fg%2F1tgh33vw?entry=ttu&g_ep=EgoyMDI1MDUwMy4wIKXMDSoASAFQAw%3D%3D" target="_blank">Shop 4/126-128 Avoca St, <br><span style="padding-left: 28px;">Randwick NSW 2031</span></a></li>
+                        <li class="mb-3"><i class="fas fa-walking pr-2"></i> <strong>Visit us!</strong></li>
+                        <li class="mb-3"><i class="fas fa-phone pr-2"></i> <a href="tel:0293987578">(02) 9398 7578</a></li>
+                        <li class="mb-3"><i class="fas fa-headset pr-2"></i> <strong>Call us!</strong></li>
+                        <li class="mb-3"><i class="fas fa-envelope pr-2"></i> <a href="mailto:info@dkdental.au">info@dkdental.au</a></li>
+                        <li><i class="fas fa-pen pr-2"></i> <strong>Write to us!</strong></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-4">
+                  <div class="schedule-morden">
+                    <div class="icon">
+                      <i class="flaticon-calendar"></i>
+                    </div>
+                    <div class="schedule-morden-content">
+                      <h6>Appointments</h6>
+
+                      <p class="mb-0">Booking an appointment at DK Dental Studio is easy and convenient. Our expert team is here to provide personalised treatments tailored to your unique needs.</p>
+
+                      <div class="mt-4">
+                        <span class="text-success"><i class="fas fa-check"></i> Online booking available now!</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!--=================================
+    Schedule -->
+
+
+    <!--=================================
+    footer-->
+    <footer class="footer">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-md-4 text-center copyright text-md-left mb-3 mb-md-0">
+            <p class="mb-0 text-white"> &copy; Copyright <span id="copyright"> <script>document.getElementById('copyright').appendChild(document.createTextNode(new Date().getFullYear()))</script></span> <a href="index.html"> DK Dental Studio </a> All Rights Reserved</p>
+            <p class="mb-0 text-white mt-2">Web Development and AI Automation by <a href="https://www.aaa-city.com" target="_blank">AAA.City</a></p>
+          </div>
+          <div class="col-md-4 text-center mb-3 mb-md-0">
+            <a href="index.html">
+              <img class="img-fluid" src="images/DKD_logo_white_footer.png" alt="DK Dental Studio Logo">
+            </a>
+          </div>
+          <div class="col-md-4 text-center text-md-right">
+            <p class="mb-0 text-white">
+              Read Our <a href="terms-and-conditions.html">Terms & Conditions</a> and <a href="privacy-policy.html">Privacy Policy</a>
+            </p>
+          </div>
+        </div>
+      </div>
+  </footer>
+  <!--=================================
+  footer-->
+
+    <!--=================================
+    back to top-->
+     <a id="back-to-top" class="back-to-top" href="#"><i class="fas fa-angle-up"></i> </a>
+    <!--=================================
+    back to top-->
+
+    <!--=================================
+    Javascript -->
+
+    <!-- JS Global Compulsory (Do not remove)-->
+    <script src="js/jquery-3.7.1.min.js"></script>
+    <script src="js/popper/popper.min.js"></script>
+    <script src="js/bootstrap/bootstrap.min.js"></script>
+
+    <!-- Page JS Implementing Plugins (Remove the plugin script here if site does not use that feature)-->
+    <script src="js/jquery.appear.js"></script>
+    <script src="js/counter/jquery.countTo.js"></script>
+    <script src="js/owl-carousel/owl.carousel.min.js"></script>
+    <script src="js/jarallax/jarallax.min.js"></script>
+    <script src="js/jarallax/jarallax-video.min.js"></script>
+    <script src="js/select2/select2.full.js"></script>
+    <script src="js/datetimepicker/moment.min.js"></script>
+    <script src="js/datetimepicker/datetimepicker.min.js"></script>
+
+    <!-- Template Scripts (Do not remove)-->
+    <script src="js/custom.js"></script>
+
+    <!-- Google Calendar Integration -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="js/google-calendar.js"></script>
+
+    <!-- Admin Information (only visible in edit mode) -->
+    <div id="admin-info" style="display: none; position: fixed; bottom: 20px; right: 20px; background: #f8f9fa; border: 1px solid #ddd; padding: 15px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 9999;">
+      <h6><i class="fas fa-info-circle"></i> Admin Info</h6>
+      <p class="mb-2"><small>Google Calendar integration is active.</small></p>
+      <p class="mb-0"><small><a href="GOOGLE_CALENDAR_SETUP.md" target="_blank">View Setup Guide</a></small></p>
+    </div>
+
+    <!-- Initialize Bootstrap 5 components -->
+    <script>
+      $(document).ready(function() {
+        // Initialize Bootstrap 5 navbar toggler
+        $('.navbar-toggler').on('click', function() {
+          var target = $(this).data('bs-target');
+          $(target).toggleClass('show');
+        });
+        
+        // Show admin info for development environment
+        // In production, this should be removed or properly secured
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('dev')) {
+          document.getElementById('admin-info').style.display = 'block';
+        }
+      });
+
+      // Service selection function
+      function selectService(element, service) {
+        // Remove selected class from all service cards
+        document.querySelectorAll('.service-card').forEach(card => {
+          card.classList.remove('selected');
+        });
+        
+        // Add selected class to clicked card
+        element.classList.add('selected');
+        
+        // Update calendar with selected service
+        if (typeof loadCalendarForService === 'function') {
+          loadCalendarForService(service);
+        }
+      }
+    </script>
+  </body>
+
+
+</html> 
