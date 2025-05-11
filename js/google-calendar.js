@@ -36,7 +36,11 @@ let serverAccessToken = null;
  * On page load, initialize Google API client
  */
 document.addEventListener('DOMContentLoaded', function() {
+  // Add debug display
+  addDebugDisplay();
+  
   // Load the Google API client
+  debugLog('Page loaded, initializing Google Calendar integration');
   loadGoogleAPI();
 });
 
@@ -93,18 +97,39 @@ function fetchServerAccessToken() {
  * Load the Google API client and auth2 library
  */
 function loadGoogleAPI() {
+  debugLog('Loading Google API client...');
+  
+  // Set a timeout to ensure we don't wait forever
+  const apiLoadTimeout = setTimeout(() => {
+    debugLog('Google API client load timed out, using fallback calendar');
+    showError("Google Calendar API load timed out. Using basic calendar mode.");
+    showFallbackCalendar();
+  }, 5000); // 5 second timeout
+  
   gapi = window.gapi;
   
   if (!gapi) {
+    debugLog('Google API client not available');
+    clearTimeout(apiLoadTimeout);
     showError("Google API client not loaded. Please check your internet connection and try again.");
     showFallbackCalendar();
     return;
   }
   
   // Load the client
-  gapi.load('client', function() {
-    initClient();
-  });
+  try {
+    debugLog('Calling gapi.load...');
+    gapi.load('client', function() {
+      debugLog('gapi.load callback executed');
+      clearTimeout(apiLoadTimeout);
+      initClient();
+    });
+  } catch (error) {
+    debugLog('Error in gapi.load:', error);
+    clearTimeout(apiLoadTimeout);
+    showError("Failed to load Google Calendar API. Using basic calendar mode.");
+    showFallbackCalendar();
+  }
 }
 
 /**
@@ -113,6 +138,24 @@ function loadGoogleAPI() {
 function debugLog(...args) {
   if (DEBUG_MODE) {
     console.log('[Calendar Debug]', ...args);
+    
+    // Also add to debug display if it exists
+    const debugLog = document.getElementById('calendar-debug-log');
+    if (debugLog) {
+      const now = new Date();
+      const timestamp = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}.${now.getMilliseconds()}`;
+      const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
+      
+      const logEntry = document.createElement('div');
+      logEntry.innerHTML = `<span style="color:#999;">${timestamp}</span> ${message}`;
+      debugLog.appendChild(logEntry);
+      
+      // Auto-scroll to bottom
+      debugLog.scrollTop = debugLog.scrollHeight;
+      
+      // Show the debug content
+      document.getElementById('calendar-debug-content').style.display = 'block';
+    }
   }
 }
 
@@ -137,11 +180,22 @@ function initClient() {
         gapi.client.setToken({ access_token: token });
         debugLog('Server access token applied to gapi client');
         
-        // If a service is already selected, load it
-        if (selectedService) {
-          debugLog('Loading calendar for service:', selectedService);
-          loadCalendar(selectedService);
-        }
+        // Test if the calendar API is available
+        debugLog('Testing Google Calendar API access...');
+        return gapi.client.calendar.calendarList.list({
+          maxResults: 1
+        }).then(response => {
+          debugLog('Calendar API test successful:', response);
+          
+          // If a service is already selected, load it
+          if (selectedService) {
+            debugLog('Loading calendar for service:', selectedService);
+            loadCalendar(selectedService);
+          }
+        }).catch(error => {
+          debugLog('Calendar API test failed:', error);
+          throw new Error('Calendar API test failed: ' + error.message);
+        });
       })
       .catch(error => {
         console.error('Failed to set server access token:', error);
@@ -1208,4 +1262,69 @@ window.showBookingFallback = function(eventData) {
       </div>
     `;
   });
-}; 
+};
+
+// Add debug display to page
+function addDebugDisplay() {
+  if (DEBUG_MODE) {
+    const debugDiv = document.createElement('div');
+    debugDiv.id = 'calendar-debug';
+    debugDiv.style.position = 'fixed';
+    debugDiv.style.bottom = '20px';
+    debugDiv.style.right = '20px';
+    debugDiv.style.backgroundColor = '#f5f5f5';
+    debugDiv.style.border = '1px solid #ddd';
+    debugDiv.style.padding = '10px';
+    debugDiv.style.borderRadius = '5px';
+    debugDiv.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+    debugDiv.style.zIndex = '9999';
+    debugDiv.style.maxHeight = '300px';
+    debugDiv.style.overflowY = 'auto';
+    debugDiv.style.fontSize = '12px';
+    debugDiv.style.fontFamily = 'monospace';
+    debugDiv.style.display = 'none';
+    
+    const header = document.createElement('div');
+    header.innerHTML = '<h6 style="margin: 0 0 5px 0;"><i class="fas fa-bug"></i> Calendar Debug</h6>';
+    header.style.cursor = 'pointer';
+    header.onclick = function() {
+      const content = document.getElementById('calendar-debug-content');
+      content.style.display = content.style.display === 'none' ? 'block' : 'none';
+    };
+    
+    const content = document.createElement('div');
+    content.id = 'calendar-debug-content';
+    content.style.display = 'none';
+    
+    const log = document.createElement('div');
+    log.id = 'calendar-debug-log';
+    
+    const actions = document.createElement('div');
+    actions.style.marginTop = '10px';
+    actions.innerHTML = `
+      <button style="font-size: 10px; padding: 2px 5px; margin-right: 5px;" onclick="clearDebugLog()">Clear Log</button>
+      <button style="font-size: 10px; padding: 2px 5px;" onclick="forceRefreshCalendar()">Force Refresh</button>
+    `;
+    
+    content.appendChild(log);
+    content.appendChild(actions);
+    debugDiv.appendChild(header);
+    debugDiv.appendChild(content);
+    
+    document.body.appendChild(debugDiv);
+    
+    // Add global functions
+    window.clearDebugLog = function() {
+      document.getElementById('calendar-debug-log').innerHTML = '';
+    };
+    
+    window.forceRefreshCalendar = function() {
+      if (selectedService) {
+        showFallbackCalendar();
+      }
+    };
+    
+    // Show the debug display
+    debugDiv.style.display = 'block';
+  }
+} 
