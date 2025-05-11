@@ -692,6 +692,7 @@ function createCalendarHTML(month, year, service) {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 10px;
         margin-top: 20px;
+        margin-bottom: 30px;
       }
       
       .time-slot {
