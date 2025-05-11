@@ -3,7 +3,7 @@
  * OAuth Callback Handler for DK Dental Studio
  * 
  * This page handles the OAuth callback from Google and stores the refresh token
- * This version uses a simplified approach without the API Client library
+ * This version is designed to work without cURL by using file_get_contents
  */
 
 // Start session for authentication
@@ -22,7 +22,7 @@ if (!isset($_SESSION['authenticated'])) {
 // Define client credentials
 $clientId = '593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com';
 $clientSecret = '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';
-$redirectUri = 'https://dkdstudio.aaa-city.com/vendor/google/oauth/callback.php';
+$redirectUri = 'https://' . $_SERVER['HTTP_HOST'] . '/vendor/google/oauth/callback.php';
 
 // Define token storage location
 $secureDir = dirname(__FILE__) . '/secure';
@@ -53,7 +53,7 @@ if (isset($_GET['code'])) {
     $codeLength = strlen($code);
     error_log('Received authorization code: ' . substr($code, 0, 5) . '...' . substr($code, -5) . " (Length: $codeLength)");
     
-    // Exchange authorization code for access token using cURL if available, or file_get_contents as fallback
+    // Exchange authorization code for access token using file_get_contents
     $tokenUrl = 'https://oauth2.googleapis.com/token';
     $postData = [
         'code' => $code,
@@ -62,61 +62,32 @@ if (isset($_GET['code'])) {
         'redirect_uri' => $redirectUri,
         'grant_type' => 'authorization_code'
     ];
-
-    $response = null;
-    $httpCode = 0;
-    $curlError = '';
     
-    // Try cURL first
-    if (function_exists('curl_init')) {
-        // Initialize cURL session
-        $ch = curl_init($tokenUrl);
-        
-        // Set cURL options
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
-        
-        // Execute cURL request
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        
-        // Close cURL session
-        curl_close($ch);
-    } 
-    // Fall back to file_get_contents with stream context
-    else {
-        error_log('cURL not available, using file_get_contents instead');
-        $options = [
-            'http' => [
-                'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-                'method'  => 'POST',
-                'content' => http_build_query($postData)
-            ]
-        ];
-        
-        $context = stream_context_create($options);
-        try {
-            $response = file_get_contents($tokenUrl, false, $context);
-            if ($response !== false) {
-                $httpCode = 200;
-            } else {
-                $httpCode = 400;
-                error_log('file_get_contents request failed');
-            }
-        } catch (Exception $e) {
-            error_log('Error in file_get_contents request: ' . $e->getMessage());
-            $httpCode = 500;
+    $options = [
+        'http' => [
+            'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+            'method'  => 'POST',
+            'content' => http_build_query($postData)
+        ]
+    ];
+    
+    $context = stream_context_create($options);
+    try {
+        $response = file_get_contents($tokenUrl, false, $context);
+        if ($response !== false) {
+            $httpCode = 200;
+        } else {
+            $httpCode = 400;
+            error_log('file_get_contents request failed');
         }
+    } catch (Exception $e) {
+        error_log('Error in file_get_contents request: ' . $e->getMessage());
+        $httpCode = 500;
+        $response = '';
     }
     
     // Log raw response for debugging
     error_log("Token exchange HTTP code: $httpCode");
-    if ($curlError) {
-        error_log("cURL error: $curlError");
-    }
     
     // Process the response
     if ($httpCode == 200) {

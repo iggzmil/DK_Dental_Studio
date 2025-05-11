@@ -3,6 +3,7 @@
  * OAuth Token Helper for DK Dental Studio
  * 
  * This file provides functions to get and refresh tokens for Google API usage
+ * This version uses file_get_contents instead of cURL
  */
 
 /**
@@ -14,6 +15,23 @@ function getGoogleAccessToken() {
     // Define token file location
     $secureDir = dirname(__FILE__) . '/secure';
     $tokenFile = $secureDir . '/google_refresh_token.json';
+    
+    // Create secure directory if it doesn't exist
+    if (!file_exists($secureDir)) {
+        try {
+            mkdir($secureDir, 0777, true);
+            // Try to set more restrictive permissions
+            @chmod($secureDir, 0700);
+        } catch (Exception $e) {
+            error_log('Error creating secure directory: ' . $e->getMessage());
+            // Use alternative location
+            $secureDir = sys_get_temp_dir() . '/dk_dental_oauth';
+            if (!file_exists($secureDir)) {
+                @mkdir($secureDir, 0777, true);
+            }
+            $tokenFile = $secureDir . '/google_refresh_token.json';
+        }
+    }
     
     // Check if token file exists
     if (!file_exists($tokenFile)) {
@@ -77,64 +95,26 @@ function refreshAccessToken($refreshToken) {
         'grant_type' => 'refresh_token'
     ];
     
-    $response = null;
-    $httpCode = 0;
-    $curlError = '';
+    // Prepare request using file_get_contents
+    $options = [
+        'http' => [
+            'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+            'method'  => 'POST',
+            'content' => http_build_query($postData)
+        ]
+    ];
     
-    // Try using cURL if available
-    if (function_exists('curl_init')) {
-        // Initialize cURL session
-        $ch = curl_init($tokenUrl);
-        
-        // Set cURL options
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
-        
-        // Execute cURL request
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        
-        // Close cURL session
-        curl_close($ch);
-    } 
-    // Fall back to file_get_contents if cURL is not available
-    else {
-        error_log('cURL not available for token refresh, using file_get_contents instead');
-        $options = [
-            'http' => [
-                'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-                'method'  => 'POST',
-                'content' => http_build_query($postData)
-            ]
-        ];
-        
-        $context = stream_context_create($options);
-        try {
-            $response = file_get_contents($tokenUrl, false, $context);
-            if ($response !== false) {
-                $httpCode = 200;
-            } else {
-                error_log('file_get_contents request failed for token refresh');
-                $httpCode = 400;
-            }
-        } catch (Exception $e) {
-            error_log('Error in file_get_contents request: ' . $e->getMessage());
-            $httpCode = 500;
+    $context = stream_context_create($options);
+    try {
+        $response = file_get_contents($tokenUrl, false, $context);
+        if ($response !== false) {
+            return json_decode($response, true);
+        } else {
+            error_log('file_get_contents request failed for token refresh');
+            return null;
         }
-    }
-    
-    // Process the response
-    if ($httpCode == 200) {
-        return json_decode($response, true);
-    } else {
-        error_log("Token refresh error (HTTP $httpCode): $response");
-        if ($curlError) {
-            error_log("cURL error: $curlError");
-        }
+    } catch (Exception $e) {
+        error_log('Error in file_get_contents request: ' . $e->getMessage());
         return null;
     }
-}
-?> 
+} 
