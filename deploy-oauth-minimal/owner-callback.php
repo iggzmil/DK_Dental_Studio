@@ -63,12 +63,23 @@ try {
     $client->setApprovalPrompt('force'); // Force to get refresh token
     $client->setIncludeGrantedScopes(true); // Enable incremental authorization
     
-    // Set scopes - make sure this is explicitly set as an array first, then use addScope
-    $scopes = ['https://www.googleapis.com/auth/business.manage'];
-    $client->setScopes($scopes);
+    // Clear any existing scopes
+    $client->setScopes([]);
     
-    // Debug scopes
-    echo "<!-- Scopes set: " . json_encode($client->getScopes()) . " -->\n";
+    // Add each scope using addScope method
+    $client->addScope('https://www.googleapis.com/auth/business.manage');
+    // Uncomment if you need additional scopes
+    // $client->addScope('https://www.googleapis.com/auth/plus.business.manage');
+    
+    // Verify scopes are set properly
+    $configuredScopes = $client->getScopes();
+    echo "<!-- Scopes set: " . json_encode($configuredScopes) . " -->\n";
+    
+    // Print warning if scopes are empty
+    if (empty($configuredScopes)) {
+        echo "<h1>Warning: Scopes appear to be empty</h1>";
+        echo "<p>This may cause authorization errors with Google OAuth.</p>";
+    }
 
     // Define token storage location
     $secureDir = __DIR__ . '/secure';

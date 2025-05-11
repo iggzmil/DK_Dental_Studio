@@ -38,12 +38,21 @@ try {
     $client->setApprovalPrompt('force');
     $client->setIncludeGrantedScopes(true);
     
-    // Set scopes - make sure this is explicitly set as an array first, then use addScope
-    $scopes = ['https://www.googleapis.com/auth/business.manage'];
-    $client->setScopes($scopes);
+    // Clear any existing scopes
+    $client->setScopes([]);
+    
+    // Add each scope using addScope method
+    $client->addScope('https://www.googleapis.com/auth/business.manage');
     
     // Check if scopes were set properly
-    echo "<p>Scopes set: " . implode(', ', $client->getScopes()) . "</p>";
+    $configuredScopes = $client->getScopes();
+    echo "<p>Scopes set: " . implode(', ', $configuredScopes) . "</p>";
+    
+    // Print warning if scopes are empty
+    if (empty($configuredScopes)) {
+        echo "<h1>Warning: Scopes appear to be empty</h1>";
+        echo "<p>This may cause authorization errors with Google OAuth.</p>";
+    }
     
     // Verify the client ID was set correctly
     $configClientId = $client->getClientId();
