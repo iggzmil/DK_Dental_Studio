@@ -116,6 +116,41 @@
     .btn-primary i {
       color: white !important;
     }
+
+    /* Form validation styling */
+    .form-control.is-invalid {
+      border-color: #dc3545;
+      padding-right: calc(1.5em + 0.75rem);
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23dc3545' viewBox='0 0 12 12'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right calc(0.375em + 0.1875rem) center;
+      background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+
+    .form-control.is-valid {
+      border-color: #28a745;
+      padding-right: calc(1.5em + 0.75rem);
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right calc(0.375em + 0.1875rem) center;
+      background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+
+    .invalid-feedback {
+      display: none;
+      width: 100%;
+      margin-top: 0.25rem;
+      font-size: 80%;
+      color: #dc3545;
+    }
+
+    .is-invalid ~ .invalid-feedback {
+      display: block;
+    }
+
+    #form-message {
+      margin-bottom: 1rem;
+    }
   </style>
 
 </head>
@@ -260,23 +295,44 @@
                 <h3 class="text-white">We'd love to hear from you</h3>
                 <p class="text-white">The price is something not necessarily defined as financial. It could be time, effort, sacrifice, money or perhaps, something else.</p>
               </div>
-              <form id="contact-form">
+              <form id="contact-form" novalidate>
                 <div class="row">
                   <div class="form-group col-md-6">
-                    <input type="text" class="form-control" id="first-name" name="first-name" placeholder="First Name" required>
+                    <input type="text" class="form-control" id="first-name" name="first-name" placeholder="First Name"
+                           required minlength="2" maxlength="50" pattern="^[A-Za-z\s\-']+$"
+                           title="Please enter a valid name (letters, spaces, hyphens and apostrophes only)">
+                    <div class="invalid-feedback">Please enter a valid name (2-50 characters, letters only)</div>
                   </div>
                   <div class="form-group col-md-6">
-                    <input type="email" class="form-control" id="email" name="email" placeholder="Email" required>
+                    <input type="email" class="form-control" id="email" name="email" placeholder="Email"
+                           required pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$"
+                           title="Please enter a valid email address">
+                    <div class="invalid-feedback">Please enter a valid email address</div>
                   </div>
                   <div class="form-group col-md-6">
-                    <input type="text" class="form-control" id="phone" name="phone" placeholder="Phone Number" required>
+                    <input type="tel" class="form-control" id="phone" name="phone" placeholder="Phone Number"
+                           required pattern="^(?:\+?61|0)[2-478](?:[ -]?[0-9]){8}$"
+                           title="Please enter a valid Australian phone number (e.g., 0412 345 678 or +61412345678)">
+                    <div class="invalid-feedback">Please enter a valid Australian phone number</div>
                   </div>
-                   <div class="form-group col-md-6">
-                    <input type="text" class="form-control" id="subject" name="subject" placeholder="Subject" required>
+                  <div class="form-group col-md-6">
+                    <input type="text" class="form-control" id="subject" name="subject" placeholder="Subject"
+                           required minlength="3" maxlength="100"
+                           title="Please enter a subject between 3-100 characters">
+                    <div class="invalid-feedback">Please enter a subject (3-100 characters)</div>
                   </div>
                   <div class="form-group col-lg-12">
-                    <textarea class="form-control" id="message" name="message" rows="5" placeholder="Message" required></textarea>
+                    <textarea class="form-control" id="message" name="message" rows="5" placeholder="Message"
+                              required minlength="10" maxlength="1000"
+                              title="Please enter a message between 10-1000 characters"></textarea>
+                    <div class="invalid-feedback">Please enter a message (minimum 10 characters)</div>
                   </div>
+
+                  <!-- Honeypot field to catch bots - hidden from humans -->
+                  <div class="form-group" style="display:none !important;">
+                    <input type="text" name="website" id="website" autocomplete="off" tabindex="-1">
+                  </div>
+
                   <div class="form-group col-sm-12 mb-0">
                     <button type="submit" class="btn btn-outline-light">Send Message</button>
                   </div>

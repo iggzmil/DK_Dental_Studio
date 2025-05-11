@@ -26,9 +26,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Failed to get CSRF token:', error);
             });
 
+        // Add input validation event listeners
+        const formInputs = contactForm.querySelectorAll('input, textarea');
+        formInputs.forEach(input => {
+            input.addEventListener('blur', function() {
+                validateField(this);
+            });
+
+            input.addEventListener('input', function() {
+                // Remove error when user starts typing again
+                if (this.classList.contains('is-invalid')) {
+                    this.classList.remove('is-invalid');
+                }
+            });
+        });
+
         // Set up form submission
         contactForm.addEventListener('submit', function(event) {
             event.preventDefault();
+
+            // Validate all fields before submission
+            let isValid = true;
+            formInputs.forEach(input => {
+                if (!validateField(input)) {
+                    isValid = false;
+                }
+            });
+
+            if (!isValid) {
+                // Focus the first invalid field
+                contactForm.querySelector('.is-invalid').focus();
+                return;
+            }
 
             // Show loading state
             const submitButton = contactForm.querySelector('button[type="submit"]');
@@ -170,6 +199,81 @@ function getFieldNameFromError(error) {
 }
 
 /**
+ * Validate a single form field
+ * @param {HTMLElement} field - The field to validate
+ * @returns {boolean} - Whether the field is valid
+ */
+function validateField(field) {
+    // Skip validation for hidden fields
+    if (field.type === 'hidden') {
+        return true;
+    }
+
+    let isValid = true;
+    let errorMessage = '';
+
+    // Check validity using the HTML5 Validation API
+    if (!field.checkValidity()) {
+        isValid = false;
+
+        // Get specific error message
+        if (field.validity.valueMissing) {
+            errorMessage = 'This field is required';
+        } else if (field.validity.typeMismatch) {
+            if (field.type === 'email') {
+                errorMessage = 'Please enter a valid email address';
+            } else if (field.type === 'tel') {
+                errorMessage = 'Please enter a valid phone number';
+            }
+        } else if (field.validity.tooShort) {
+            errorMessage = `Please enter at least ${field.minLength} characters`;
+        } else if (field.validity.tooLong) {
+            errorMessage = `Please enter no more than ${field.maxLength} characters`;
+        } else if (field.validity.patternMismatch) {
+            errorMessage = field.title || 'Please match the requested format';
+        } else {
+            errorMessage = 'Please enter a valid value';
+        }
+    }
+
+    // Additional custom validation
+    if (isValid && field.id === 'phone') {
+        // Australian phone number validation
+        const phoneValue = field.value.replace(/\s+/g, '');
+        const phoneRegex = /^(?:\+?61|0)[2-478](?:[ -]?[0-9]){8}$/;
+
+        if (!phoneRegex.test(phoneValue)) {
+            isValid = false;
+            errorMessage = 'Please enter a valid Australian phone number';
+        }
+    }
+
+    // Update field styling and error message
+    if (!isValid) {
+        field.classList.add('is-invalid');
+        field.classList.remove('is-valid');
+
+        // Find or create feedback element
+        let feedbackElement = field.nextElementSibling;
+        if (!feedbackElement || !feedbackElement.classList.contains('invalid-feedback')) {
+            feedbackElement = document.createElement('div');
+            feedbackElement.className = 'invalid-feedback';
+            field.parentNode.appendChild(feedbackElement);
+        }
+
+        feedbackElement.textContent = errorMessage;
+    } else {
+        // Mark as valid if it has content
+        if (field.value.trim() !== '') {
+            field.classList.add('is-valid');
+        }
+        field.classList.remove('is-invalid');
+    }
+
+    return isValid;
+}
+
+/**
  * Clear all form error messages
  */
 function clearFormErrors() {
@@ -177,11 +281,5 @@ function clearFormErrors() {
     const invalidFields = document.querySelectorAll('.is-invalid');
     invalidFields.forEach(field => {
         field.classList.remove('is-invalid');
-    });
-
-    // Remove all invalid-feedback elements
-    const feedbackElements = document.querySelectorAll('.invalid-feedback');
-    feedbackElements.forEach(element => {
-        element.remove();
     });
 }

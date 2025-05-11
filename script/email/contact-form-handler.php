@@ -33,17 +33,77 @@ function validateContactForm($data) {
         }
     }
 
-    // Email validation
-    if (isset($data['email']) && !empty($data['email']) && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-        $errors[] = 'Please enter a valid email address';
+    // First name validation
+    if (isset($data['first-name']) && !empty($data['first-name'])) {
+        $firstName = trim($data['first-name']);
+
+        // Check length
+        if (strlen($firstName) < 2) {
+            $errors[] = 'First name must be at least 2 characters';
+        } elseif (strlen($firstName) > 50) {
+            $errors[] = 'First name must be no more than 50 characters';
+        }
+
+        // Check for valid characters (letters, spaces, hyphens, apostrophes)
+        if (!preg_match('/^[A-Za-z\s\-\']+$/', $firstName)) {
+            $errors[] = 'First name can only contain letters, spaces, hyphens, and apostrophes';
+        }
     }
 
-    // Phone validation (basic)
+    // Email validation
+    if (isset($data['email']) && !empty($data['email'])) {
+        $email = trim($data['email']);
+
+        // Basic email validation
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errors[] = 'Please enter a valid email address';
+        }
+
+        // Additional email validation (domain check)
+        $parts = explode('@', $email);
+        if (count($parts) === 2) {
+            $domain = $parts[1];
+            if (!checkdnsrr($domain, 'MX') && !checkdnsrr($domain, 'A')) {
+                $errors[] = 'Email domain appears to be invalid';
+            }
+        }
+    }
+
+    // Phone validation (Australian format)
     if (isset($data['phone']) && !empty($data['phone'])) {
-        // Remove non-numeric characters for validation
-        $phone = preg_replace('/[^0-9]/', '', $data['phone']);
-        if (strlen($phone) < 8 || strlen($phone) > 15) {
-            $errors[] = 'Please enter a valid phone number';
+        $phone = trim($data['phone']);
+
+        // Remove spaces and other formatting characters
+        $cleanPhone = preg_replace('/[^0-9+]/', '', $phone);
+
+        // Australian phone number validation
+        // Matches formats like: 0412345678, 0412 345 678, +61412345678, +61 412 345 678
+        if (!preg_match('/^(?:\+?61|0)[2-478]([0-9]){8}$/', $cleanPhone)) {
+            $errors[] = 'Please enter a valid Australian phone number';
+        }
+    }
+
+    // Subject validation
+    if (isset($data['subject']) && !empty($data['subject'])) {
+        $subject = trim($data['subject']);
+
+        // Check length
+        if (strlen($subject) < 3) {
+            $errors[] = 'Subject must be at least 3 characters';
+        } elseif (strlen($subject) > 100) {
+            $errors[] = 'Subject must be no more than 100 characters';
+        }
+    }
+
+    // Message validation
+    if (isset($data['message']) && !empty($data['message'])) {
+        $message = trim($data['message']);
+
+        // Check length
+        if (strlen($message) < 10) {
+            $errors[] = 'Message must be at least 10 characters';
+        } elseif (strlen($message) > 1000) {
+            $errors[] = 'Message must be no more than 1000 characters';
         }
     }
 
@@ -140,8 +200,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Rate limiting - prevent spam submissions
+    session_start();
+    $currentTime = time();
+    $lastSubmissionTime = isset($_SESSION['last_form_submission']) ? $_SESSION['last_form_submission'] : 0;
+
+    // Allow only one submission every 60 seconds
+    if (($currentTime - $lastSubmissionTime) < 60) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Please wait a moment before submitting another message.'
+        ]);
+        exit;
+    }
+
+    // Simple honeypot check (if JavaScript is enabled, this should never be filled)
+    if (isset($_POST['website']) && !empty($_POST['website'])) {
+        // This is likely a bot - silently exit with a fake success message
+        echo json_encode([
+            'success' => true,
+            'message' => 'Thank you for your message. We will get back to you shortly.'
+        ]);
+        exit;
+    }
+
+    // Sanitize input data
+    $sanitizedData = [];
+    foreach ($_POST as $key => $value) {
+        // Skip the honeypot field
+        if ($key === 'website') {
+            continue;
+        }
+
+        // Sanitize string values
+        if (is_string($value)) {
+            $sanitizedData[$key] = trim(strip_tags($value));
+        } else {
+            $sanitizedData[$key] = $value;
+        }
+    }
+
     // Validate form data
-    $errors = validateContactForm($_POST);
+    $errors = validateContactForm($sanitizedData);
 
     if (!empty($errors)) {
         echo json_encode([
@@ -152,14 +252,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Update last submission time
+    $_SESSION['last_form_submission'] = $currentTime;
+
     // Create email content
-    $emailHtml = createEmailHtml($_POST);
+    $emailHtml = createEmailHtml($sanitizedData);
 
     // Set recipient email (can be configured as needed)
     $toEmail = 'info@dkdental.au'; // Default recipient
 
     // Set email subject
-    $emailSubject = 'New Contact Form Submission: ' . $_POST['subject'];
+    $emailSubject = 'New Contact Form Submission: ' . $sanitizedData['subject'];
 
     // Send the email
     $result = sendGmailEmail(
