@@ -11,24 +11,57 @@
  * @return string|null Access token or null if unable to get one
  */
 function getGoogleAccessToken() {
-    // Define token file location
+    // Define token file location - make sure this points to the correct path
     $secureDir = dirname(__FILE__) . '/secure';
     $tokenFile = $secureDir . '/google_refresh_token.json';
     
+    // Log the path for debugging
+    error_log('Token file path in getGoogleAccessToken: ' . $tokenFile);
+    
     // Check if token file exists
     if (!file_exists($tokenFile)) {
-        error_log('Token file not found. OAuth authorization may be needed.');
-        return null;
+        error_log('Token file not found at: ' . $tokenFile);
+        error_log('Current directory: ' . dirname(__FILE__));
+        
+        // Try an alternative location as a fallback
+        $altTokenFile = $_SERVER['DOCUMENT_ROOT'] . '/vendor/google/oauth/secure/google_refresh_token.json';
+        error_log('Trying alternative token path: ' . $altTokenFile);
+        
+        if (file_exists($altTokenFile)) {
+            error_log('Found token at alternative path');
+            $tokenFile = $altTokenFile;
+        } else {
+            error_log('Token not found at alternative path either');
+            return null;
+        }
+    } else {
+        error_log('Token file found at: ' . $tokenFile);
     }
     
     // Load token data
     $tokenData = json_decode(file_get_contents($tokenFile), true);
+    
+    // Check if we have valid token data
+    if (!is_array($tokenData)) {
+        error_log('Token file exists but contains invalid data');
+        return null;
+    }
+    
+    // Log token data for debugging (remove sensitive info in production)
+    error_log('Token data: ' . json_encode([
+        'has_access_token' => isset($tokenData['access_token']),
+        'has_refresh_token' => isset($tokenData['refresh_token']),
+        'has_expires_in' => isset($tokenData['expires_in']),
+        'has_created' => isset($tokenData['created']),
+    ]));
     
     // Check if we need to refresh the token
     if (!isset($tokenData['access_token']) || 
         !isset($tokenData['expires_in']) || 
         !isset($tokenData['created']) || 
         (isset($tokenData['created']) && $tokenData['created'] + $tokenData['expires_in'] - 300 < time())) {
+        
+        error_log('Token needs refresh');
         
         // Token doesn't exist or is about to expire, refresh it
         if (isset($tokenData['refresh_token'])) {
@@ -44,9 +77,14 @@ function getGoogleAccessToken() {
                 
                 // Save updated token
                 file_put_contents($tokenFile, json_encode($newToken));
+                error_log('Token refreshed and saved successfully');
                 
                 return $newToken['access_token'];
+            } else {
+                error_log('Failed to refresh token');
             }
+        } else {
+            error_log('No refresh token available');
         }
         
         error_log('Failed to refresh access token');
@@ -54,6 +92,7 @@ function getGoogleAccessToken() {
     }
     
     // Return existing valid access token
+    error_log('Returning existing valid access token');
     return $tokenData['access_token'];
 }
 

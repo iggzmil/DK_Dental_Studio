@@ -2,6 +2,9 @@
  * Google Calendar Integration for DK Dental Studio Appointment Booking
  */
 
+// Debug mode - set to true to show detailed debug information
+const DEBUG_MODE = true;
+
 // Google API credentials
 // const GOOGLE_API_KEY = 'AIzaSyDFoNqB7BIuoZrUQDRVhnpVLjXsUgT-6Ow'; // Replace with your API key - Not used with server-side OAuth
 const GOOGLE_CLIENT_ID = '593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com';
@@ -43,23 +46,40 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function fetchServerAccessToken() {
   return new Promise((resolve, reject) => {
-    fetch('/api/get-access-token.php')
+    console.log('Fetching server access token...');
+    
+    // Use a relative path to the API endpoint
+    const apiUrl = 'api/get-access-token.php';
+    console.log('API URL:', apiUrl);
+    
+    fetch(apiUrl)
       .then(response => {
+        console.log('Server response status:', response.status);
         if (!response.ok) {
-          throw new Error('Failed to fetch access token from server');
+          throw new Error(`Failed to fetch access token from server: ${response.status} ${response.statusText}`);
         }
         return response.json();
       })
       .then(data => {
-        if (data.access_token) {
+        console.log('Server response received:', data);
+        if (data.success && data.access_token) {
           serverAccessToken = data.access_token;
+          console.log('Access token successfully retrieved from server');
           resolve(serverAccessToken);
         } else {
+          console.error('Server returned error:', data.error, data.message);
+          if (data.debug) {
+            console.log('Debug info:', data.debug);
+          }
           throw new Error('No access token in response');
         }
       })
       .catch(error => {
         console.error('Error fetching server access token:', error);
+        
+        // Show a more user-friendly error
+        showError("Could not connect to the booking system. Please try again later or contact us directly.");
+        
         reject(error);
       });
   });
@@ -84,34 +104,50 @@ function loadGoogleAPI() {
 }
 
 /**
+ * Debug logging function - only logs when DEBUG_MODE is true
+ */
+function debugLog(...args) {
+  if (DEBUG_MODE) {
+    console.log('[Calendar Debug]', ...args);
+  }
+}
+
+/**
  * Initialize the Google API client
  */
 function initClient() {
   // Initialize the client without an API key
+  debugLog('Initializing Google API client...');
+  
   gapi.client.init({
     discoveryDocs: DISCOVERY_DOCS,
   }).then(() => {
-    console.log('Google API client initialized');
+    debugLog('Google API client initialized');
     
     // Fetch token from server instead of using client-side auth
+    debugLog('Fetching server access token...');
     fetchServerAccessToken()
       .then(token => {
         // Set the access token for all future requests
+        debugLog('Setting access token on gapi client');
         gapi.client.setToken({ access_token: token });
-        console.log('Server access token applied to gapi client');
+        debugLog('Server access token applied to gapi client');
         
         // If a service is already selected, load it
         if (selectedService) {
+          debugLog('Loading calendar for service:', selectedService);
           loadCalendar(selectedService);
         }
       })
       .catch(error => {
         console.error('Failed to set server access token:', error);
+        debugLog('Token fetch failed, showing fallback calendar');
         showError("Failed to authorize access to Google Calendar. Using fallback calendar.");
         showFallbackCalendar();
       });
   }).catch(error => {
     console.error('Error initializing Google API client', error);
+    debugLog('Google API client initialization failed:', error);
     showError("Failed to initialize Google Calendar. Using fallback calendar.");
     showFallbackCalendar();
   });
@@ -121,10 +157,68 @@ function initClient() {
  * Show a fallback calendar without Google Calendar integration
  */
 function showFallbackCalendar() {
+  debugLog('Showing fallback calendar');
+  
   // If Google Calendar integration fails, we can still show a basic calendar
   // that allows users to select dates and times, but booking will use the fallback method
   if (selectedService) {
-    loadCalendar(selectedService);
+    // Create a special version of loadCalendar that doesn't try to use Google Calendar
+    const calendarContainer = document.getElementById('appointment-calendar');
+    
+    // Show a notice to the user
+    const notice = document.createElement('div');
+    notice.className = 'alert alert-info mb-4';
+    notice.innerHTML = `
+      <p><strong>Note:</strong> The calendar is currently operating in basic mode. 
+      Your booking will be sent to our staff who will confirm your appointment.</p>
+    `;
+    
+    // Get today's date
+    const today = new Date();
+    const month = today.getMonth();
+    const year = today.getFullYear();
+    
+    // Create the calendar layout
+    calendarContainer.innerHTML = createCalendarHTML(month, year, selectedService);
+    
+    // Insert the notice at the top
+    calendarContainer.insertBefore(notice, calendarContainer.firstChild);
+    
+    // Add event listeners to calendar days
+    setupCalendarInteraction();
+    
+    // Override the generateTimeSlots function to not use Google Calendar API
+    window.originalGenerateTimeSlots = generateTimeSlots;
+    generateTimeSlots = function(dateString) {
+      debugLog('Using fallback time slot generation for', dateString);
+      
+      // Define business hours based on service and day of week
+      const date = new Date(dateString);
+      const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      
+      // Define business hours
+      let startHour, endHour;
+      
+      if (selectedService === 'mouthguards' && (dayOfWeek >= 1 && dayOfWeek <= 3)) {
+        // Mon-Wed for mouthguards: 10am-6pm
+        startHour = 10;
+        endHour = 18;
+      } else {
+        // Other days or services: 10am-4pm
+        startHour = 10;
+        endHour = 16;
+      }
+      
+      // Generate all possible slots every 30 minutes
+      const allSlots = [];
+      for (let hour = startHour; hour < endHour; hour++) {
+        allSlots.push(`${String(hour).padStart(2, '0')}:00`);
+        allSlots.push(`${String(hour).padStart(2, '0')}:30`);
+      }
+      
+      // Generate mock availability - show most slots as available
+      return Promise.resolve(allSlots.filter(() => Math.random() > 0.2));
+    };
   }
 }
 
@@ -192,6 +286,8 @@ function loadCalendar(service) {
   // Get the calendar container
   const calendarContainer = document.getElementById('appointment-calendar');
   
+  debugLog('Loading calendar for service:', service);
+  
   // For this demo, we'll show a mock calendar interface
   // In a production environment, you would use the Google Calendar API to fetch free/busy times
   
@@ -200,11 +296,15 @@ function loadCalendar(service) {
   const month = today.getMonth();
   const year = today.getFullYear();
   
+  debugLog('Creating calendar for', month, year);
+  
   // Create the calendar layout
   calendarContainer.innerHTML = createCalendarHTML(month, year, service);
   
   // Add event listeners to calendar days
   setupCalendarInteraction();
+  
+  debugLog('Calendar loaded and interactions set up');
 }
 
 /**
