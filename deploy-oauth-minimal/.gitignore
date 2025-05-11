@@ -7,18 +7,22 @@ dk-dental-oauth-deployment.zip
 /secure/*.json
 /debug/
 
+# OAuth tokens and secure data
+/secure/
+/secure/*
+vendor/google/oauth/secure/
+vendor/google/oauth/secure/*
+
 # Cache and temporary files
 *.cache
+/cache/
+/cache/*
 .DS_Store
 Thumbs.db
 
 # Generated files
 *.zip
 *.log
-
-# OAuth tokens and secure data
-/secure/
-/secure/*
 
 # Temporary files
 *.tmp

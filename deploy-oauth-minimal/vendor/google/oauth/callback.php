@@ -15,17 +15,17 @@ ini_set('display_errors', 1);
 
 // Ensure only authenticated users can access this page
 if (!isset($_SESSION['authenticated'])) {
-    header('Location: owner-auth.php');
+    header('Location: auth.php');
     exit;
 }
 
 // Define client credentials
 $clientId = '976666616562-c4s3nfesuu7drrt6nmghnb6qc6cteers.apps.googleusercontent.com';
 $clientSecret = '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';
-$redirectUri = 'https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php';
+$redirectUri = 'https://' . $_SERVER['HTTP_HOST'] . '/vendor/google/oauth/callback.php';
 
 // Define token storage location
-$secureDir = __DIR__ . '/secure';
+$secureDir = dirname(__FILE__) . '/secure';
 if (!file_exists($secureDir)) {
     mkdir($secureDir, 0700, true);
 }
@@ -149,7 +149,7 @@ if (isset($_GET['code'])) {
                 <p>You can safely close this window and return to your website.</p>
             </div>
         <?php else: ?>
-            <p><a href="owner-auth.php">Try again</a></p>
+            <p><a href="auth.php">Try again</a></p>
             <div class="debug">
                 <p><strong>Debug Information:</strong></p>
                 <p>Query String: <?php echo htmlspecialchars($_SERVER['QUERY_STRING']); ?></p>
@@ -163,4 +163,4 @@ if (isset($_GET['code'])) {
         <?php endif; ?>
     </div>
 </body>
-</html>
+</html> 

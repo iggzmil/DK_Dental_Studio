@@ -3,7 +3,7 @@
  * OAuth Authorization Page for DK Dental Studio
  * 
  * This page initiates the OAuth flow for Google API access
- * This version is designed to work with the minimal Google API Client package
+ * This version is designed to work with minimal dependencies
  */
 
 // Start session for authentication
@@ -33,7 +33,7 @@ if (!isset($_SESSION['authenticated'])) {
 // Define the client credentials
 $clientId = '976666616562-c4s3nfesuu7drrt6nmghnb6qc6cteers.apps.googleusercontent.com';
 $clientSecret = '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';
-$redirectUri = 'https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php';
+$redirectUri = 'https://' . $_SERVER['HTTP_HOST'] . '/vendor/google/oauth/callback.php';
 $scope = 'https://www.googleapis.com/auth/business.manage';
 
 // Skip the Google API Client and create the auth URL directly
@@ -107,4 +107,4 @@ function showLoginForm() {
     </html>
     <?php
 }
-?>
+?> 

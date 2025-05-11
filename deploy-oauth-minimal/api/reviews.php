@@ -3,7 +3,7 @@
  * Google Reviews API Endpoint for DK Dental Studio
  * 
  * This endpoint fetches Google reviews using the OAuth token
- * This version is designed to work with the minimal Google API Client package
+ * This version is designed to work with minimal dependencies
  */
 
 // Set content type to JSON
@@ -20,81 +20,110 @@ if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < $cacheTime)) {
     exit;
 }
 
-// Load the minimal Google API Client
-require_once __DIR__ . '/../vendor/autoload.php';
+// Include our token helper
+require_once __DIR__ . '/../vendor/google/oauth/token.php';
 
-// Include the GoogleTokenManager class
-require_once __DIR__ . '/../includes/GoogleTokenManager.php';
+// Get a valid access token
+$accessToken = getGoogleAccessToken();
 
-// Define token storage location
-$secureDir = __DIR__ . '/../secure';
-if (!file_exists($secureDir)) {
-    mkdir($secureDir, 0700, true);
-}
-$tokenFile = $secureDir . '/google_refresh_token.json';
-
-// Initialize token manager
-$tokenManager = new GoogleTokenManager(
-    '593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com',
-    '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',
-    $tokenFile
-);
-
-// Get authorized client
-$client = $tokenManager->getAuthorizedClient();
-
-if (!$client) {
-    // Return mock data if not authorized
+if (!$accessToken) {
+    // No valid token, return mock data
     $mockReviews = getMockReviews();
     echo json_encode($mockReviews);
     exit;
 }
 
 try {
-    // Use Google My Business API to fetch reviews
-    $mybusiness = new Google\Service\MyBusinessAccountManagement($client);
-
-    // First, get the account
-    $accounts = $mybusiness->accounts->listAccounts();
-    if (count($accounts->getAccounts()) == 0) {
+    // Set up API calls using cURL directly
+    
+    // 1. First, get the account
+    $accountsUrl = 'https://mybusinessaccountmanagement.googleapis.com/v1/accounts';
+    $ch = curl_init($accountsUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Bearer ' . $accessToken,
+        'Content-Type: application/json'
+    ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode != 200) {
+        throw new Exception("Failed to get accounts: HTTP $httpCode - $response");
+    }
+    
+    $accountsData = json_decode($response, true);
+    if (empty($accountsData['accounts'])) {
         throw new Exception("No accounts found");
     }
-
-    $accountName = $accounts->getAccounts()[0]->getName();
-
-    // Then get the location
-    $locations = $mybusiness->accounts_locations->listAccountsLocations($accountName);
-    if (count($locations->getLocations()) == 0) {
+    
+    $accountName = $accountsData['accounts'][0]['name'];
+    
+    // 2. Then get the location
+    $locationsUrl = "https://mybusinessbusinessinformation.googleapis.com/v1/$accountName/locations";
+    $ch = curl_init($locationsUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Bearer ' . $accessToken,
+        'Content-Type: application/json'
+    ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode != 200) {
+        throw new Exception("Failed to get locations: HTTP $httpCode - $response");
+    }
+    
+    $locationsData = json_decode($response, true);
+    if (empty($locationsData['locations'])) {
         throw new Exception("No locations found");
     }
-
-    $locationName = $locations->getLocations()[0]->getName();
-
-    // Finally, get the reviews
-    $reviews = $mybusiness->accounts_locations_reviews->listAccountsLocationsReviews($locationName);
-
+    
+    $locationName = $locationsData['locations'][0]['name'];
+    
+    // 3. Finally, get the reviews
+    $reviewsUrl = "https://mybusiness.googleapis.com/v4/$locationName/reviews";
+    $ch = curl_init($reviewsUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Bearer ' . $accessToken,
+        'Content-Type: application/json'
+    ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode != 200) {
+        throw new Exception("Failed to get reviews: HTTP $httpCode - $response");
+    }
+    
+    $reviewsData = json_decode($response, true);
+    
     // Format reviews for the frontend
     $formattedReviews = [];
-    foreach ($reviews->getReviews() as $review) {
-        // Only include reviews with comments and ratings of 4 or higher
-        if ($review->getComment() && $review->getStarRating() >= 4) {
-            $formattedReviews[] = [
-                'author_name' => $review->getReviewer()->getDisplayName(),
-                'rating' => $review->getStarRating(),
-                'text' => $review->getComment(),
-                'time' => strtotime($review->getCreateTime())
-            ];
+    if (isset($reviewsData['reviews'])) {
+        foreach ($reviewsData['reviews'] as $review) {
+            // Only include reviews with comments and ratings of 4 or higher
+            if (isset($review['comment']) && !empty($review['comment']) && $review['starRating'] >= 4) {
+                $formattedReviews[] = [
+                    'author_name' => $review['reviewer']['displayName'],
+                    'rating' => $review['starRating'],
+                    'text' => $review['comment'],
+                    'time' => strtotime($review['createTime'])
+                ];
+            }
         }
     }
-
+    
     // Sort by newest first
     usort($formattedReviews, function($a, $b) {
         return $b['time'] - $a['time'];
     });
-
+    
     // Limit to 10 reviews
     $formattedReviews = array_slice($formattedReviews, 0, 10);
-
+    
     // Create cache directory if it doesn't exist
     if (!is_dir(dirname($cacheFile))) {
         mkdir(dirname($cacheFile), 0755, true);
@@ -102,13 +131,13 @@ try {
     
     // Cache the results
     file_put_contents($cacheFile, json_encode($formattedReviews));
-
+    
     // Return the reviews
     echo json_encode($formattedReviews);
 } catch (Exception $e) {
     // Log the error
     error_log('Error fetching reviews: ' . $e->getMessage());
-
+    
     // Return mock data as fallback
     $mockReviews = getMockReviews();
     echo json_encode($mockReviews);
