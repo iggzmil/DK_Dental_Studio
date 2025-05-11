@@ -239,8 +239,9 @@ function validateField(field) {
     // Additional custom validation
     if (isValid && field.id === 'phone') {
         // Australian phone number validation
-        const phoneValue = field.value.replace(/\s+/g, '');
-        const phoneRegex = /^(?:\+?61|0)[2-478](?:[ -]?[0-9]){8}$/;
+        const phoneValue = field.value.replace(/[\s-]+/g, '');
+        // Simplified regex for Australian mobile or landline numbers
+        const phoneRegex = /^(\+?61|0)[2478]\d{8}$/;
 
         if (!phoneRegex.test(phoneValue)) {
             isValid = false;

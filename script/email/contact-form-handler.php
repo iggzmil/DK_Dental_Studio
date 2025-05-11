@@ -73,12 +73,12 @@ function validateContactForm($data) {
     if (isset($data['phone']) && !empty($data['phone'])) {
         $phone = trim($data['phone']);
 
-        // Remove spaces and other formatting characters
+        // Remove spaces, dashes and other formatting characters
         $cleanPhone = preg_replace('/[^0-9+]/', '', $phone);
 
         // Australian phone number validation
         // Matches formats like: 0412345678, 0412 345 678, +61412345678, +61 412 345 678
-        if (!preg_match('/^(?:\+?61|0)[2-478]([0-9]){8}$/', $cleanPhone)) {
+        if (!preg_match('/^(\+?61|0)[2478]\d{8}$/', $cleanPhone)) {
             $errors[] = 'Please enter a valid Australian phone number';
         }
     }
