@@ -11,6 +11,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // If form exists, set up submission handler
     if (contactForm) {
+        // Check for autofilled fields immediately after DOM is loaded
+        const formInputs = contactForm.querySelectorAll('input, textarea');
+        formInputs.forEach(input => {
+            // Check if the field has a value (might be autofilled)
+            if (input.value !== '') {
+                // Mark as valid if it has content
+                input.classList.add('is-valid');
+            }
+        });
         // Fetch CSRF token from server
         fetch('/script/email/session-handler.php')
             .then(response => response.json())
@@ -39,7 +48,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     this.classList.remove('is-invalid');
                 }
             });
+
+            // Handle autofill
+            input.addEventListener('animationstart', function(e) {
+                // The animation name that is triggered by Chrome's autofill
+                if (e.animationName === 'onAutoFillStart' ||
+                    e.animationName === 'onAutoFill' ||
+                    e.animationName === 'autoFillStart') {
+                    validateField(this);
+                }
+            });
         });
+
+        // Add special handling for autofill detection
+        // This will run once when the page loads and after a short delay
+        // to catch autofilled fields
+        setTimeout(() => {
+            formInputs.forEach(input => {
+                // Check if the field has a value (might be autofilled)
+                if (input.value !== '') {
+                    validateField(input);
+                }
+            });
+        }, 500);
 
         // Set up form submission
         contactForm.addEventListener('submit', function(event) {
@@ -76,7 +107,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server responded with status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 // Reset button state
                 submitButton.disabled = false;
@@ -104,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitButton.innerHTML = originalButtonText;
 
                 // Show error message
-                showFormMessage('error', 'An unexpected error occurred. Please try again later.');
+                showFormMessage('error', 'The server encountered an error processing your request. Please try again later or contact us directly.');
                 console.error('Form submission error:', error);
             });
         });
@@ -236,8 +272,13 @@ function validateField(field) {
         }
     }
 
+    // Skip validation for empty fields (unless they're required)
+    if (field.value.trim() === '' && !field.required) {
+        return true;
+    }
+
     // Additional custom validation
-    if (isValid && field.id === 'phone') {
+    if (isValid && field.id === 'phone' && field.value.trim() !== '') {
         // Australian phone number validation
         const phoneValue = field.value.replace(/[\s-]+/g, '');
         // Simplified regex for Australian mobile or landline numbers

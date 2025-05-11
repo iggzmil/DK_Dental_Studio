@@ -167,6 +167,34 @@
     #form-message {
       margin-bottom: 1rem;
     }
+
+    /* Autofill detection */
+    @keyframes onAutoFill {
+      from {}
+      to {}
+    }
+
+    @keyframes onAutoFillStart {
+      from {}
+      to {}
+    }
+
+    @keyframes autoFillStart {
+      from {}
+      to {}
+    }
+
+    input:-webkit-autofill {
+      animation-name: onAutoFillStart, onAutoFill;
+      animation-duration: 1ms;
+      animation-fill-mode: both;
+    }
+
+    /* Firefox and other browsers */
+    input:autofill {
+      animation-name: autoFillStart;
+      animation-duration: 1ms;
+    }
   </style>
 
 </head>
@@ -327,7 +355,7 @@
                   </div>
                   <div class="form-group col-md-6">
                     <input type="tel" class="form-control" id="phone" name="phone" placeholder="Phone Number"
-                           required pattern="^(\+?61|0)[2-478][ -]?[0-9][ -]?[0-9][ -]?[0-9][ -]?[0-9][ -]?[0-9][ -]?[0-9][ -]?[0-9][ -]?[0-9]$"
+                           required
                            title="Please enter a valid Australian phone number (e.g., 0412 345 678 or +61412345678)">
                     <div class="invalid-feedback">Please enter a valid Australian phone number</div>
                   </div>
