@@ -48,8 +48,9 @@ function fetchServerAccessToken() {
   return new Promise((resolve, reject) => {
     console.log('Fetching server access token...');
     
-    // Use a relative path to the API endpoint
-    const apiUrl = 'api/get-access-token.php';
+    // Use the correct path based on the server environment
+    // The token-test.php showed that the document root is /var/www/DK_Dental_Studio
+    const apiUrl = window.location.origin + '/api/get-access-token.php';
     console.log('API URL:', apiUrl);
     
     fetch(apiUrl)
@@ -79,6 +80,9 @@ function fetchServerAccessToken() {
         
         // Show a more user-friendly error
         showError("Could not connect to the booking system. Please try again later or contact us directly.");
+        
+        // Fall back to the basic calendar
+        showFallbackCalendar();
         
         reject(error);
       });

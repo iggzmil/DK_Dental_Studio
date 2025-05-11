@@ -13,23 +13,43 @@ ini_set('display_errors', 1);
 // Set headers for JSON response
 header('Content-Type: application/json');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Access-Control-Allow-Origin: *'); // Allow cross-origin requests
 
-// Check if token file exists directly
-$tokenFile = __DIR__ . '/../vendor/google/oauth/secure/google_refresh_token.json';
+// Use the absolute path based on the server environment
+$tokenFile = '/var/www/DK_Dental_Studio/vendor/google/oauth/secure/google_refresh_token.json';
 $tokenExists = file_exists($tokenFile);
 
 // Log the token path for debugging
 error_log('Looking for token file at: ' . $tokenFile);
 error_log('Token file exists: ' . ($tokenExists ? 'Yes' : 'No'));
 
-// Include the token helper
-require_once __DIR__ . '/../vendor/google/oauth/token.php';
+// Try to read the token directly
+$accessToken = null;
+if ($tokenExists && is_readable($tokenFile)) {
+    try {
+        $tokenData = json_decode(file_get_contents($tokenFile), true);
+        if (isset($tokenData['access_token'])) {
+            $accessToken = $tokenData['access_token'];
+            error_log('Access token read directly from file');
+        }
+    } catch (Exception $e) {
+        error_log('Error reading token file directly: ' . $e->getMessage());
+    }
+}
 
-// Get a valid access token
-$accessToken = getGoogleAccessToken();
-
-// Log the result
-error_log('Access token retrieved: ' . ($accessToken ? 'Yes' : 'No'));
+// If direct reading failed, try using the token helper
+if (!$accessToken) {
+    error_log('Direct token read failed, trying token helper');
+    
+    // Include the token helper
+    require_once __DIR__ . '/../vendor/google/oauth/token.php';
+    
+    // Get a valid access token
+    $accessToken = getGoogleAccessToken();
+    
+    // Log the result
+    error_log('Access token retrieved via helper: ' . ($accessToken ? 'Yes' : 'No'));
+}
 
 // Prepare the response
 $response = [];

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #0576ee;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Google Calendar API Test</h1>
+    
+    <div class="card">
+        <h2>1. Test Token API</h2>
+        <p>Click the button to test if the token API is working:</p>
+        <button id="test-token">Test Token API</button>
+        <div id="token-result" style="margin-top: 10px;"></div>
+    </div>
+    
+    <div class="card">
+        <h2>2. Test Calendar API</h2>
+        <p>Click the button to test if the calendar API is working:</p>
+        <button id="test-calendar">Test Calendar API</button>
+        <div id="calendar-result" style="margin-top: 10px;"></div>
+    </div>
+
+    <script>
+        document.getElementById('test-token').addEventListener('click', function() {
+            const resultDiv = document.getElementById('token-result');
+            resultDiv.innerHTML = '<p>Testing token API...</p>';
+            
+            fetch(window.location.origin + '/api/get-access-token.php')
+                .then(response => {
+                    resultDiv.innerHTML += `<p>Response status: ${response.status} ${response.statusText}</p>`;
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        resultDiv.innerHTML += `<p class="success">Success! Token received.</p>`;
+                        resultDiv.innerHTML += `<p>Token starts with: ${data.access_token.substring(0, 10)}...</p>`;
+                    } else {
+                        resultDiv.innerHTML += `<p class="error">Error: ${data.error}</p>`;
+                        resultDiv.innerHTML += `<p class="error">Message: ${data.message}</p>`;
+                        if (data.debug) {
+                            resultDiv.innerHTML += `<p>Debug info:</p>`;
+                            resultDiv.innerHTML += `<pre>${JSON.stringify(data.debug, null, 2)}</pre>`;
+                        }
+                    }
+                })
+                .catch(error => {
+                    resultDiv.innerHTML += `<p class="error">Fetch error: ${error.message}</p>`;
+                });
+        });
+
+        document.getElementById('test-calendar').addEventListener('click', function() {
+            const resultDiv = document.getElementById('calendar-result');
+            resultDiv.innerHTML = '<p>Testing calendar API...</p>';
+            
+            // First get the token
+            fetch(window.location.origin + '/api/get-access-token.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        throw new Error('Failed to get token: ' + data.error);
+                    }
+                    
+                    // Now test the calendar API
+                    const token = data.access_token;
+                    resultDiv.innerHTML += `<p>Token received, testing calendar API...</p>`;
+                    
+                    // Create a test event
+                    const eventData = {
+                        event: {
+                            summary: 'Test Event',
+                            description: 'This is a test event created by the API test page',
+                            start: {
+                                dateTime: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+                                timeZone: 'Australia/Sydney'
+                            },
+                            end: {
+                                dateTime: new Date(Date.now() + 86400000 + 3600000).toISOString(), // Tomorrow + 1 hour
+                                timeZone: 'Australia/Sydney'
+                            }
+                        },
+                        service: 'dentures'
+                    };
+                    
+                    return fetch(window.location.origin + '/api/create-event.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(eventData)
+                    });
+                })
+                .then(response => {
+                    resultDiv.innerHTML += `<p>Response status: ${response.status} ${response.statusText}</p>`;
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        resultDiv.innerHTML += `<p class="success">Success! Event created.</p>`;
+                        resultDiv.innerHTML += `<p>Event ID: ${data.event_id}</p>`;
+                    } else {
+                        resultDiv.innerHTML += `<p class="error">Error: ${data.error}</p>`;
+                        if (data.details) {
+                            resultDiv.innerHTML += `<p>API Error Details:</p>`;
+                            resultDiv.innerHTML += `<pre>${JSON.stringify(data.details, null, 2)}</pre>`;
+                        }
+                    }
+                })
+                .catch(error => {
+                    resultDiv.innerHTML += `<p class="error">Error: ${error.message}</p>`;
+                });
+        });
+    </script>
+</body>
+</html> 
