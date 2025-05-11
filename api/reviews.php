@@ -4,18 +4,43 @@
  * Retrieves reviews from Google Business Profile using OAuth credentials
  */
 
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Set headers for JSON response
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
-// Path to the token file (stored during OAuth flow)
-$tokenFile = dirname(__FILE__) . '/../secure/google_refresh_token.json';
+// Define possible token file paths (in order of preference)
+$possibleTokenPaths = [
+    dirname(__FILE__) . '/../secure/google_refresh_token.json',
+    dirname(__FILE__) . '/../secure/token.json',
+    __DIR__ . '/../secure/google_refresh_token.json',
+    __DIR__ . '/../secure/token.json',
+    dirname(dirname(__FILE__)) . '/secure/google_refresh_token.json',
+    dirname(dirname(__FILE__)) . '/secure/token.json'
+];
+
+// Try to find the token file
+$tokenFile = null;
+foreach ($possibleTokenPaths as $path) {
+    if (file_exists($path)) {
+        $tokenFile = $path;
+        break;
+    }
+}
 
 // Error if token file doesn't exist
-if (!file_exists($tokenFile)) {
+if ($tokenFile === null) {
     echo json_encode([
         'error' => true,
         'message' => 'OAuth token not found. Please complete the authorization process.',
+        'debug' => [
+            'checked_paths' => $possibleTokenPaths,
+            'current_dir' => __DIR__,
+            'parent_dir' => dirname(__FILE__)
+        ],
         'reviews' => []
     ]);
     exit;
@@ -50,18 +75,23 @@ if (!isset($tokenData['access_token'])) {
     echo json_encode([
         'error' => true,
         'message' => 'Access token not found in token file',
+        'debug' => [
+            'token_file' => $tokenFile,
+            'token_data_keys' => array_keys($tokenData)
+        ],
         'reviews' => []
     ]);
     exit;
 }
 
-// Make API request to Google My Business API
-$reviews = fetchGoogleReviews($tokenData['access_token']);
+// Make API request to Google My Business API or use mock data
+// Use mock data by default for now until we confirm API access works
+$reviews = getMockReviews();
 
 // Return reviews
 echo json_encode([
     'error' => false,
-    'message' => 'Success',
+    'message' => 'Success (using mock data for initial testing)',
     'reviews' => $reviews
 ]);
 exit;

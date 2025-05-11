@@ -675,8 +675,11 @@
     <!-- Template Scripts (Do not remove)-->
     <script src="js/custom.js"></script>
 
-    <!-- Google Reviews Widget -->
-    <script src="js/google-reviews.js"></script>
+    <!-- Google Reviews Widget (Temporarily commented out) -->
+    <!-- <script src="js/google-reviews.js"></script> -->
+    
+    <!-- Temporary Mock Reviews Script (until PHP API issues are fixed) -->
+    <script src="js/mock-reviews.js"></script>
 
     <!-- Initialize Bootstrap 5 components and Google Reviews -->
     <script>
@@ -712,7 +715,8 @@
         $('#collapseOne').addClass('show');
         $('[data-bs-target="#collapseOne"]').removeClass('collapsed').attr('aria-expanded', 'true');
 
-        // Initialize Google Reviews Widget
+        // Initialize Google Reviews Widget (Temporarily commented out)
+        /* 
         const googleReviews = new GoogleReviewsWidget({
           containerSelector: '#google-reviews-carousel',
           apiEndpoint: '/api/reviews.php',
@@ -724,6 +728,7 @@
           autoplay: true,
           autoplaySpeed: 5000
         });
+        */
       });
     </script>
   </body>
