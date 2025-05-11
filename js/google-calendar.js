@@ -43,6 +43,9 @@ document.addEventListener('DOMContentLoaded', function() {
   debugLog('Page loaded, initializing Google Calendar integration');
   loadGoogleAPI();
   
+  // Expose gapi globally for easier access
+  window.gapi = gapi;
+  
   // Check if calendar is loaded after a delay
   setTimeout(function() {
     if (selectedService) {
