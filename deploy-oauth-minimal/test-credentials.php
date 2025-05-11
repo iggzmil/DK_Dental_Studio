@@ -13,11 +13,9 @@ require_once __DIR__ . '/vendor/autoload.php';
 echo "<h1>Testing Google Client Credentials</h1>";
 
 try {
-    // CREDENTIALS - Using environment variables or defined variables
-    // In production, set these environment variables on your server
-    // or use a secure configuration file outside the web root
-    $clientId = getenv('GOOGLE_CLIENT_ID') ?: 'YOUR_CLIENT_ID_HERE';
-    $clientSecret = getenv('GOOGLE_CLIENT_SECRET') ?: 'YOUR_CLIENT_SECRET_HERE';
+    // HARDCODED CLIENT CREDENTIALS
+    $clientId = '976666616562-c4s3nfesuu7drrt6nmghnb6qc6cteers.apps.googleusercontent.com';
+    $clientSecret = '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';
     
     echo "<p>Using Client ID: $clientId</p>";
     

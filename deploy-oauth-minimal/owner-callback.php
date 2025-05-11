@@ -32,11 +32,9 @@ if (!interface_exists('Google\Auth\GetUniverseDomainInterface')) {
 }
 
 try {
-    // CREDENTIALS - Using environment variables or defined variables
-    // In production, set these environment variables on your server
-    // or use a secure configuration file outside the web root
-    $clientId = getenv('GOOGLE_CLIENT_ID') ?: 'YOUR_CLIENT_ID_HERE';
-    $clientSecret = getenv('GOOGLE_CLIENT_SECRET') ?: 'YOUR_CLIENT_SECRET_HERE';
+    // HARDCODED CLIENT CREDENTIALS - Define these before creating the client
+    $clientId = '976666616562-c4s3nfesuu7drrt6nmghnb6qc6cteers.apps.googleusercontent.com';
+    $clientSecret = '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';
     
     // Debug output
     echo "<!-- Debug: Setting up Google Client for callback -->\n";
