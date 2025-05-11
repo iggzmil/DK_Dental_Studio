@@ -33,20 +33,20 @@ function validateContactForm($data) {
         }
     }
 
-    // First name validation
+    // Name validation
     if (isset($data['first-name']) && !empty($data['first-name'])) {
         $firstName = trim($data['first-name']);
 
         // Check length
         if (strlen($firstName) < 2) {
-            $errors[] = 'First name must be at least 2 characters';
+            $errors[] = 'Name must be at least 2 characters';
         } elseif (strlen($firstName) > 50) {
-            $errors[] = 'First name must be no more than 50 characters';
+            $errors[] = 'Name must be no more than 50 characters';
         }
 
         // Check for valid characters (letters, spaces, hyphens, apostrophes)
         if (!preg_match('/^[A-Za-z\s\-\']+$/', $firstName)) {
-            $errors[] = 'First name can only contain letters, spaces, hyphens, and apostrophes';
+            $errors[] = 'Name can only contain letters, spaces, hyphens, and apostrophes';
         }
     }
 

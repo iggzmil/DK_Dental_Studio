@@ -181,7 +181,7 @@ function getFieldNameFromError(error) {
 
     // Map of error text to field IDs
     const fieldMap = {
-        'first name': 'first-name',
+        'name': 'first-name',
         'email': 'email',
         'phone': 'phone',
         'subject': 'subject',

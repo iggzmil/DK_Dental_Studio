@@ -112,8 +112,24 @@
       color: white !important;
     }
 
-    /* Button icon styling */
-    .btn-primary i {
+    /* Button styling */
+    .btn-primary i,
+    .btn-outline-primary i {
+      color: white !important;
+    }
+
+    /* Contact form button styling */
+    .contact-form-section .btn-outline-primary {
+      color: white !important;
+      border-color: white;
+      background-color: transparent;
+    }
+
+    .contact-form-section .btn-outline-primary:hover,
+    .contact-form-section .btn-outline-primary:focus,
+    .contact-form-section .btn-outline-primary:active {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-color: white;
       color: white !important;
     }
 
@@ -298,7 +314,7 @@
               <form id="contact-form" novalidate>
                 <div class="row">
                   <div class="form-group col-md-6">
-                    <input type="text" class="form-control" id="first-name" name="first-name" placeholder="First Name"
+                    <input type="text" class="form-control" id="first-name" name="first-name" placeholder="Name"
                            required minlength="2" maxlength="50" pattern="^[A-Za-z\s\-']+$"
                            title="Please enter a valid name (letters, spaces, hyphens and apostrophes only)">
                     <div class="invalid-feedback">Please enter a valid name (2-50 characters, letters only)</div>
@@ -334,7 +350,9 @@
                   </div>
 
                   <div class="form-group col-sm-12 mb-0">
-                    <button type="submit" class="btn btn-outline-light">Send Message</button>
+                    <button type="submit" class="btn btn-outline-primary" style="min-width: 140px; color: white;">
+                      <i class="fas fa-paper-plane mr-2"></i>Send Message
+                    </button>
                   </div>
                 </div>
               </form>
