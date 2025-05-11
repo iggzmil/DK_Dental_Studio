@@ -1,0 +1,11 @@
+# Generated files
+*.zip
+*.log
+
+# OAuth tokens and secure data
+/secure/
+/secure/*
+
+# Temporary files
+*.tmp
+*.temp 
