@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
         // Add input validation event listeners
-        const formInputs = contactForm.querySelectorAll('input, textarea');
+        // Using the formInputs variable already declared above
         formInputs.forEach(input => {
             input.addEventListener('blur', function() {
                 validateField(this);
