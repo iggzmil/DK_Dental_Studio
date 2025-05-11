@@ -42,6 +42,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // Load the Google API client
   debugLog('Page loaded, initializing Google Calendar integration');
   loadGoogleAPI();
+  
+  // Check if calendar is loaded after a delay
+  setTimeout(function() {
+    if (selectedService) {
+      checkCalendarLoaded();
+    }
+  }, 15000); // 15 second timeout
 });
 
 /**
@@ -50,44 +57,35 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function fetchServerAccessToken() {
   return new Promise((resolve, reject) => {
-    console.log('Fetching server access token...');
+    debugLog('Fetching server access token...');
     
-    // Use the correct path based on the server environment
-    // The token-test.php showed that the document root is /var/www/DK_Dental_Studio
+    // Use absolute path for production environment
     const apiUrl = window.location.origin + '/api/get-access-token.php';
-    console.log('API URL:', apiUrl);
+    debugLog('API URL:', apiUrl);
     
     fetch(apiUrl)
       .then(response => {
-        console.log('Server response status:', response.status);
+        debugLog('Server response status:', response.status);
         if (!response.ok) {
           throw new Error(`Failed to fetch access token from server: ${response.status} ${response.statusText}`);
         }
         return response.json();
       })
       .then(data => {
-        console.log('Server response received:', data);
+        debugLog('Server response received:', data);
         if (data.success && data.access_token) {
           serverAccessToken = data.access_token;
-          console.log('Access token successfully retrieved from server');
+          debugLog('Access token successfully retrieved from server');
           resolve(serverAccessToken);
         } else {
-          console.error('Server returned error:', data.error, data.message);
-          if (data.debug) {
-            console.log('Debug info:', data.debug);
-          }
+          debugLog('Server returned error:', data.error, data.message);
           throw new Error('No access token in response');
         }
       })
       .catch(error => {
-        console.error('Error fetching server access token:', error);
-        
-        // Show a more user-friendly error
+        debugLog('Error fetching server access token:', error);
         showError("Could not connect to the booking system. Please try again later or contact us directly.");
-        
-        // Fall back to the basic calendar
         showFallbackCalendar();
-        
         reject(error);
       });
   });
@@ -104,7 +102,7 @@ function loadGoogleAPI() {
     debugLog('Google API client load timed out, using fallback calendar');
     showError("Google Calendar API load timed out. Using basic calendar mode.");
     showFallbackCalendar();
-  }, 5000); // 5 second timeout
+  }, 10000); // 10 second timeout
   
   gapi = window.gapi;
   
@@ -166,49 +164,56 @@ function initClient() {
   // Initialize the client without an API key
   debugLog('Initializing Google API client...');
   
-  gapi.client.init({
-    discoveryDocs: DISCOVERY_DOCS,
-  }).then(() => {
-    debugLog('Google API client initialized');
-    
-    // Fetch token from server instead of using client-side auth
-    debugLog('Fetching server access token...');
-    fetchServerAccessToken()
-      .then(token => {
-        // Set the access token for all future requests
-        debugLog('Setting access token on gapi client');
-        gapi.client.setToken({ access_token: token });
-        debugLog('Server access token applied to gapi client');
-        
-        // Test if the calendar API is available
-        debugLog('Testing Google Calendar API access...');
-        return gapi.client.calendar.calendarList.list({
-          maxResults: 1
-        }).then(response => {
-          debugLog('Calendar API test successful:', response);
+  try {
+    gapi.client.init({
+      discoveryDocs: DISCOVERY_DOCS,
+    }).then(() => {
+      debugLog('Google API client initialized');
+      
+      // Fetch token from server instead of using client-side auth
+      debugLog('Fetching server access token...');
+      fetchServerAccessToken()
+        .then(token => {
+          // Set the access token for all future requests
+          debugLog('Setting access token on gapi client');
+          gapi.client.setToken({ access_token: token });
+          debugLog('Server access token applied to gapi client');
           
-          // If a service is already selected, load it
-          if (selectedService) {
-            debugLog('Loading calendar for service:', selectedService);
-            loadCalendar(selectedService);
-          }
-        }).catch(error => {
-          debugLog('Calendar API test failed:', error);
-          throw new Error('Calendar API test failed: ' + error.message);
+          // Test if the calendar API is available
+          debugLog('Testing Google Calendar API access...');
+          return gapi.client.calendar.calendarList.list({
+            maxResults: 1
+          }).then(response => {
+            debugLog('Calendar API test successful:', response);
+            
+            // If a service is already selected, load it
+            if (selectedService) {
+              debugLog('Loading calendar for service:', selectedService);
+              loadCalendar(selectedService);
+            }
+          }).catch(error => {
+            debugLog('Calendar API test failed:', error);
+            throw new Error('Calendar API test failed: ' + error.message);
+          });
+        })
+        .catch(error => {
+          console.error('Failed to set server access token:', error);
+          debugLog('Token fetch failed, showing fallback calendar');
+          showError("Failed to authorize access to Google Calendar. Using fallback calendar.");
+          showFallbackCalendar();
         });
-      })
-      .catch(error => {
-        console.error('Failed to set server access token:', error);
-        debugLog('Token fetch failed, showing fallback calendar');
-        showError("Failed to authorize access to Google Calendar. Using fallback calendar.");
-        showFallbackCalendar();
-      });
-  }).catch(error => {
-    console.error('Error initializing Google API client', error);
-    debugLog('Google API client initialization failed:', error);
-    showError("Failed to initialize Google Calendar. Using fallback calendar.");
+    }).catch(error => {
+      console.error('Error initializing Google API client', error);
+      debugLog('Google API client initialization failed:', error);
+      showError("Failed to initialize Google Calendar. Using fallback calendar.");
+      showFallbackCalendar();
+    });
+  } catch (error) {
+    console.error('Exception during Google API client initialization', error);
+    debugLog('Exception during Google API client initialization:', error);
+    showError("Exception during Google Calendar initialization. Using fallback calendar.");
     showFallbackCalendar();
-  });
+  }
 }
 
 /**
@@ -220,8 +225,12 @@ function showFallbackCalendar() {
   // If Google Calendar integration fails, we can still show a basic calendar
   // that allows users to select dates and times, but booking will use the fallback method
   if (selectedService) {
-    // Create a special version of loadCalendar that doesn't try to use Google Calendar
+    // Get the calendar container
     const calendarContainer = document.getElementById('appointment-calendar');
+    if (!calendarContainer) {
+      debugLog('ERROR: Calendar container not found!');
+      return;
+    }
     
     // Show a notice to the user
     const notice = document.createElement('div');
@@ -240,13 +249,35 @@ function showFallbackCalendar() {
     calendarContainer.innerHTML = createCalendarHTML(month, year, selectedService);
     
     // Insert the notice at the top
-    calendarContainer.insertBefore(notice, calendarContainer.firstChild);
+    if (calendarContainer.firstChild) {
+      calendarContainer.insertBefore(notice, calendarContainer.firstChild);
+    } else {
+      calendarContainer.appendChild(notice);
+    }
     
     // Add event listeners to calendar days
     setupCalendarInteraction();
     
+    // Create empty containers for time slots and booking form if they don't exist
+    let timeSlotsContainer = document.getElementById('time-slots-container');
+    if (!timeSlotsContainer) {
+      timeSlotsContainer = document.createElement('div');
+      timeSlotsContainer.id = 'time-slots-container';
+      timeSlotsContainer.className = 'time-slots-container';
+      calendarContainer.appendChild(timeSlotsContainer);
+    }
+    
+    let bookingFormContainer = document.getElementById('booking-form-container');
+    if (!bookingFormContainer) {
+      bookingFormContainer = document.createElement('div');
+      bookingFormContainer.id = 'booking-form-container';
+      bookingFormContainer.className = 'booking-form-container';
+      bookingFormContainer.style.display = 'none';
+      calendarContainer.appendChild(bookingFormContainer);
+    }
+    
     // Override the generateTimeSlots function to not use Google Calendar API
-    window.originalGenerateTimeSlots = generateTimeSlots;
+    window.originalGenerateTimeSlots = window.originalGenerateTimeSlots || generateTimeSlots;
     generateTimeSlots = function(dateString) {
       debugLog('Using fallback time slot generation for', dateString);
       
@@ -275,8 +306,14 @@ function showFallbackCalendar() {
       }
       
       // Generate mock availability - show most slots as available
-      return Promise.resolve(allSlots.filter(() => Math.random() > 0.2));
+      const availableSlots = allSlots.filter(() => Math.random() > 0.2);
+      debugLog('Generated fallback time slots:', availableSlots);
+      return Promise.resolve(availableSlots);
     };
+    
+    debugLog('Fallback calendar set up successfully');
+  } else {
+    debugLog('No service selected, cannot show fallback calendar');
   }
 }
 
@@ -285,7 +322,7 @@ function showFallbackCalendar() {
  */
 window.loadCalendarForService = function(service) {
   selectedService = service;
-  console.log('Loading calendar for service:', service);
+  debugLog('Loading calendar for service:', service);
   
   // Update UI to show selected service
   document.querySelectorAll('.service-card').forEach(card => {
@@ -298,6 +335,11 @@ window.loadCalendarForService = function(service) {
   
   // Show loading state
   const calendarContainer = document.getElementById('appointment-calendar');
+  if (!calendarContainer) {
+    debugLog('ERROR: Calendar container not found!');
+    return;
+  }
+  
   calendarContainer.innerHTML = `
     <div class="calendar-loading">
       <div class="spinner"></div>
@@ -305,22 +347,40 @@ window.loadCalendarForService = function(service) {
     </div>
   `;
   
-  // Clear any previous time slots and booking form
-  document.getElementById('time-slots-container').innerHTML = '';
-  const bookingFormContainer = document.getElementById('booking-form-container');
-  if (bookingFormContainer) {
+  // Create empty containers for time slots and booking form if they don't exist
+  let timeSlotsContainer = document.getElementById('time-slots-container');
+  if (!timeSlotsContainer) {
+    timeSlotsContainer = document.createElement('div');
+    timeSlotsContainer.id = 'time-slots-container';
+    timeSlotsContainer.className = 'time-slots-container';
+    calendarContainer.appendChild(timeSlotsContainer);
+  } else {
+    timeSlotsContainer.innerHTML = '';
+  }
+  
+  let bookingFormContainer = document.getElementById('booking-form-container');
+  if (!bookingFormContainer) {
+    bookingFormContainer = document.createElement('div');
+    bookingFormContainer.id = 'booking-form-container';
+    bookingFormContainer.className = 'booking-form-container';
+    bookingFormContainer.style.display = 'none';
+    calendarContainer.appendChild(bookingFormContainer);
+  } else {
     bookingFormContainer.style.display = 'none';
   }
   
   // Check if we're authorized and have the calendar API loaded
   if (!gapi) {
     // First load - initialize the API
+    debugLog('gapi not loaded, initializing API');
     loadGoogleAPI();
   } else if (!gapi.client || !gapi.client.calendar) {
     // API loaded but calendar not initialized
+    debugLog('gapi loaded but calendar not initialized');
     initClient();
   } else {
     // Proceed to load the calendar
+    debugLog('gapi and calendar initialized, loading calendar');
     loadCalendar(service);
   }
 };
@@ -341,28 +401,72 @@ function requestAuthorization() {
  * Load the calendar for the selected service
  */
 function loadCalendar(service) {
+  debugLog('loadCalendar called for service:', service);
+  
   // Get the calendar container
   const calendarContainer = document.getElementById('appointment-calendar');
+  if (!calendarContainer) {
+    debugLog('ERROR: Calendar container not found!');
+    return;
+  }
   
-  debugLog('Loading calendar for service:', service);
+  debugLog('Calendar container found, rendering calendar');
   
-  // For this demo, we'll show a mock calendar interface
-  // In a production environment, you would use the Google Calendar API to fetch free/busy times
-  
-  // Get today's date
-  const today = new Date();
-  const month = today.getMonth();
-  const year = today.getFullYear();
-  
-  debugLog('Creating calendar for', month, year);
-  
-  // Create the calendar layout
-  calendarContainer.innerHTML = createCalendarHTML(month, year, service);
-  
-  // Add event listeners to calendar days
-  setupCalendarInteraction();
-  
-  debugLog('Calendar loaded and interactions set up');
+  try {
+    // Get today's date
+    const today = new Date();
+    const month = today.getMonth();
+    const year = today.getFullYear();
+    
+    debugLog('Creating calendar for', month, year);
+    
+    // Create the calendar layout
+    calendarContainer.innerHTML = createCalendarHTML(month, year, service);
+    
+    // Add event listeners to calendar days
+    debugLog('Setting up calendar interactions');
+    setupCalendarInteraction();
+    
+    // Add a notice that the calendar is loaded successfully
+    const notice = document.createElement('div');
+    notice.className = 'alert alert-success mb-4';
+    notice.innerHTML = `
+      <p><strong>Success:</strong> The appointment calendar has been loaded successfully.
+      Please select a date to see available times.</p>
+    `;
+    
+    // Insert the notice at the top
+    if (calendarContainer.firstChild) {
+      calendarContainer.insertBefore(notice, calendarContainer.firstChild);
+    } else {
+      calendarContainer.appendChild(notice);
+    }
+    
+    debugLog('Calendar loaded and interactions set up');
+    
+    // Create an empty time slots container if it doesn't exist
+    if (!document.getElementById('time-slots-container')) {
+      const timeSlotsContainer = document.createElement('div');
+      timeSlotsContainer.id = 'time-slots-container';
+      timeSlotsContainer.className = 'time-slots-container';
+      calendarContainer.appendChild(timeSlotsContainer);
+    }
+    
+    // Create an empty booking form container if it doesn't exist
+    if (!document.getElementById('booking-form-container')) {
+      const bookingFormContainer = document.createElement('div');
+      bookingFormContainer.id = 'booking-form-container';
+      bookingFormContainer.className = 'booking-form-container';
+      bookingFormContainer.style.display = 'none';
+      calendarContainer.appendChild(bookingFormContainer);
+    }
+  } catch (error) {
+    debugLog('ERROR rendering calendar:', error);
+    
+    // Show a simple error message and fall back to the basic calendar
+    showError("We encountered an issue loading the calendar. Using basic calendar mode.");
+    showFallbackCalendar();
+  }
 }
 
 /**
@@ -693,11 +797,18 @@ function setupCalendarInteraction() {
     
     // Show time slots for this date
     const timeSlotsContainer = document.getElementById('time-slots-container');
+    if (!timeSlotsContainer) {
+      debugLog('ERROR: Time slots container not found!');
+      return;
+    }
+    
     timeSlotsContainer.innerHTML = createTimeSlotsHTML(dateString);
     
     // Clear any booking form
     const bookingFormContainer = document.getElementById('booking-form-container');
-    bookingFormContainer.style.display = 'none';
+    if (bookingFormContainer) {
+      bookingFormContainer.style.display = 'none';
+    }
     
     // Scroll to time slots
     timeSlotsContainer.scrollIntoView({ behavior: 'smooth' });
@@ -916,6 +1027,8 @@ function setupCalendarInteraction() {
  * Generate time slots for a given date
  */
 function generateTimeSlots(dateString) {
+  debugLog('Generating time slots for date:', dateString);
+  
   // Define business hours based on service and day of week
   const date = new Date(dateString);
   const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
@@ -940,58 +1053,85 @@ function generateTimeSlots(dateString) {
     allSlots.push(`${String(hour).padStart(2, '0')}:30`);
   }
   
-  // If Google Calendar API is available, check for busy times
-  if (gapi && gapi.client && gapi.client.calendar) {
+  debugLog('Generated all possible time slots:', allSlots);
+  
+  // If Google Calendar API is available and properly initialized, check for busy times
+  if (gapi && gapi.client && gapi.client.calendar && serverAccessToken) {
+    debugLog('Using Google Calendar API to check busy times');
+    
     // Create time range for the entire day
     const timeMin = new Date(dateString + 'T00:00:00').toISOString();
     const timeMax = new Date(dateString + 'T23:59:59').toISOString();
     
     // Return a promise that resolves with available slots
     return new Promise((resolve, reject) => {
-      gapi.client.calendar.freebusy.query({
-        timeMin: timeMin,
-        timeMax: timeMax,
-        items: [{ id: CALENDAR_ID[selectedService] }]
-      }).then(response => {
-        const busySlots = [];
-        const busyPeriods = response.result.calendars[CALENDAR_ID[selectedService]].busy;
-        
-        // Process busy periods to determine which slots are unavailable
-        busyPeriods.forEach(period => {
-          const start = new Date(period.start);
-          const end = new Date(period.end);
+      try {
+        gapi.client.calendar.freebusy.query({
+          timeMin: timeMin,
+          timeMax: timeMax,
+          items: [{ id: CALENDAR_ID[selectedService] }]
+        }).then(response => {
+          debugLog('Freebusy query response:', response);
           
-          // Check each slot against busy periods
-          allSlots.forEach(slot => {
-            const [hours, minutes] = slot.split(':').map(Number);
-            const slotStart = new Date(date);
-            slotStart.setHours(hours, minutes, 0, 0);
+          const busySlots = [];
+          if (response.result && 
+              response.result.calendars && 
+              response.result.calendars[CALENDAR_ID[selectedService]] &&
+              response.result.calendars[CALENDAR_ID[selectedService]].busy) {
             
-            const slotEnd = new Date(slotStart);
-            slotEnd.setMinutes(slotEnd.getMinutes() + SERVICE_DURATION[selectedService]);
+            const busyPeriods = response.result.calendars[CALENDAR_ID[selectedService]].busy;
             
-            // If slot overlaps with busy period, mark as busy
-            if ((slotStart >= start && slotStart < end) || 
-                (slotEnd > start && slotEnd <= end) ||
-                (slotStart <= start && slotEnd >= end)) {
-              busySlots.push(slot);
-            }
-          });
+            // Process busy periods to determine which slots are unavailable
+            busyPeriods.forEach(period => {
+              const start = new Date(period.start);
+              const end = new Date(period.end);
+              
+              // Check each slot against busy periods
+              allSlots.forEach(slot => {
+                const [hours, minutes] = slot.split(':').map(Number);
+                const slotStart = new Date(date);
+                slotStart.setHours(hours, minutes, 0, 0);
+                
+                const slotEnd = new Date(slotStart);
+                slotEnd.setMinutes(slotEnd.getMinutes() + SERVICE_DURATION[selectedService]);
+                
+                // If slot overlaps with busy period, mark as busy
+                if ((slotStart >= start && slotStart < end) || 
+                    (slotEnd > start && slotEnd <= end) ||
+                    (slotStart <= start && slotEnd >= end)) {
+                  busySlots.push(slot);
+                }
+              });
+            });
+          } else {
+            debugLog('No busy periods found or invalid response structure');
+          }
+          
+          // Filter out busy slots
+          const availableSlots = allSlots.filter(slot => !busySlots.includes(slot));
+          debugLog('Available slots after checking busy times:', availableSlots);
+          resolve(availableSlots);
+        }).catch(error => {
+          debugLog('Error fetching busy times:', error);
+          // If there's an error, fall back to all slots with random availability
+          const availableSlots = allSlots.filter(() => Math.random() > 0.3);
+          debugLog('Falling back to random availability:', availableSlots);
+          resolve(availableSlots);
         });
-        
-        // Filter out busy slots
-        const availableSlots = allSlots.filter(slot => !busySlots.includes(slot));
-        resolve(availableSlots);
-      }).catch(error => {
-        console.error('Error fetching busy times', error);
-        // If there's an error, fall back to all slots with random availability
+      } catch (error) {
+        debugLog('Exception in freebusy query:', error);
+        // If there's an exception, fall back to all slots with random availability
         const availableSlots = allSlots.filter(() => Math.random() > 0.3);
+        debugLog('Falling back to random availability due to exception:', availableSlots);
         resolve(availableSlots);
-      });
+      }
     });
   } else {
+    debugLog('Google Calendar API not available, using fallback time slots');
     // If Google Calendar API is not available, generate mock availability
-    return Promise.resolve(allSlots.filter(() => Math.random() > 0.3));
+    const availableSlots = allSlots.filter(() => Math.random() > 0.3);
+    debugLog('Generated fallback time slots:', availableSlots);
+    return Promise.resolve(availableSlots);
   }
 }
 
@@ -1014,38 +1154,60 @@ function createTimeSlotsHTML(dateString) {
   
   // Generate time slots asynchronously
   const timeSlotsContainer = document.getElementById('time-slots-container');
+  if (!timeSlotsContainer) {
+    debugLog('ERROR: Time slots container not found!');
+    return html;
+  }
+  
   timeSlotsContainer.innerHTML = html;
   
   // Get time slots and update the UI
-  generateTimeSlots(dateString).then(timeSlots => {
-    if (timeSlots.length === 0) {
-      // No available slots
-      html = `
-        <h4 class="mb-4">Available Times for ${dayOfWeek}, ${formattedDate}</h4>
-        <div class="alert alert-info">
-          <p class="text-center mb-0">No available appointments for this date. Please select another date.</p>
-        </div>
-      `;
-    } else {
-      // Show available slots
-      html = `
-        <h4 class="mb-4">Available Times for ${dayOfWeek}, ${formattedDate}</h4>
-        <div class="time-slots-grid">
-      `;
-      
-      timeSlots.forEach(slot => {
-        html += `
-          <div class="time-slot" onclick="selectTimeSlot(this, '${dateString}', '${slot}')">
-            ${formatTime(slot)}
+  generateTimeSlots(dateString)
+    .then(timeSlots => {
+      if (!Array.isArray(timeSlots) || timeSlots.length === 0) {
+        // No available slots
+        html = `
+          <h4 class="mb-4">Available Times for ${dayOfWeek}, ${formattedDate}</h4>
+          <div class="alert alert-info">
+            <p class="text-center mb-0">No available appointments for this date. Please select another date.</p>
           </div>
         `;
-      });
+      } else {
+        // Show available slots
+        html = `
+          <h4 class="mb-4">Available Times for ${dayOfWeek}, ${formattedDate}</h4>
+          <div class="time-slots-grid">
+        `;
+        
+        timeSlots.forEach(slot => {
+          html += `
+            <div class="time-slot" onclick="selectTimeSlot(this, '${dateString}', '${slot}')">
+              ${formatTime(slot)}
+            </div>
+          `;
+        });
+        
+        html += `</div>`;
+      }
       
-      html += `</div>`;
-    }
-    
-    timeSlotsContainer.innerHTML = html;
-  });
+      timeSlotsContainer.innerHTML = html;
+    })
+    .catch(error => {
+      debugLog('ERROR generating time slots:', error);
+      
+      // Show error message
+      html = `
+        <h4 class="mb-4">Available Times for ${dayOfWeek}, ${formattedDate}</h4>
+        <div class="alert alert-warning">
+          <p class="text-center mb-0">We encountered an issue loading available times. Please try again or select another date.</p>
+        </div>
+        <div class="text-center mt-3">
+          <button class="btn btn-sm btn-primary" onclick="showTimeSlots(document.querySelector('.calendar-day.selected'))">Retry</button>
+        </div>
+      `;
+      
+      timeSlotsContainer.innerHTML = html;
+    });
   
   return html;
 }
@@ -1327,4 +1489,45 @@ function addDebugDisplay() {
     // Show the debug display
     debugDiv.style.display = 'block';
   }
+}
+
+/**
+ * Check if the calendar is properly loaded
+ */
+function checkCalendarLoaded() {
+  debugLog('Checking if calendar is properly loaded');
+  
+  // Get the calendar container
+  const calendarContainer = document.getElementById('appointment-calendar');
+  if (!calendarContainer) {
+    debugLog('ERROR: Calendar container not found!');
+    return;
+  }
+  
+  // Check if we have the calendar grid
+  const calendarGrid = calendarContainer.querySelector('.calendar-grid');
+  if (!calendarGrid) {
+    debugLog('Calendar grid not found, calendar not properly loaded');
+    
+    // Show a notice that the calendar is not loaded properly
+    const notice = document.createElement('div');
+    notice.className = 'alert alert-warning mb-4';
+    notice.innerHTML = `
+      <p><strong>Note:</strong> The calendar did not load properly. 
+      Please try refreshing the page or contact us directly.</p>
+      <div class="text-center mt-3">
+        <button class="btn btn-primary" onclick="window.location.reload()">Refresh Page</button>
+        <a href="contact-us.html" class="btn btn-outline-secondary ml-2">Contact Us</a>
+      </div>
+    `;
+    
+    // Clear the container and show the notice
+    calendarContainer.innerHTML = '';
+    calendarContainer.appendChild(notice);
+    
+    return false;
+  }
+  
+  debugLog('Calendar appears to be properly loaded');
+  return true;
 } 

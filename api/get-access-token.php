@@ -15,7 +15,7 @@ header('Content-Type: application/json');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Access-Control-Allow-Origin: *'); // Allow cross-origin requests
 
-// Use the absolute path based on the server environment
+// Define the absolute path to the token file on the production server
 $tokenFile = '/var/www/DK_Dental_Studio/vendor/google/oauth/secure/google_refresh_token.json';
 $tokenExists = file_exists($tokenFile);
 
@@ -37,20 +37,6 @@ if ($tokenExists && is_readable($tokenFile)) {
     }
 }
 
-// If direct reading failed, try using the token helper
-if (!$accessToken) {
-    error_log('Direct token read failed, trying token helper');
-    
-    // Include the token helper
-    require_once __DIR__ . '/../vendor/google/oauth/token.php';
-    
-    // Get a valid access token
-    $accessToken = getGoogleAccessToken();
-    
-    // Log the result
-    error_log('Access token retrieved via helper: ' . ($accessToken ? 'Yes' : 'No'));
-}
-
 // Prepare the response
 $response = [];
 
@@ -64,17 +50,11 @@ if ($accessToken) {
     // Log success
     error_log('Access token provided to client');
 } else {
-    // Return an error response with debugging info
+    // Return an error response
     $response = [
         'success' => false,
         'error' => 'No valid access token available',
-        'message' => 'OAuth authorization may be required. Please contact the administrator.',
-        'debug' => [
-            'token_file_path' => $tokenFile,
-            'token_file_exists' => $tokenExists,
-            'current_dir' => __DIR__,
-            'server_path' => $_SERVER['DOCUMENT_ROOT']
-        ]
+        'message' => 'OAuth authorization may be required. Please contact the administrator.'
     ];
     
     // Log the error
