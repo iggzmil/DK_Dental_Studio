@@ -22,7 +22,7 @@ if (!isset($_SESSION['authenticated'])) {
 // Define client credentials
 $clientId = '976666616562-c4s3nfesuu7drrt6nmghnb6qc6cteers.apps.googleusercontent.com';
 $clientSecret = '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';
-$redirectUri = 'https://' . $_SERVER['HTTP_HOST'] . '/vendor/google/oauth/callback.php';
+$redirectUri = 'https://dkdstudio.aaa-city.com/vendor/google/oauth/callback.php';
 
 // Define token storage location
 $secureDir = dirname(__FILE__) . '/secure';

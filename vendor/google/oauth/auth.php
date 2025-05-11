@@ -33,8 +33,14 @@ if (!isset($_SESSION['authenticated'])) {
 // Define the client credentials
 $clientId = '976666616562-c4s3nfesuu7drrt6nmghnb6qc6cteers.apps.googleusercontent.com';
 $clientSecret = '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';
-$redirectUri = 'https://' . $_SERVER['HTTP_HOST'] . '/vendor/google/oauth/callback.php';
+
+// Ensure the redirect URI matches exactly what's configured in Google Cloud Console
+// Remove any extra slashes or path elements that might cause mismatch
+$redirectUri = 'https://dkdstudio.aaa-city.com/vendor/google/oauth/callback.php';
 $scope = 'https://www.googleapis.com/auth/business.manage';
+
+// Log redirect URI for debugging
+error_log('Using redirect URI: ' . $redirectUri);
 
 // Skip the Google API Client and create the auth URL directly
 $authUrl = 'https://accounts.google.com/o/oauth2/auth'
@@ -45,8 +51,10 @@ $authUrl = 'https://accounts.google.com/o/oauth2/auth'
     . '&access_type=offline'
     . '&prompt=consent';
 
-// Log the URL for debugging
+// Log additional debugging information
 error_log('Generated OAuth URL: ' . $authUrl);
+error_log('Server HTTP_HOST: ' . $_SERVER['HTTP_HOST']);
+error_log('Client ID: ' . $clientId);
 
 // Display authorization instructions
 ?>

@@ -64,7 +64,7 @@ function getGoogleAccessToken() {
  * @return array|null New token data or null if refresh failed
  */
 function refreshAccessToken($refreshToken) {
-    // Define client credentials
+    // Define client credentials - use exact same values as auth.php and callback.php
     $clientId = '976666616562-c4s3nfesuu7drrt6nmghnb6qc6cteers.apps.googleusercontent.com';
     $clientSecret = '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';
     
