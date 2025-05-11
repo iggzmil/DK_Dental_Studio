@@ -95,33 +95,53 @@ class GoogleReviewsWidget {
   }
 
   fetchReviews() {
-    // This method would use the Google My Business API to fetch reviews
-    // For now, we're using mock data since the provided credentials are OAuth credentials
+    // Show loading state
+    this.container.innerHTML = `
+      <div class="item">
+        <div class="testimonial-item">
+          <div class="testimonial-content">
+            <p>Loading reviews...</p>
+          </div>
+        </div>
+      </div>
+    `;
 
-    // In a production environment with the correct API key, you would use:
-    /*
-    const service = new google.maps.places.PlacesService(document.createElement('div'));
+    // Fetch reviews from our API endpoint
+    fetch(this.apiEndpoint)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.error) {
+          console.error('Error from API:', data.message);
+          // Fallback to mock data if API returns an error
+          this.useMockData();
+          return;
+        }
 
-    service.getDetails({
-      placeId: this.placeId,
-      fields: ['reviews', 'name', 'rating']
-    }, (place, status) => {
-      if (status === google.maps.places.PlacesServiceStatus.OK && place.reviews) {
-        this.reviewsData = place.reviews
+        if (!data.reviews || !data.reviews.length) {
+          console.warn('No reviews returned from API, using mock data');
+          this.useMockData();
+          return;
+        }
+
+        // Filter and sort reviews
+        this.reviewsData = data.reviews
           .filter(review => review.rating >= this.minRating)
+          .sort((a, b) => b.time - a.time) // Sort by most recent
           .slice(0, this.maxReviews);
 
         this.renderReviews();
         this.initCarousel();
-      } else {
-        console.error('Error fetching Google reviews:', status);
-        this.renderErrorMessage();
-      }
-    });
-    */
-
-    // For now, we'll use the mock data
-    this.useMockData();
+      })
+      .catch(error => {
+        console.error('Error fetching reviews:', error);
+        // Fallback to mock data on error
+        this.useMockData();
+      });
   }
 
   formatDate(timestamp) {
