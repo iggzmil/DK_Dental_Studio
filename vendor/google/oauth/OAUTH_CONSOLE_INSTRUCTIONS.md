@@ -13,7 +13,7 @@ This guide provides step-by-step instructions for configuring your Google Cloud 
 ### Step 1: Edit Redirect URIs
 
 1. In the left sidebar, click on "APIs & Services" → "Credentials"
-2. Find your OAuth 2.0 Client ID in the list and click the edit (pencil) icon
+2. Find your OAuth 2.0 Client ID (`593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com`) in the list and click the edit (pencil) icon
 3. Under "Authorized redirect URIs", make sure the following URI is listed exactly:
    ```
    https://dkdstudio.aaa-city.com/vendor/google/oauth/callback.php

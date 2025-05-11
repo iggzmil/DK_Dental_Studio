@@ -65,8 +65,8 @@ function getGoogleAccessToken() {
  */
 function refreshAccessToken($refreshToken) {
     // Define client credentials - use exact same values as auth.php and callback.php
-    $clientId = '976666616562-c4s3nfesuu7drrt6nmghnb6qc6cteers.apps.googleusercontent.com';
-    $clientSecret = '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';
+    $clientId = '593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com';
+    $clientSecret = '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';
     
     // Set up token refresh request
     $tokenUrl = 'https://oauth2.googleapis.com/token';

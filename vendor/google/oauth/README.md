@@ -15,6 +15,13 @@ vendor/google/oauth/
 └── README.md         # This documentation
 ```
 
+## OAuth Credentials
+
+This implementation uses the following OAuth credentials:
+- Client ID: `593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com`
+- Redirect URI: `https://dkdstudio.aaa-city.com/vendor/google/oauth/callback.php`
+- Scope: `https://www.googleapis.com/auth/business.manage`
+
 ## Troubleshooting 403 access_denied Error
 
 If you encounter a `403: access_denied` error during the OAuth authorization process, follow these steps to resolve it:

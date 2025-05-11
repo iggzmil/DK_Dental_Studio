@@ -1,9 +1,10 @@
 # OAuth Credentials Information for DK Dental Studio
 
 ## Client Credentials
-- **Client ID**: 976666616562-c4s3nfesuu7drrt6nmghnb6qc6cteers.apps.googleusercontent.com
-- **Client Secret**: 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
-- **Authorized Scope**: https://www.googleapis.com/auth/business.manage
+- **Project Name**: DK Dental Studio OAuth
+- **Client ID**: 593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com
+- **Client Secret**: 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
+- **API Scope**: https://www.googleapis.com/auth/business.manage
 
 ## Important Files
 - **Authorization Page**: owner-auth.php
