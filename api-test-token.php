@@ -46,13 +46,15 @@ if (file_exists($tokenFile)) {
 echo "<h2>2. API Access Test</h2>";
 
 // Test the API
-$apiUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/api/get-access-token.php';
+$protocol = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off') || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+$apiUrl = $protocol . $_SERVER['HTTP_HOST'] . '/api/get-access-token.php';
 echo "<p>Testing API URL: " . htmlspecialchars($apiUrl) . "</p>";
 
 // Make the API request
 $ch = curl_init($apiUrl);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_HEADER, false);
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // Follow redirects
 $response = curl_exec($ch);
 $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
@@ -103,7 +105,8 @@ echo "<h2>3. JavaScript Fetch Test</h2>";
 
 <script>
     // Test the API using JavaScript fetch
-    fetch('/api/get-access-token.php')
+    const apiUrl = window.location.protocol + '//' + window.location.host + '/api/get-access-token.php';
+    fetch(apiUrl)
         .then(response => {
             document.getElementById('js-test-result').innerHTML += `<p>Response status: ${response.status} ${response.statusText}</p>`;
             return response.json();

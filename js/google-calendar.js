@@ -59,8 +59,8 @@ function fetchServerAccessToken() {
   return new Promise((resolve, reject) => {
     debugLog('Fetching server access token...');
     
-    // Use absolute path for production environment
-    const apiUrl = window.location.origin + '/api/get-access-token.php';
+    // Use absolute path for production environment with proper protocol
+    const apiUrl = window.location.protocol + '//' + window.location.host + '/api/get-access-token.php';
     debugLog('API URL:', apiUrl);
     
     fetch(apiUrl)
