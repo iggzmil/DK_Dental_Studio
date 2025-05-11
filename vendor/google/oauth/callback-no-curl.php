@@ -24,6 +24,9 @@ $clientId = '593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleuserconten
 $clientSecret = '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';
 $redirectUri = 'https://' . $_SERVER['HTTP_HOST'] . '/vendor/google/oauth/callback.php';
 
+// Also include Calendar scope for consistency with auth.php
+$scope = 'https://www.googleapis.com/auth/business.manage https://www.googleapis.com/auth/calendar';
+
 // Define token storage location
 $secureDir = dirname(__FILE__) . '/secure';
 if (!file_exists($secureDir)) {
@@ -60,7 +63,8 @@ if (isset($_GET['code'])) {
         'client_id' => $clientId,
         'client_secret' => $clientSecret,
         'redirect_uri' => $redirectUri,
-        'grant_type' => 'authorization_code'
+        'grant_type' => 'authorization_code',
+        'scope' => $scope
     ];
     
     $options = [

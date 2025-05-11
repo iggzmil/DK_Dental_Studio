@@ -37,7 +37,9 @@ $clientSecret = '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';
 // Ensure the redirect URI matches exactly what's configured in Google Cloud Console
 // Remove any extra slashes or path elements that might cause mismatch
 $redirectUri = 'https://dkdstudio.aaa-city.com/vendor/google/oauth/callback.php';
-$scope = 'https://www.googleapis.com/auth/business.manage';
+
+// Include both Business Profile and Calendar scopes
+$scope = 'https://www.googleapis.com/auth/business.manage https://www.googleapis.com/auth/calendar';
 
 // Log redirect URI for debugging
 error_log('Using redirect URI: ' . $redirectUri);
