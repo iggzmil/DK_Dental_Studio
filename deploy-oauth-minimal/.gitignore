@@ -1,3 +1,17 @@
+# Deployment and log files
+deployment-check.log
+dk-dental-oauth-deployment.zip
+
+# Sensitive files
+.env
+/secure/*.json
+/debug/
+
+# Cache and temporary files
+*.cache
+.DS_Store
+Thumbs.db
+
 # Generated files
 *.zip
 *.log
