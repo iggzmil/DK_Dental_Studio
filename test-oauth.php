@@ -31,7 +31,7 @@ if (!isset($_SESSION['authenticated'])) {
 }
 
 // Include the token helper
-require_once 'vendor/google/oauth/token.php';
+require_once __DIR__ . '/vendor/google/oauth/token.php';
 
 // Get a valid access token
 $accessToken = getGoogleAccessToken();

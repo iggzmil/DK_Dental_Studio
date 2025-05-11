@@ -1,0 +1,12 @@
+# Ignore the secure directory containing tokens
+/secure/
+*.json
+*.key
+*.pem
+
+# Ignore any environment files that might contain secrets
+.env
+*.env
+
+# Ignore logs
+*.log 
