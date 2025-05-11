@@ -137,10 +137,18 @@ class OAuth2 implements GetUniverseDomainInterface
             $debug .= "redirectUri: " . $this->redirectUri;
             error_log($debug);
             
-            // Save to a file for easier debugging
-            file_put_contents(dirname(dirname(dirname(dirname(__DIR__)))) . '/oauth_debug.log', 
+            // Try to use a more permissive debug directory
+            $safeDebugDir = dirname(dirname(dirname(dirname(__DIR__)))) . '/debug';
+            if (!file_exists($safeDebugDir)) {
+                @mkdir($safeDebugDir, 0777, true);
+            }
+            
+            // Safe debug logging attempt
+            @file_put_contents(
+                $safeDebugDir . '/oauth_debug.log', 
                 date('Y-m-d H:i:s') . ' - ' . $debug . PHP_EOL, 
-                FILE_APPEND);
+                FILE_APPEND
+            );
             
             throw new GoogleException('Missing Client ID');
         }

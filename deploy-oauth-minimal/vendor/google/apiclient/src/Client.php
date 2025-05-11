@@ -1126,10 +1126,18 @@ class Client
         $debugMsg = "Creating OAuth2 service with clientId: " . $this->getClientId();
         error_log($debugMsg);
         
-        // Write to debug file
-        file_put_contents(dirname(dirname(__DIR__)) . '/oauth_debug.log', 
+        // Try to use a more permissive debug directory
+        $safeDebugDir = dirname(dirname(__DIR__)) . '/debug';
+        if (!file_exists($safeDebugDir)) {
+            @mkdir($safeDebugDir, 0777, true);
+        }
+        
+        // Safe debug logging attempt
+        @file_put_contents(
+            $safeDebugDir . '/oauth_debug.log', 
             date('Y-m-d H:i:s') . ' - ' . $debugMsg . PHP_EOL, 
-            FILE_APPEND);
+            FILE_APPEND
+        );
         
         $auth = new OAuth2();
         

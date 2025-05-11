@@ -74,7 +74,13 @@ try {
     $client->setAccessType('offline');
     $client->setApprovalPrompt('force'); // Force to get refresh token
     $client->setIncludeGrantedScopes(true); // Enable incremental authorization
-    $client->setScopes(['https://www.googleapis.com/auth/business.manage']);
+    
+    // Set scopes - make sure this is explicitly set as an array first, then use addScope
+    $scopes = ['https://www.googleapis.com/auth/business.manage'];
+    $client->setScopes($scopes);
+    
+    // Debug scopes
+    echo "<!-- Scopes set: " . json_encode($client->getScopes()) . " -->\n";
 
     // Generate authorization URL
     $authUrl = $client->createAuthUrl();

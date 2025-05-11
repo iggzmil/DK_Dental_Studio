@@ -37,7 +37,13 @@ try {
     $client->setAccessType('offline');
     $client->setApprovalPrompt('force');
     $client->setIncludeGrantedScopes(true);
-    $client->setScopes(['https://www.googleapis.com/auth/business.manage']);
+    
+    // Set scopes - make sure this is explicitly set as an array first, then use addScope
+    $scopes = ['https://www.googleapis.com/auth/business.manage'];
+    $client->setScopes($scopes);
+    
+    // Check if scopes were set properly
+    echo "<p>Scopes set: " . implode(', ', $client->getScopes()) . "</p>";
     
     // Verify the client ID was set correctly
     $configClientId = $client->getClientId();
@@ -47,6 +53,21 @@ try {
     $authUrl = $client->createAuthUrl();
     echo "<p>Successfully created auth URL: <a href='$authUrl'>$authUrl</a></p>";
     echo "<p>✅ Test passed! The Google Client is properly configured.</p>";
+    
+    // Prevent file_put_contents errors in Client.php and OAuth2.php
+    // By defining local debug dir with proper permissions
+    $debugDir = __DIR__ . '/debug';
+    if (!file_exists($debugDir)) {
+        @mkdir($debugDir, 0777, true);
+    }
+    
+    // Safe debug logging function
+    function safeLogDebug($message) {
+        $debugFile = __DIR__ . '/debug/oauth_debug.log';
+        @file_put_contents($debugFile, date('Y-m-d H:i:s') . ' - ' . $message . PHP_EOL, FILE_APPEND);
+    }
+    
+    safeLogDebug("Test credential verification successful");
     
     // Check OAuth2 service details
     $reflectionClass = new ReflectionClass($client);
@@ -62,6 +83,14 @@ try {
         $clientIdProperty->setAccessible(true);
         $oauthClientId = $clientIdProperty->getValue($auth);
         echo "<p>OAuth2 service client ID: $oauthClientId</p>";
+        
+        // Verify OAuth2 scopes
+        if (property_exists($auth, 'scopes')) {
+            $scopesProperty = $reflectionOAuth->getProperty('scopes');
+            $scopesProperty->setAccessible(true);
+            $oauthScopes = $scopesProperty->getValue($auth);
+            echo "<p>OAuth2 service scopes: " . implode(', ', $oauthScopes) . "</p>";
+        }
     } else {
         echo "<p>OAuth2 service was not initialized yet, but that's normal until createAuthUrl is called</p>";
     }
