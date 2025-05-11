@@ -51,6 +51,11 @@ if (!isset($data['event']) || !isset($data['service'])) {
 
 // Use the absolute path based on the server environment
 $tokenFile = '/var/www/DK_Dental_Studio/vendor/google/oauth/secure/google_refresh_token.json';
+$tokenExists = file_exists($tokenFile);
+
+// Log the token path for debugging
+error_log('Looking for token file at: ' . $tokenFile);
+error_log('Token file exists: ' . ($tokenExists ? 'Yes' : 'No'));
 
 // Try to read the token directly
 $accessToken = null;

@@ -63,13 +63,27 @@ function fetchServerAccessToken() {
     const apiUrl = window.location.protocol + '//' + window.location.host + '/api/get-access-token.php';
     debugLog('API URL:', apiUrl);
     
-    fetch(apiUrl)
+    // Add a timestamp to prevent caching issues
+    const cacheBuster = new Date().getTime();
+    const urlWithNoCaching = apiUrl + '?nocache=' + cacheBuster;
+    
+    fetch(urlWithNoCaching, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
+      },
+      credentials: 'same-origin'
+    })
       .then(response => {
         debugLog('Server response status:', response.status);
         if (!response.ok) {
           throw new Error(`Failed to fetch access token from server: ${response.status} ${response.statusText}`);
         }
-        return response.json();
+        return response.json().catch(error => {
+          debugLog('Error parsing JSON from server response:', error);
+          throw new Error('Invalid JSON in server response');
+        });
       })
       .then(data => {
         debugLog('Server response received:', data);
@@ -78,12 +92,15 @@ function fetchServerAccessToken() {
           debugLog('Access token successfully retrieved from server');
           resolve(serverAccessToken);
         } else {
-          debugLog('Server returned error:', data.error, data.message);
-          throw new Error('No access token in response');
+          const errorMsg = data.error || 'Unknown error';
+          const errorDetails = data.message || 'No details provided';
+          debugLog('Server returned error:', errorMsg, errorDetails);
+          throw new Error(`No access token in response: ${errorMsg} - ${errorDetails}`);
         }
       })
       .catch(error => {
         debugLog('Error fetching server access token:', error);
+        console.error('Token fetch error details:', error);
         showError("Could not connect to the booking system. Please try again later or contact us directly.");
         showFallbackCalendar();
         reject(error);
@@ -102,7 +119,7 @@ function loadGoogleAPI() {
     debugLog('Google API client load timed out, using fallback calendar');
     showError("Google API client not loaded. Please check your internet connection and try again.");
     showFallbackCalendar();
-  }, 10000); // 10 second timeout
+  }, 15000); // 15 second timeout
   
   gapi = window.gapi;
   
@@ -169,7 +186,7 @@ function initClient() {
     debugLog('Google API client initialization timed out, showing fallback calendar');
     showError("Google Calendar API initialization timed out. Using basic calendar mode.");
     showFallbackCalendar();
-  }, 7000); // 7 second timeout
+  }, 12000); // 12 second timeout
   
   try {
     gapi.client.init({
@@ -186,7 +203,7 @@ function initClient() {
         debugLog('Token fetch timed out, showing fallback calendar');
         showError("Token retrieval timed out. Using basic calendar mode.");
         showFallbackCalendar();
-      }, 5000); // 5 second timeout
+      }, 10000); // 10 second timeout
       
       fetchServerAccessToken()
         .then(token => {
@@ -205,12 +222,19 @@ function initClient() {
             debugLog('Calendar API test timed out, showing fallback calendar');
             showError("Calendar API test timed out. Using basic calendar mode.");
             showFallbackCalendar();
-          }, 5000); // 5 second timeout
+          }, 10000); // 10 second timeout
           
           return gapi.client.calendar.calendarList.list({
             maxResults: 1
           }).then(response => {
             clearTimeout(apiTestTimeout);
+            
+            // Validate the response
+            if (!response || typeof response !== 'object') {
+              debugLog('Calendar API test failed: Invalid response format');
+              throw new Error('Invalid response format');
+            }
+            
             debugLog('Calendar API test successful:', response);
             
             // If a service is already selected, load it

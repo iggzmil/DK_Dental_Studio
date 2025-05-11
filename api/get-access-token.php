@@ -15,15 +15,8 @@ header('Content-Type: application/json');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Access-Control-Allow-Origin: *'); // Allow cross-origin requests
 
-// Define paths to the token file - try both absolute and relative paths
+// Define the exact path to the token file - only location on the web server
 $tokenFile = '/var/www/DK_Dental_Studio/vendor/google/oauth/secure/google_refresh_token.json';
-$relativeTokenFile = __DIR__ . '/vendor/google/oauth/secure/google_refresh_token.json';
-
-// Check if the absolute path exists, otherwise use the relative path
-if (!file_exists($tokenFile) && file_exists($relativeTokenFile)) {
-    $tokenFile = $relativeTokenFile;
-}
-
 $tokenExists = file_exists($tokenFile);
 
 // Log the token path for debugging
