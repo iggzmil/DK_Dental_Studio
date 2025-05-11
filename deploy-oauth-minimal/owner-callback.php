@@ -32,54 +32,18 @@ if (!interface_exists('Google\Auth\GetUniverseDomainInterface')) {
 }
 
 try {
-    // HARDCODED CLIENT CREDENTIALS - Define these before creating the client
+    // Create Google client with minimal configuration
+    $client = new Google\Client();
+    
+    // Define client credentials
     $clientId = '976666616562-c4s3nfesuu7drrt6nmghnb6qc6cteers.apps.googleusercontent.com';
     $clientSecret = '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';
     
-    // Debug output
-    echo "<!-- Debug: Setting up Google Client for callback -->\n";
-    echo "<!-- Client ID: " . $clientId . " -->\n";
-    
-    // Create Google client with configuration options directly
-    $client = new Google\Client([
-        'client_id' => $clientId,
-        'client_secret' => $clientSecret
-    ]);
-    
-    // Double check client ID is set by explicitly calling setter methods
+    // Configure client
     $client->setClientId($clientId);
     $client->setClientSecret($clientSecret);
-    
-    // Debug check if client ID was properly set
-    $configClientId = $client->getClientId();
-    echo "<!-- Confirmed Client ID: " . $configClientId . " -->\n";
-    
-    // Set redirect URI - make sure this is the correct path on your server
-    $redirectUri = 'https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php';
-    $client->setRedirectUri($redirectUri);
-    
-    // Set OAuth flow settings
-    $client->setAccessType('offline');
-    $client->setApprovalPrompt('force'); // Force to get refresh token
-    $client->setIncludeGrantedScopes(true); // Enable incremental authorization
-    
-    // Clear any existing scopes
-    $client->setScopes([]);
-    
-    // Add each scope using addScope method
+    $client->setRedirectUri('https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php');
     $client->addScope('https://www.googleapis.com/auth/business.manage');
-    // Uncomment if you need additional scopes
-    // $client->addScope('https://www.googleapis.com/auth/plus.business.manage');
-    
-    // Verify scopes are set properly
-    $configuredScopes = $client->getScopes();
-    echo "<!-- Scopes set: " . json_encode($configuredScopes) . " -->\n";
-    
-    // Print warning if scopes are empty
-    if (empty($configuredScopes)) {
-        echo "<h1>Warning: Scopes appear to be empty</h1>";
-        echo "<p>This may cause authorization errors with Google OAuth.</p>";
-    }
 
     // Define token storage location
     $secureDir = __DIR__ . '/secure';
@@ -91,8 +55,15 @@ try {
     // Process the authorization code
     if (isset($_GET['code'])) {
         try {
+            // Log the received code (partial for security)
+            $codeLength = strlen($_GET['code']);
+            error_log('Received authorization code: ' . substr($_GET['code'], 0, 5) . '...' . substr($_GET['code'], -5) . " (Length: $codeLength)");
+            
             // Exchange authorization code for access token
             $token = $client->fetchAccessTokenWithAuthCode($_GET['code']);
+            
+            // Debug token response
+            error_log('Token response: ' . json_encode($token));
 
             if (isset($token['refresh_token'])) {
                 // Store the refresh token
@@ -103,25 +74,36 @@ try {
 
                 $success = true;
                 $message = "Authorization successful! Your website can now display your Google reviews.";
+                
+                // Log success
+                error_log('OAuth flow completed successfully. Refresh token obtained.');
             } else {
                 $success = false;
                 $message = "No refresh token was received. Please try again.";
+                
+                // Log error
+                error_log('OAuth token response did not contain refresh_token: ' . json_encode($token));
             }
         } catch (Exception $e) {
             $success = false;
             $message = "Error during authorization: " . $e->getMessage();
-            // Add debug output
-            echo "<!-- Error details: " . $e->getTraceAsString() . " -->";
+            
+            // Log detailed error
+            error_log('OAuth error: ' . $e->getMessage() . ' - ' . $e->getTraceAsString());
         }
     } else {
         $success = false;
         $message = "No authorization code received.";
+        
+        // Log error
+        error_log('No authorization code received in callback. Query string: ' . $_SERVER['QUERY_STRING']);
     }
 } catch (Exception $e) {
     $success = false;
     $message = "Error initializing Google Client: " . $e->getMessage();
-    // Add debug output
-    echo "<!-- Error details: " . $e->getTraceAsString() . " -->";
+    
+    // Log error
+    error_log('Error initializing Google Client: ' . $e->getMessage() . ' - ' . $e->getTraceAsString());
 }
 ?>
 <!DOCTYPE html>
@@ -133,6 +115,7 @@ try {
         .container { border: 1px solid #ddd; padding: 20px; border-radius: 5px; }
         .success { color: green; }
         .error { color: red; }
+        .debug { background: #f8f9fa; border: 1px solid #ddd; padding: 10px; margin-top: 20px; font-family: monospace; }
     </style>
 </head>
 <body>
@@ -151,6 +134,16 @@ try {
             </div>
         <?php else: ?>
             <p><a href="owner-auth.php">Try again</a></p>
+            <div class="debug">
+                <p><strong>Debug Information:</strong></p>
+                <p>Query String: <?php echo htmlspecialchars($_SERVER['QUERY_STRING']); ?></p>
+                <?php if (isset($_GET['error'])): ?>
+                    <p>Error: <?php echo htmlspecialchars($_GET['error']); ?></p>
+                <?php endif; ?>
+                <?php if (isset($_GET['error_description'])): ?>
+                    <p>Error Description: <?php echo htmlspecialchars($_GET['error_description']); ?></p>
+                <?php endif; ?>
+            </div>
         <?php endif; ?>
     </div>
 </body>

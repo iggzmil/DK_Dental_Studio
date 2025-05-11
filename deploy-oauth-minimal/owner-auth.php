@@ -43,82 +43,42 @@ if (!interface_exists('Google\Auth\GetUniverseDomainInterface')) {
 }
 
 try {
-    // HARDCODED CLIENT CREDENTIALS - Define these before creating the client
+    // Create Google client object with minimal required settings for OAuth flow
+    $client = new Google\Client();
+    
+    // Define the client credentials
     $clientId = '976666616562-c4s3nfesuu7drrt6nmghnb6qc6cteers.apps.googleusercontent.com';
     $clientSecret = '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';
     
-    // Debug output
-    echo "<!-- Debug: Setting up Google Client -->\n";
-    echo "<!-- Client ID: " . $clientId . " -->\n";
-    echo "<!-- Client Secret: " . (empty($clientSecret) ? 'NOT SET' : 'IS SET') . " -->\n";
-    
-    // Create Google client with configuration options directly
-    $client = new Google\Client([
-        'client_id' => $clientId,
-        'client_secret' => $clientSecret
-    ]);
-    
-    // Double check client ID is set by explicitly calling setter methods
+    // Essential configuration options only
     $client->setClientId($clientId);
     $client->setClientSecret($clientSecret);
+    $client->setRedirectUri('https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php');
+    $client->setAccessType('offline');  // Request refresh token
+    $client->setApprovalPrompt('force'); // Force consent screen to get refresh token
     
-    // Debug check if client ID was properly set
-    $configClientId = $client->getClientId();
-    echo "<!-- Confirmed Client ID: " . $configClientId . " -->\n";
-    
-    // Set redirect URI - make sure this is the correct path on your server
-    $redirectUri = 'https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php';
-    $client->setRedirectUri($redirectUri);
-    
-    // OAuth flow settings
-    $client->setAccessType('offline');
-    $client->setApprovalPrompt('force'); // Force to get refresh token
-    $client->setIncludeGrantedScopes(true); // Enable incremental authorization
-    
-    // Clear any existing scopes
-    $client->setScopes([]);
-    
-    // Add each scope using addScope method
+    // Add scope - explicitly using addScope instead of setScopes
     $client->addScope('https://www.googleapis.com/auth/business.manage');
-    // Uncomment if you need additional scopes
-    // $client->addScope('https://www.googleapis.com/auth/plus.business.manage');
     
-    // Verify scopes are set properly
-    $configuredScopes = $client->getScopes();
-    echo "<!-- Scopes set: " . json_encode($configuredScopes) . " -->\n";
-    
-    // Print warning if scopes are empty
-    if (empty($configuredScopes)) {
-        echo "<h1>Warning: Scopes appear to be empty</h1>";
-        echo "<p>This may cause authorization errors with Google OAuth.</p>";
-    }
-
-    // Generate authorization URL
+    // Create the authorization URL
     $authUrl = $client->createAuthUrl();
     
-    // Verify the auth URL has a scope parameter
+    // Verify the URL contains a scope parameter
     if (strpos($authUrl, 'scope=') === false) {
-        echo "<h1>Error: Auth URL is missing scope parameter</h1>";
-        echo "<p>OAuth requires scopes to be passed in the authorization URL.</p>";
-        echo "<p>Current URL: " . htmlspecialchars($authUrl) . "</p>";
+        // Log the issue
+        error_log('OAuth URL missing scope parameter: ' . $authUrl);
         
-        // Force add scope parameter if missing
-        if (strpos($authUrl, '?') !== false) {
-            $authUrl .= '&scope=' . urlencode('https://www.googleapis.com/auth/business.manage');
-        } else {
-            $authUrl .= '?scope=' . urlencode('https://www.googleapis.com/auth/business.manage');
-        }
+        // Try to manually construct a proper auth URL
+        $manualAuthUrl = 'https://accounts.google.com/o/oauth2/auth?'
+            . 'client_id=' . urlencode($clientId)
+            . '&redirect_uri=' . urlencode('https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php')
+            . '&response_type=code' 
+            . '&scope=' . urlencode('https://www.googleapis.com/auth/business.manage')
+            . '&access_type=offline'
+            . '&approval_prompt=force';
         
-        echo "<p>Updated URL: " . htmlspecialchars($authUrl) . "</p>";
+        $authUrl = $manualAuthUrl;
     }
-    
-    // Debug: check the OAuth2 service inside the client
-    $reflectionClass = new ReflectionClass($client);
-    $authProperty = $reflectionClass->getProperty('auth');
-    $authProperty->setAccessible(true);
-    $auth = $authProperty->getValue($client);
-    
-    echo "<!-- OAuth2 service initialized: " . ($auth ? 'YES' : 'NO') . " -->\n";
     
 } catch (Exception $e) {
     // Display detailed error message for debugging
@@ -139,6 +99,7 @@ try {
         body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
         .container { border: 1px solid #ddd; padding: 20px; border-radius: 5px; }
         .btn { display: inline-block; background: #0d6efd; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }
+        .debug { background: #f8f9fa; border: 1px solid #ddd; padding: 10px; margin-top: 20px; font-family: monospace; }
     </style>
 </head>
 <body>
@@ -150,8 +111,12 @@ try {
         <p><a href="<?php echo $authUrl; ?>" class="btn">Authorize Google Access</a></p>
         <p>After clicking, you'll be redirected to Google's sign-in page. Sign in with the Google account that manages your business profile.</p>
         
-        <!-- Debug info (hidden in HTML comment) -->
-        <!-- Redirect URI: <?php echo $redirectUri; ?> -->
+        <div class="debug">
+            <p><strong>Debug Information:</strong></p>
+            <p>Client ID: <?php echo htmlspecialchars(substr($clientId, 0, 10) . '...'); ?></p>
+            <p>Redirect URI: <?php echo htmlspecialchars('https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php'); ?></p>
+            <p>Auth URL: <?php echo htmlspecialchars($authUrl); ?></p>
+        </div>
     </div>
 </body>
 </html>
