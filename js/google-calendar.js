@@ -3,7 +3,7 @@
  */
 
 // Debug mode - set to true to show detailed debug information
-const DEBUG_MODE = true;
+const DEBUG_MODE = false;
 
 // Google API credentials
 // const GOOGLE_API_KEY = 'AIzaSyDFoNqB7BIuoZrUQDRVhnpVLjXsUgT-6Ow'; // Replace with your API key - Not used with server-side OAuth
@@ -20,9 +20,9 @@ const SCOPES = "https://www.googleapis.com/auth/calendar.events";
 
 // Default service durations in minutes
 const SERVICE_DURATION = {
-  'dentures': 45,
-  'repairs': 30,
-  'mouthguards': 30
+  'dentures': 60,
+  'repairs': 60,
+  'mouthguards': 60
 };
 
 // Store selected service
@@ -317,6 +317,12 @@ function showFallbackCalendar() {
       const date = new Date(dateString);
       const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
       
+      // Check for weekends first
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        // No appointments on weekends
+        return Promise.resolve([]);
+      }
+      
       // Define business hours
       let startHour, endHour;
       
@@ -326,15 +332,18 @@ function showFallbackCalendar() {
         endHour = 18;
       } else {
         // Other days or services: 10am-4pm
+        // This covers:
+        // - Dentures (Mon-Fri): 10am-4pm
+        // - Repairs (Mon-Fri): 10am-4pm (same as dentures)
+        // - Mouthguards (Thu-Fri): 10am-4pm
         startHour = 10;
         endHour = 16;
       }
       
-      // Generate all possible slots every 30 minutes
+      // Generate all possible slots every hour (60 minutes)
       const allSlots = [];
       for (let hour = startHour; hour < endHour; hour++) {
         allSlots.push(`${String(hour).padStart(2, '0')}:00`);
-        allSlots.push(`${String(hour).padStart(2, '0')}:30`);
       }
       
       // Generate mock availability - show most slots as available
@@ -1061,21 +1070,30 @@ function generateTimeSlots(dateString) {
   // Define business hours
   let startHour, endHour;
   
+  // Check for weekends first
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    // No appointments on weekends
+    return Promise.resolve([]);
+  }
+  
   if (selectedService === 'mouthguards' && (dayOfWeek >= 1 && dayOfWeek <= 3)) {
     // Mon-Wed for mouthguards: 10am-6pm
     startHour = 10;
     endHour = 18;
   } else {
     // Other days or services: 10am-4pm
+    // This covers:
+    // - Dentures (Mon-Fri): 10am-4pm
+    // - Repairs (Mon-Fri): 10am-4pm (same as dentures)
+    // - Mouthguards (Thu-Fri): 10am-4pm
     startHour = 10;
     endHour = 16;
   }
   
-  // Generate all possible slots every 30 minutes
+  // Generate all possible slots every hour (60 minutes)
   const allSlots = [];
   for (let hour = startHour; hour < endHour; hour++) {
     allSlots.push(`${String(hour).padStart(2, '0')}:00`);
-    allSlots.push(`${String(hour).padStart(2, '0')}:30`);
   }
   
   debugLog('Generated all possible time slots:', allSlots);
@@ -1511,8 +1529,8 @@ function addDebugDisplay() {
       }
     };
     
-    // Show the debug display
-    debugDiv.style.display = 'block';
+    // Debug display is hidden by default when DEBUG_MODE is false
+    debugDiv.style.display = 'none';
   }
 }
 

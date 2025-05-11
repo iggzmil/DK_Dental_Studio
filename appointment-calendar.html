@@ -248,24 +248,24 @@
         </div>
         <div class="row service-selection">
           <div class="col-md-4">
-            <div class="service-card" data-service="dentures" onclick="selectService(this, 'dentures')">
+            <div class="service-card selected" data-service="dentures" onclick="selectService(this, 'dentures')">
               <h5><i class="flaticon-dental-checkup text-primary"></i> Dentures Consultation</h5>
               <p>Initial consultation for full or partial dentures</p>
-              <p class="mt-2"><strong>Duration:</strong> 45 minutes</p>
+              <p class="mt-2"><strong>Duration:</strong> 1 hour</p>
             </div>
           </div>
           <div class="col-md-4">
             <div class="service-card" data-service="repairs" onclick="selectService(this, 'repairs')">
               <h5><i class="flaticon-dental-care text-primary"></i> Repairs & Maintenance</h5>
               <p>Consultation for denture repairs or maintenance</p>
-              <p class="mt-2"><strong>Duration:</strong> 30 minutes</p>
+              <p class="mt-2"><strong>Duration:</strong> 1 hour</p>
             </div>
           </div>
           <div class="col-md-4">
             <div class="service-card" data-service="mouthguards" onclick="selectService(this, 'mouthguards')">
               <h5><i class="flaticon-dental-insurance text-primary"></i> Mouthguards</h5>
               <p>Consultation for custom mouthguard fitting</p>
-              <p class="mt-2"><strong>Duration:</strong> 30 minutes</p>
+              <p class="mt-2"><strong>Duration:</strong> 1 hour</p>
             </div>
           </div>
         </div>
@@ -288,12 +288,14 @@
 
         <div class="row">
           <div class="col-12">
+            <div class="appointment-type-indicator mb-3">
+              <h4 class="text-center" id="appointment-type-text">Booking: Dentures Consultation</h4>
+            </div>
             <div class="calendar-container" id="appointment-calendar">
               <!-- Calendar will load here -->
               <div class="calendar-loading">
                 <div class="spinner"></div>
                 <p>Loading appointment calendar...</p>
-                <p>Please select a service to see available times</p>
               </div>
             </div>
           </div>
@@ -470,6 +472,14 @@
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('dev')) {
           document.getElementById('admin-info').style.display = 'block';
         }
+
+        // Automatically select dentures service and load calendar when page loads
+        const denturesCard = document.querySelector('.service-card[data-service="dentures"]');
+        if (denturesCard) {
+          selectService(denturesCard, 'dentures');
+          // Update appointment type text
+          updateAppointmentTypeText('dentures');
+        }
       });
 
       // Service selection function
@@ -481,6 +491,9 @@
         
         // Add selected class to clicked card
         element.classList.add('selected');
+        
+        // Update appointment type text
+        updateAppointmentTypeText(service);
         
         // Update calendar with selected service
         if (typeof loadCalendarForService === 'function') {
@@ -525,6 +538,20 @@
             }
           }
         }, 3000);
+      }
+
+      // Function to update the appointment type text
+      function updateAppointmentTypeText(service) {
+        const appointmentTypeText = document.getElementById('appointment-type-text');
+        if (appointmentTypeText) {
+          let serviceName = 'Dentures Consultation';
+          if (service === 'repairs') {
+            serviceName = 'Repairs & Maintenance';
+          } else if (service === 'mouthguards') {
+            serviceName = 'Mouthguards';
+          }
+          appointmentTypeText.textContent = 'Booking: ' + serviceName;
+        }
       }
     </script>
   </body>
