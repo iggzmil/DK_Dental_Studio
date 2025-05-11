@@ -9,6 +9,10 @@
 // Start session for authentication
 session_start();
 
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Ensure only authenticated users can access this page
 if (!isset($_SESSION['authenticated'])) {
     header('Location: owner-auth.php');
@@ -30,9 +34,18 @@ if (!interface_exists('Google\Auth\GetUniverseDomainInterface')) {
 try {
     // Create Google client
     $client = new Google\Client();
-    $client->setClientId('593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com');
-    $client->setClientSecret('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');
-    $client->setRedirectUri('https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php');
+    
+    // HARDCODED CLIENT CREDENTIALS
+    $clientId = '593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com';
+    $clientSecret = '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';
+    
+    // Set client credentials explicitly
+    $client->setClientId($clientId);
+    $client->setClientSecret($clientSecret);
+    
+    // Set redirect URI - make sure this is the correct path on your server
+    $redirectUri = 'https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php';
+    $client->setRedirectUri($redirectUri);
 
     // Define token storage location
     $secureDir = __DIR__ . '/secure';
@@ -63,6 +76,8 @@ try {
         } catch (Exception $e) {
             $success = false;
             $message = "Error during authorization: " . $e->getMessage();
+            // Add debug output
+            echo "<!-- Error details: " . $e->getTraceAsString() . " -->";
         }
     } else {
         $success = false;
@@ -71,6 +86,8 @@ try {
 } catch (Exception $e) {
     $success = false;
     $message = "Error initializing Google Client: " . $e->getMessage();
+    // Add debug output
+    echo "<!-- Error details: " . $e->getTraceAsString() . " -->";
 }
 ?>
 <!DOCTYPE html>

@@ -404,6 +404,12 @@ class Client
      */
     public function createAuthUrl($scope = null, array $queryParams = [])
     {
+        // Debug information
+        error_log("Creating auth URL...");
+        error_log("Client ID: " . ($this->config['client_id'] ?? 'NOT SET'));
+        error_log("Client Secret: " . (empty($this->config['client_secret']) ? 'NOT SET' : 'IS SET'));
+        error_log("Redirect URI: " . ($this->config['redirect_uri'] ?? 'NOT SET'));
+        
         if (empty($scope)) {
             $scope = $this->prepareScopes();
         }

@@ -25,12 +25,35 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use GuzzleHttp\Psr7\Request;
 
 /**
- * This class implements the RESTful transport of apiServiceRequest()'s
+ * This class implements the RESTful transport of apiServiceRequest().
  */
 class REST
 {
+    /**
+     * Executes a Psr\Http\Message\RequestInterface and returns the response
+     * 
+     * This is a simplified version for the minimal OAuth implementation.
+     *
+     * @param ClientInterface $client
+     * @param RequestInterface $request
+     * @param string $expectedClass
+     * @param array $config
+     * @return mixed|null expected class or raw response
+     */
+    public static function execute(
+        ClientInterface $client,
+        RequestInterface $request,
+        $expectedClass = null,
+        $config = array()
+    ) {
+        $response = $client->send($request);
+        
+        return json_decode((string) $response->getBody(), true);
+    }
+
     /**
      * Executes a Psr\Http\Message\RequestInterface and (if applicable) automatically retries
      * when errors occur.
@@ -45,7 +68,7 @@ class REST
      * @throws \Google\Service\Exception on server side error (ie: not authenticated,
      *  invalid or malformed post body, invalid url)
      */
-    public static function execute(
+    public static function executeFull(
         ClientInterface $client,
         RequestInterface $request,
         $expectedClass = null,

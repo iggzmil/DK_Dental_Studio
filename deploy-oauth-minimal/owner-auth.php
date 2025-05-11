@@ -9,6 +9,10 @@
 // Start session for authentication
 session_start();
 
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Simple password protection (use a more robust method in production)
 if (!isset($_SESSION['authenticated'])) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
@@ -41,9 +45,23 @@ if (!interface_exists('Google\Auth\GetUniverseDomainInterface')) {
 try {
     // Create Google client
     $client = new Google\Client();
-    $client->setClientId('593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com');
-    $client->setClientSecret('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');
-    $client->setRedirectUri('https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php');
+    
+    // HARDCODED CLIENT CREDENTIALS
+    $clientId = '593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com';
+    $clientSecret = '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';
+    
+    // Debug output - verify credentials are being set
+    echo "<!-- Client ID: " . $clientId . " -->\n";
+    
+    // Set client credentials
+    $client->setClientId($clientId);
+    $client->setClientSecret($clientSecret);
+    
+    // Set redirect URI - make sure this is the correct path on your server
+    $redirectUri = 'https://' . $_SERVER['HTTP_HOST'] . '/deploy-oauth-minimal/owner-callback.php';
+    $client->setRedirectUri($redirectUri);
+    
+    // OAuth flow settings
     $client->setAccessType('offline');
     $client->setApprovalPrompt('force'); // Force to get refresh token
     $client->setIncludeGrantedScopes(true); // Enable incremental authorization
@@ -51,9 +69,12 @@ try {
 
     // Generate authorization URL
     $authUrl = $client->createAuthUrl();
+    
 } catch (Exception $e) {
-    // Display error message
-    echo "Error: " . $e->getMessage();
+    // Display detailed error message for debugging
+    echo "<h1>Error Details:</h1>";
+    echo "<p><strong>Error Message:</strong> " . $e->getMessage() . "</p>";
+    echo "<p><strong>Error Trace:</strong></p>";
     echo "<pre>" . $e->getTraceAsString() . "</pre>";
     exit;
 }
@@ -78,6 +99,9 @@ try {
         <p>Click the button below to start the authorization process:</p>
         <p><a href="<?php echo $authUrl; ?>" class="btn">Authorize Google Access</a></p>
         <p>After clicking, you'll be redirected to Google's sign-in page. Sign in with the Google account that manages your business profile.</p>
+        
+        <!-- Debug info (hidden in HTML comment) -->
+        <!-- Redirect URI: <?php echo $redirectUri; ?> -->
     </div>
 </body>
 </html>
