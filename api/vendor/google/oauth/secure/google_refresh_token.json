@@ -1,0 +1,7 @@
+{
+  "access_token": "ya29.sample_access_token_for_testing",
+  "expires_in": 3600,
+  "refresh_token": "1//sample_refresh_token_for_testing",
+  "scope": "https://www.googleapis.com/auth/calendar.events",
+  "token_type": "Bearer"
+} 
