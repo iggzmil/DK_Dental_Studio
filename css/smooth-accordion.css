@@ -1,0 +1,100 @@
+/**
+ * Smooth Accordion Styles
+ *
+ * CSS styles for enhancing accordion animations
+ */
+
+/* Base accordion styling */
+.accordion .card {
+  overflow: hidden;
+  margin-bottom: 10px;
+  border: 1px solid rgba(0,0,0,.125);
+  border-radius: 0.25rem;
+  transition: box-shadow 0.3s ease;
+}
+
+.accordion .card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.accordion .card-header {
+  cursor: pointer;
+  padding: 0;
+  background-color: #f8f9fa;
+  transition: background-color 0.3s ease;
+}
+
+.accordion .card-header:hover {
+  background-color: #e9ecef;
+}
+
+.accordion .btn-link {
+  width: 100%;
+  text-align: left;
+  padding: 15px 20px;
+  color: #212529;
+  text-decoration: none;
+  font-weight: 500;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.accordion .btn-link:hover,
+.accordion .btn-link:focus {
+  text-decoration: none;
+  box-shadow: none;
+  color: #0d6efd;
+}
+
+/* Indicator for active accordion item */
+.accordion .btn-link:not(.collapsed) {
+  font-weight: 600;
+  color: #0d6efd;
+  background-color: rgba(13, 110, 253, 0.05);
+}
+
+/* No indicator icon */
+
+/* Smooth animation for accordion content */
+.smooth-accordion-content {
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+  will-change: max-height;
+}
+
+.smooth-accordion-content:not(.show) {
+  display: block !important;
+  max-height: 0 !important;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  border-top: 0;
+  border-bottom-width: 0;
+}
+
+/* Card body animation */
+.accordion .card-body {
+  padding: 15px 20px;
+  transition: opacity 0.3s ease;
+}
+
+.smooth-accordion-content:not(.show) .card-body {
+  opacity: 0;
+}
+
+.smooth-accordion-content.show .card-body {
+  opacity: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+  .accordion .btn-link {
+    padding: 12px 15px;
+    font-size: 0.95rem;
+  }
+
+  .accordion .card-body {
+    padding: 12px 15px;
+  }
+}

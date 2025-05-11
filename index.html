@@ -30,37 +30,9 @@
     <link rel="stylesheet" href="css/footer-style.css" />
     <link rel="stylesheet" href="css/appointment-style.css" />
     <link rel="stylesheet" href="css/google-reviews.css" />
+    <link rel="stylesheet" href="css/smooth-accordion.css" />
 
     <style>
-      /* Custom accordion styling */
-      .accordion .card-header {
-        cursor: pointer;
-        transition: all 0.3s ease;
-      }
-
-      .accordion .btn-link {
-        color: #212529;
-        text-decoration: none;
-        font-weight: 500;
-      }
-
-      .accordion .btn-link:hover,
-      .accordion .btn-link:focus {
-        text-decoration: none;
-        box-shadow: none;
-      }
-
-      /* Indicator for active accordion item */
-      .accordion .btn-link:not(.collapsed) {
-        font-weight: 600;
-        color: #0d6efd;
-      }
-
-      .accordion .card {
-        margin-bottom: 10px;
-        border: 1px solid rgba(0,0,0,.125);
-        border-radius: 0.25rem;
-      }
 
       /* Mobile menu styling */
       @media (max-width: 991.98px) {
@@ -406,7 +378,6 @@
                 <div id="collapseOne" class="collapse show accordion-content" aria-labelledby="headingOne" data-bs-parent="#accordion">
                   <div class="card-body">
                     <p>No referral is needed just book yourself an appointment with DK Dental Studio.</p>
-
                   </div>
                 </div>
               </div>
@@ -674,10 +645,11 @@
 
     <!-- Template Scripts (Do not remove)-->
     <script src="js/custom.js"></script>
+    <script src="js/smooth-accordion.js"></script>
 
     <!-- Google Reviews Widget (Temporarily commented out) -->
     <!-- <script src="js/google-reviews.js"></script> -->
-    
+
     <!-- Temporary Mock Reviews Script (until PHP API issues are fixed) -->
     <script src="js/mock-reviews.js"></script>
 
@@ -690,33 +662,13 @@
           $(target).toggleClass('show');
         });
 
-        // Fix for Bootstrap 5 accordion
-        $('.accordion .btn-link').on('click', function(e) {
-          e.preventDefault();
-          var $this = $(this);
-          var $target = $($this.data('bs-target'));
+        // The accordion functionality is now handled by smooth-accordion.js
 
-          // Toggle the collapse
-          if ($target.hasClass('show')) {
-            $target.removeClass('show');
-            $this.addClass('collapsed').attr('aria-expanded', 'false');
-          } else {
-            // Close all other panels
-            $('.accordion .collapse.show').removeClass('show');
-            $('.accordion .btn-link').addClass('collapsed').attr('aria-expanded', 'false');
-
-            // Open this panel
-            $target.addClass('show');
-            $this.removeClass('collapsed').attr('aria-expanded', 'true');
-          }
-        });
-
-        // Open the first accordion by default
-        $('#collapseOne').addClass('show');
-        $('[data-bs-target="#collapseOne"]').removeClass('collapsed').attr('aria-expanded', 'true');
+        // Initialize the first accordion item as open
+        // This is now handled by the smooth-accordion.js script
 
         // Initialize Google Reviews Widget (Temporarily commented out)
-        /* 
+        /*
         const googleReviews = new GoogleReviewsWidget({
           containerSelector: '#google-reviews-carousel',
           apiEndpoint: '/script/reviews/reviews.php',

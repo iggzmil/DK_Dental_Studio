@@ -1,0 +1,40 @@
+name: Deploy Email System
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'script/email/**'
+      - 'contact-us.html'
+      - '.github/workflows/deploy-email-system.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+      
+    - name: Validate PHP files
+      run: |
+        for file in script/email/*.php; do
+          php -l $file
+        done
+      
+    - name: Create deployment package
+      run: |
+        mkdir -p deploy/script/email
+        cp script/email/*.php deploy/script/email/
+        cp script/email/*.js deploy/script/email/
+        cp script/email/README.md deploy/script/email/
+        cp contact-us.html deploy/
+        
+    - name: Upload deployment package
+      uses: actions/upload-artifact@v2
+      with:
+        name: email-system
+        path: deploy/
+        
+    # Note: Actual deployment to the web server would be configured here
+    # This is just a placeholder for the GitHub workflow
+    # The actual deployment would be handled manually or through a separate process
