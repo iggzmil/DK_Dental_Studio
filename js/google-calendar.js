@@ -1286,6 +1286,7 @@ function showBookingForm(dateString, timeString) {
     <p><strong>Service:</strong> ${getServiceName(selectedService)}</p>
     <p><strong>Date:</strong> ${formatDate(dateString)}</p>
     <p><strong>Time:</strong> ${formatTime(timeString)}</p>
+    <p><strong>Duration:</strong> ${SERVICE_DURATION[selectedService]} minutes</p>
     
     <form class="booking-form mt-4" onsubmit="event.preventDefault(); submitBookingForm();">
       <div class="form-group">
@@ -1311,6 +1312,15 @@ function showBookingForm(dateString, timeString) {
       <div class="form-group" style="grid-column: span 2;">
         <label for="booking-notes">Additional Notes</label>
         <textarea class="form-control" id="booking-notes" rows="3"></textarea>
+      </div>
+      
+      <div class="form-group" style="grid-column: span 2;">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="booking-consent" required>
+          <label class="form-check-label" for="booking-consent">
+            I confirm that I want to receive content from DK Dental Studio using any contact information I provide.
+          </label>
+        </div>
       </div>
       
       <div style="grid-column: span 2; text-align: center; margin-top: 20px;">
