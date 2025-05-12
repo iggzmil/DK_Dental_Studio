@@ -28,7 +28,7 @@ if (file_exists($vendorPath) && file_exists($tokenManagerPath)) {
 /**
  * Send an email using Gmail API
  *
- * @param string $to Email recipient
+ * @param string $to Email recipient(s) - can be a single email or multiple comma-separated emails
  * @param string $subject Email subject
  * @param string $message Email message body (HTML)
  * @param string $fromName Sender name
@@ -106,7 +106,7 @@ function createEmail($to, $subject, $message, $fromName, $attachments = []) {
     // Headers
     $headers = [
         'From' => "{$fromName} <{$fromEmail}>",
-        'To' => $to,
+        'To' => $to, // This can now contain multiple comma-separated emails
         'Subject' => $subject,
         'MIME-Version' => '1.0',
         'Content-Type' => "multipart/mixed; boundary=\"{$boundary}\""

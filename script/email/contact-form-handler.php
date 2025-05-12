@@ -258,15 +258,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Create email content
     $emailHtml = createEmailHtml($sanitizedData);
 
-    // Set recipient email (can be configured as needed)
-    $toEmail = 'info@dkdental.au'; // Default recipient
+    // Set recipient emails (can be configured as needed)
+    $toEmail = 'info@dkdental.au'; // Primary recipient
+    $ccEmail = 'iggzmil@gmail.com'; // Secondary recipient for testing purposes
 
     // Set email subject
     $emailSubject = 'New Contact Form Submission: ' . $sanitizedData['subject'];
 
-    // Send the email
+    // Send the email to both recipients
     $result = sendGmailEmail(
-        $toEmail,
+        $toEmail . ',' . $ccEmail, // Send to both emails
         $emailSubject,
         $emailHtml,
         'DK Dental Studio Contact Form'

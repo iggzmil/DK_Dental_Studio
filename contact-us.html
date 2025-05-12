@@ -168,41 +168,20 @@
       margin-bottom: 1rem;
     }
 
-    /* Autofill detection */
-    @keyframes onAutoFill {
-      from {}
-      to {}
-    }
-
-    @keyframes onAutoFillStart {
-      from {}
-      to {}
-    }
-
-    @keyframes autoFillStart {
-      from {}
-      to {}
-    }
-
-    input:-webkit-autofill {
-      animation-name: onAutoFillStart, onAutoFill;
-      animation-duration: 1ms;
-      animation-fill-mode: both;
-    }
-
-    /* Firefox and other browsers */
-    input:autofill {
-      animation-name: autoFillStart;
-      animation-duration: 1ms;
-    }
-
-    /* Additional styling for autofilled inputs */
+    /* Autofill styling - just make sure text is visible */
     input:-webkit-autofill,
     input:-webkit-autofill:hover,
     input:-webkit-autofill:focus,
     input:-webkit-autofill:active {
       -webkit-box-shadow: 0 0 0 30px white inset !important;
+      -webkit-text-fill-color: #000 !important;
       transition: background-color 5000s ease-in-out 0s;
+    }
+
+    /* Firefox autofill */
+    input:autofill {
+      background-color: white !important;
+      color: #000 !important;
     }
   </style>
 
@@ -346,39 +325,34 @@
             <div class="contact-form">
               <div class="section-title">
                 <h3 class="text-white">We'd love to hear from you</h3>
-                <p class="text-white">The price is something not necessarily defined as financial. It could be time, effort, sacrifice, money or perhaps, something else.</p>
+                <p class="text-white">Whether you have a question, need help with a service, or just want to say hello — we’re here and ready to help.</p>
               </div>
-              <form id="contact-form" novalidate>
+              <form id="contact-form" class="needs-validation" novalidate>
                 <div class="row">
                   <div class="form-group col-md-6">
                     <input type="text" class="form-control" id="first-name" name="first-name" placeholder="Name"
-                           required minlength="2" maxlength="50" pattern="^[A-Za-z\s\-']+$"
-                           title="Please enter a valid name (letters, spaces, hyphens and apostrophes only)">
-                    <div class="invalid-feedback">Please enter a valid name (2-50 characters, letters only)</div>
+                           required>
+                    <div class="invalid-feedback">Please enter your name</div>
                   </div>
                   <div class="form-group col-md-6">
                     <input type="email" class="form-control" id="email" name="email" placeholder="Email"
-                           required pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$"
-                           title="Please enter a valid email address">
+                           required>
                     <div class="invalid-feedback">Please enter a valid email address</div>
                   </div>
                   <div class="form-group col-md-6">
                     <input type="tel" class="form-control" id="phone" name="phone" placeholder="Phone Number"
-                           required
-                           title="Please enter a valid Australian phone number (e.g., 0412 345 678 or +61412345678)">
-                    <div class="invalid-feedback">Please enter a valid Australian phone number</div>
+                           required>
+                    <div class="invalid-feedback">Please enter a valid phone number</div>
                   </div>
                   <div class="form-group col-md-6">
                     <input type="text" class="form-control" id="subject" name="subject" placeholder="Subject"
-                           required minlength="3" maxlength="100"
-                           title="Please enter a subject between 3-100 characters">
-                    <div class="invalid-feedback">Please enter a subject (3-100 characters)</div>
+                           required>
+                    <div class="invalid-feedback">Please enter a subject</div>
                   </div>
                   <div class="form-group col-lg-12">
                     <textarea class="form-control" id="message" name="message" rows="5" placeholder="Message"
-                              required minlength="10" maxlength="1000"
-                              title="Please enter a message between 10-1000 characters"></textarea>
-                    <div class="invalid-feedback">Please enter a message (minimum 10 characters)</div>
+                              required></textarea>
+                    <div class="invalid-feedback">Please enter your message</div>
                   </div>
 
                   <!-- Honeypot field to catch bots - hidden from humans -->
@@ -569,35 +543,8 @@
     <!-- Template Scripts (Do not remove)-->
     <script src="js/custom.js"></script>
 
-    <!-- Contact Form Script -->
-    <script src="script/email/contact-form.js"></script>
-
-    <!-- Autofill Detection Script -->
-    <script>
-      // This script helps detect browser autofill
-      document.addEventListener('DOMContentLoaded', function() {
-        // Function to check for autofilled fields
-        function detectAutofill() {
-          const inputs = document.querySelectorAll('input, textarea');
-          inputs.forEach(function(input) {
-            // Check for computed background color (Chrome's autofill changes this)
-            const style = window.getComputedStyle(input);
-            if (style.backgroundColor === 'rgb(232, 240, 254)' || // Chrome
-                style.backgroundColor === 'rgb(250, 255, 189)' || // Firefox
-                input.matches(':-webkit-autofill')) {
-              // Trigger validation on autofilled fields
-              const event = new Event('change', { bubbles: true });
-              input.dispatchEvent(event);
-            }
-          });
-        }
-
-        // Run detection after a short delay
-        setTimeout(detectAutofill, 500);
-        setTimeout(detectAutofill, 1000);
-        setTimeout(detectAutofill, 2000);
-      });
-    </script>
+    <!-- Clean Contact Form Script -->
+    <script src="script/email/clean-form.js"></script>
 
     <!-- Initialize Bootstrap 5 components -->
     <script>

@@ -1,8 +1,9 @@
 /**
- * Contact Form Handler for DK Dental Studio
+ * Simple Contact Form Handler for DK Dental Studio
  *
  * This script handles the contact form submission via AJAX
  * and displays success/error messages to the user.
+ * It uses a simplified approach to form validation that works better with autofill.
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -11,25 +12,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // If form exists, set up submission handler
     if (contactForm) {
-        // Simple function to check for autofilled fields
-        const checkAutofill = function() {
-            const formInputs = contactForm.querySelectorAll('input, textarea');
-            formInputs.forEach(input => {
-                // Just mark fields with values as valid without complex validation
-                if (input.value !== '') {
-                    input.classList.add('is-valid');
-                    input.classList.remove('is-invalid');
-                }
-            });
-        };
-
-        // Check immediately
-        checkAutofill();
-
-        // Check again after short delays
-        setTimeout(checkAutofill, 100);
-        setTimeout(checkAutofill, 500);
-        setTimeout(checkAutofill, 1000);
         // Fetch CSRF token from server
         fetch('/script/email/session-handler.php')
             .then(response => response.json())
@@ -45,90 +27,72 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Failed to get CSRF token:', error);
             });
 
-        // Add input validation event listeners
+        // Simple function to validate a field
+        function validateField(field) {
+            // Skip hidden fields
+            if (field.type === 'hidden') {
+                return true;
+            }
+            
+            // Check if field is valid using HTML5 validation API
+            const isValid = field.checkValidity();
+            
+            // Update field styling based on validity
+            if (isValid) {
+                field.classList.remove('is-invalid');
+                if (field.value.trim() !== '') {
+                    field.classList.add('is-valid');
+                }
+            } else {
+                field.classList.add('is-invalid');
+                field.classList.remove('is-valid');
+            }
+            
+            return isValid;
+        }
+        
+        // Add simple event listeners for validation
         const formInputs = contactForm.querySelectorAll('input, textarea');
         formInputs.forEach(input => {
+            // Validate on blur (when user leaves field)
             input.addEventListener('blur', function() {
                 validateField(this);
             });
-
+            
+            // Clear error when user starts typing
             input.addEventListener('input', function() {
-                // Remove error when user starts typing again
                 if (this.classList.contains('is-invalid')) {
                     this.classList.remove('is-invalid');
                 }
-                // Validate as user types
-                validateField(this);
             });
-
-            // Handle autofill
-            input.addEventListener('animationstart', function(e) {
-                // The animation name that is triggered by Chrome's autofill
-                if (e.animationName === 'onAutoFillStart' ||
-                    e.animationName === 'onAutoFill' ||
-                    e.animationName === 'autoFillStart') {
-                    validateField(this);
-                }
-            });
-
-            // Additional events that might be triggered by autofill
+            
+            // Validate on change (catches most autofill events)
             input.addEventListener('change', function() {
                 validateField(this);
             });
-
-            // For Safari and Firefox
-            input.addEventListener('autocomplete', function() {
-                validateField(this);
-            });
         });
-
-        // Set up a MutationObserver to detect attribute changes (for autofill)
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.type === 'attributes' &&
-                    (mutation.attributeName === 'value' ||
-                     mutation.attributeName === 'style' ||
-                     mutation.attributeName === 'class')) {
-                    validateField(mutation.target);
+        
+        // Check for autofilled fields after a delay
+        setTimeout(function() {
+            formInputs.forEach(input => {
+                if (input.value !== '') {
+                    validateField(input);
                 }
             });
-        });
-
-        // Observe all form inputs
-        formInputs.forEach(input => {
-            observer.observe(input, {
-                attributes: true,
-                attributeFilter: ['value', 'style', 'class']
-            });
-        });
+        }, 500);
 
         // Set up form submission
         contactForm.addEventListener('submit', function(event) {
             event.preventDefault();
-
-            // Simple validation approach
+            
+            // Validate all fields before submission
             let isValid = true;
-            const formInputs = contactForm.querySelectorAll('input, textarea');
-
-            // Validate all fields
             formInputs.forEach(input => {
-                // Skip hidden fields
-                if (input.type === 'hidden') {
-                    return;
-                }
-
-                // Check if field is valid using HTML5 validation API
-                if (!input.checkValidity()) {
-                    input.classList.add('is-invalid');
+                if (!validateField(input)) {
                     isValid = false;
-                } else {
-                    input.classList.remove('is-invalid');
-                    if (input.value.trim() !== '') {
-                        input.classList.add('is-valid');
-                    }
                 }
             });
-
+            
             if (!isValid) {
                 // Focus the first invalid field
                 const firstInvalid = contactForm.querySelector('.is-invalid');
@@ -137,21 +101,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 return;
             }
-
+            
             // Show loading state
             const submitButton = contactForm.querySelector('button[type="submit"]');
             const originalButtonText = submitButton.innerHTML;
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-
+            
             // Clear previous error messages
             clearFormErrors();
-
+            
             // Get form data
             const formData = new FormData(contactForm);
-
+            
             // Send AJAX request
-            // Use the contact form handler with Gmail API
             fetch('/script/email/contact-form-handler.php', {
                 method: 'POST',
                 body: formData
@@ -166,17 +129,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Reset button state
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalButtonText;
-
+                
                 if (data.success) {
                     // Show success message
                     showFormMessage('success', data.message);
-
+                    
                     // Reset form
                     contactForm.reset();
                 } else {
                     // Show error message
                     showFormMessage('error', data.message);
-
+                    
                     // Show field-specific errors if available
                     if (data.errors && Array.isArray(data.errors)) {
                         showFieldErrors(data.errors);
@@ -187,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Reset button state
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalButtonText;
-
+                
                 // Show error message
                 showFormMessage('error', 'The server encountered an error processing your request. Please try again later or contact us directly.');
                 console.error('Form submission error:', error);
@@ -195,8 +158,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
-
 
 /**
  * Show a form message (success or error)
@@ -245,14 +206,6 @@ function showFieldErrors(errors) {
             if (field) {
                 // Add error class to field
                 field.classList.add('is-invalid');
-
-                // Add error message
-                const feedbackDiv = document.createElement('div');
-                feedbackDiv.className = 'invalid-feedback';
-                feedbackDiv.innerHTML = error;
-
-                // Insert after the field
-                field.parentNode.appendChild(feedbackDiv);
             }
         }
     });
@@ -263,7 +216,7 @@ function showFieldErrors(errors) {
  */
 function getFieldNameFromError(error) {
     const lowerError = error.toLowerCase();
-
+    
     // Map of error text to field IDs
     const fieldMap = {
         'name': 'first-name',
@@ -272,49 +225,15 @@ function getFieldNameFromError(error) {
         'subject': 'subject',
         'message': 'message'
     };
-
+    
     // Check if error message contains any field names
     for (const [text, fieldId] of Object.entries(fieldMap)) {
         if (lowerError.includes(text)) {
             return fieldId;
         }
     }
-
+    
     return null;
-}
-
-/**
- * Validate a single form field
- * @param {HTMLElement} field - The field to validate
- * @returns {boolean} - Whether the field is valid
- */
-function validateField(field) {
-    // Skip validation for hidden fields
-    if (field.type === 'hidden') {
-        return true;
-    }
-
-    // Skip validation for empty fields (unless they're required)
-    if (field.value.trim() === '') {
-        if (field.required) {
-            return false;
-        }
-        return true;
-    }
-
-    // Use the browser's built-in validation
-    const isValid = field.checkValidity();
-
-    // Update field styling based on validity
-    if (isValid) {
-        field.classList.remove('is-invalid');
-        field.classList.add('is-valid');
-    } else {
-        field.classList.add('is-invalid');
-        field.classList.remove('is-valid');
-    }
-
-    return isValid;
 }
 
 /**
