@@ -195,6 +195,15 @@
       animation-name: autoFillStart;
       animation-duration: 1ms;
     }
+
+    /* Additional styling for autofilled inputs */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+      -webkit-box-shadow: 0 0 0 30px white inset !important;
+      transition: background-color 5000s ease-in-out 0s;
+    }
   </style>
 
 </head>
@@ -562,6 +571,33 @@
 
     <!-- Contact Form Script -->
     <script src="script/email/contact-form.js"></script>
+
+    <!-- Autofill Detection Script -->
+    <script>
+      // This script helps detect browser autofill
+      document.addEventListener('DOMContentLoaded', function() {
+        // Function to check for autofilled fields
+        function detectAutofill() {
+          const inputs = document.querySelectorAll('input, textarea');
+          inputs.forEach(function(input) {
+            // Check for computed background color (Chrome's autofill changes this)
+            const style = window.getComputedStyle(input);
+            if (style.backgroundColor === 'rgb(232, 240, 254)' || // Chrome
+                style.backgroundColor === 'rgb(250, 255, 189)' || // Firefox
+                input.matches(':-webkit-autofill')) {
+              // Trigger validation on autofilled fields
+              const event = new Event('change', { bubbles: true });
+              input.dispatchEvent(event);
+            }
+          });
+        }
+
+        // Run detection after a short delay
+        setTimeout(detectAutofill, 500);
+        setTimeout(detectAutofill, 1000);
+        setTimeout(detectAutofill, 2000);
+      });
+    </script>
 
     <!-- Initialize Bootstrap 5 components -->
     <script>

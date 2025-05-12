@@ -11,15 +11,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // If form exists, set up submission handler
     if (contactForm) {
-        // Check for autofilled fields immediately after DOM is loaded
-        const formInputs = contactForm.querySelectorAll('input, textarea');
-        formInputs.forEach(input => {
-            // Check if the field has a value (might be autofilled)
-            if (input.value !== '') {
-                // Mark as valid if it has content
-                input.classList.add('is-valid');
-            }
-        });
+        // Function to check for autofilled fields
+        const checkAutofill = function() {
+            const formInputs = contactForm.querySelectorAll('input, textarea');
+            formInputs.forEach(input => {
+                // Check if the field has a value (might be autofilled)
+                if (input.value !== '') {
+                    // Validate the field
+                    validateField(input);
+                }
+            });
+        };
+
+        // Check immediately
+        checkAutofill();
+
+        // Check again after a short delay (browsers often fill forms after DOMContentLoaded)
+        setTimeout(checkAutofill, 100);
+        setTimeout(checkAutofill, 500);
+        setTimeout(checkAutofill, 1000);
         // Fetch CSRF token from server
         fetch('/script/email/session-handler.php')
             .then(response => response.json())
@@ -36,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
         // Add input validation event listeners
-        // Using the formInputs variable already declared above
+        const formInputs = contactForm.querySelectorAll('input, textarea');
         formInputs.forEach(input => {
             input.addEventListener('blur', function() {
                 validateField(this);
@@ -47,6 +57,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (this.classList.contains('is-invalid')) {
                     this.classList.remove('is-invalid');
                 }
+                // Validate as user types
+                validateField(this);
             });
 
             // Handle autofill
@@ -58,35 +70,79 @@ document.addEventListener('DOMContentLoaded', function() {
                     validateField(this);
                 }
             });
+
+            // Additional events that might be triggered by autofill
+            input.addEventListener('change', function() {
+                validateField(this);
+            });
+
+            // For Safari and Firefox
+            input.addEventListener('autocomplete', function() {
+                validateField(this);
+            });
         });
 
-        // Add special handling for autofill detection
-        // This will run once when the page loads and after a short delay
-        // to catch autofilled fields
-        setTimeout(() => {
-            formInputs.forEach(input => {
-                // Check if the field has a value (might be autofilled)
-                if (input.value !== '') {
-                    validateField(input);
+        // Set up a MutationObserver to detect attribute changes (for autofill)
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' &&
+                    (mutation.attributeName === 'value' ||
+                     mutation.attributeName === 'style' ||
+                     mutation.attributeName === 'class')) {
+                    validateField(mutation.target);
                 }
             });
-        }, 500);
+        });
+
+        // Observe all form inputs
+        formInputs.forEach(input => {
+            observer.observe(input, {
+                attributes: true,
+                attributeFilter: ['value', 'style', 'class']
+            });
+        });
 
         // Set up form submission
         contactForm.addEventListener('submit', function(event) {
             event.preventDefault();
 
-            // Validate all fields before submission
+            // Force validation on all fields before submission
             let isValid = true;
+            const formInputs = contactForm.querySelectorAll('input, textarea');
+
+            // First pass: mark all empty required fields as invalid
             formInputs.forEach(input => {
-                if (!validateField(input)) {
+                if (input.required && input.value.trim() === '') {
+                    input.classList.add('is-invalid');
+
+                    // Add error message
+                    let feedbackElement = input.nextElementSibling;
+                    if (!feedbackElement || !feedbackElement.classList.contains('invalid-feedback')) {
+                        feedbackElement = document.createElement('div');
+                        feedbackElement.className = 'invalid-feedback';
+                        input.parentNode.appendChild(feedbackElement);
+                    }
+
+                    feedbackElement.textContent = 'This field is required';
                     isValid = false;
+                }
+            });
+
+            // Second pass: validate all non-empty fields
+            formInputs.forEach(input => {
+                if (input.value.trim() !== '') {
+                    if (!validateField(input)) {
+                        isValid = false;
+                    }
                 }
             });
 
             if (!isValid) {
                 // Focus the first invalid field
-                contactForm.querySelector('.is-invalid').focus();
+                const firstInvalid = contactForm.querySelector('.is-invalid');
+                if (firstInvalid) {
+                    firstInvalid.focus();
+                }
                 return;
             }
 
@@ -246,11 +302,71 @@ function validateField(field) {
         return true;
     }
 
+    // Skip validation for empty fields (unless they're required)
+    // This is important for autofill which might be in progress
+    if (field.value.trim() === '') {
+        if (field.required) {
+            // Don't show errors for required fields until form submission
+            // This prevents errors from showing during autofill
+            return false;
+        }
+        return true;
+    }
+
     let isValid = true;
     let errorMessage = '';
 
-    // Check validity using the HTML5 Validation API
-    if (!field.checkValidity()) {
+    // Special handling for email field
+    if (field.type === 'email' && field.value.trim() !== '') {
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(field.value.trim())) {
+            isValid = false;
+            errorMessage = 'Please enter a valid email address';
+        }
+    }
+
+    // Special handling for phone field
+    else if (field.id === 'phone' && field.value.trim() !== '') {
+        // Australian phone number validation
+        const phoneValue = field.value.replace(/[\s-]+/g, '');
+        // Simplified regex for Australian mobile or landline numbers
+        const phoneRegex = /^(\+?61|0)[2478]\d{8}$/;
+
+        if (!phoneRegex.test(phoneValue)) {
+            isValid = false;
+            errorMessage = 'Please enter a valid Australian phone number';
+        }
+    }
+
+    // Special handling for name field
+    else if (field.id === 'first-name' && field.value.trim() !== '') {
+        if (field.value.trim().length < 2) {
+            isValid = false;
+            errorMessage = 'Name must be at least 2 characters';
+        } else if (!/^[A-Za-z\s\-']+$/.test(field.value.trim())) {
+            isValid = false;
+            errorMessage = 'Name can only contain letters, spaces, hyphens, and apostrophes';
+        }
+    }
+
+    // Special handling for subject field
+    else if (field.id === 'subject' && field.value.trim() !== '') {
+        if (field.value.trim().length < 3) {
+            isValid = false;
+            errorMessage = 'Subject must be at least 3 characters';
+        }
+    }
+
+    // Special handling for message field
+    else if (field.id === 'message' && field.value.trim() !== '') {
+        if (field.value.trim().length < 10) {
+            isValid = false;
+            errorMessage = 'Message must be at least 10 characters';
+        }
+    }
+
+    // If no custom validation was applied, use HTML5 validation
+    else if (!field.checkValidity()) {
         isValid = false;
 
         // Get specific error message
@@ -270,24 +386,6 @@ function validateField(field) {
             errorMessage = field.title || 'Please match the requested format';
         } else {
             errorMessage = 'Please enter a valid value';
-        }
-    }
-
-    // Skip validation for empty fields (unless they're required)
-    if (field.value.trim() === '' && !field.required) {
-        return true;
-    }
-
-    // Additional custom validation
-    if (isValid && field.id === 'phone' && field.value.trim() !== '') {
-        // Australian phone number validation
-        const phoneValue = field.value.replace(/[\s-]+/g, '');
-        // Simplified regex for Australian mobile or landline numbers
-        const phoneRegex = /^(\+?61|0)[2478]\d{8}$/;
-
-        if (!phoneRegex.test(phoneValue)) {
-            isValid = false;
-            errorMessage = 'Please enter a valid Australian phone number';
         }
     }
 
