@@ -103,8 +103,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData(contactForm);
 
             // Send AJAX request
-            // Use the simple handler for testing
-            fetch('/script/email/simple-handler.php', {
+            // Use the contact form handler with Gmail API
+            fetch('/script/email/contact-form-handler.php', {
                 method: 'POST',
                 body: formData
             })
