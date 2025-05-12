@@ -26,8 +26,8 @@ function sendGmailEmail($to, $subject, $message, $fromName = 'DK Dental Studio',
     ];
 
     try {
-        // TEMPORARY: Always use fallback mode for testing
-        $useGmailApi = false;
+        // Use Gmail API for sending emails
+        $useGmailApi = true;
 
         if ($useGmailApi) {
             // Client credentials (same as in OAuth flow)

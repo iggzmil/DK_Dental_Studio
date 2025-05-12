@@ -19,16 +19,31 @@ if (!file_exists($minimalApiDir)) {
 
 // Define the missing GetUniverseDomainInterface class to prevent errors
 if (!class_exists('Google\\Auth\\GetUniverseDomainInterface')) {
+    // Create the Google\Auth namespace if it doesn't exist
+    if (!class_exists('Google\\Auth\\OAuth2')) {
+        // Create the namespace structure
+        if (!class_exists('Google\\Auth')) {
+            if (!class_exists('Google')) {
+                class Google {}
+            }
+
+            // Create the Auth namespace
+            class_alias('Google', 'Google\\Auth');
+        }
+    }
+
+    // Define the interface in the global namespace first
     class Google_Auth_GetUniverseDomainInterface {
         public function getUniverseDomain() {
             return 'googleapis.com';
         }
     }
 
-    // Create an alias in the Google\Auth namespace
-    if (!class_exists('Google\\Auth\\GetUniverseDomainInterface')) {
-        class_alias('Google_Auth_GetUniverseDomainInterface', 'Google\\Auth\\GetUniverseDomainInterface');
-    }
+    // Create the interface in the Google\Auth namespace
+    eval('namespace Google\\Auth; interface GetUniverseDomainInterface { public function getUniverseDomain(); }');
+
+    // Also define a concrete implementation that can be used
+    eval('namespace Google\\Auth; class GetUniverseDomain implements GetUniverseDomainInterface { public function getUniverseDomain() { return "googleapis.com"; } }');
 }
 
 // Check if we should use existing files or define classes inline

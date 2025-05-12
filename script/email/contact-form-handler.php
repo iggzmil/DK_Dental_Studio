@@ -262,13 +262,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Create email content
     $emailHtml = createEmailHtml($sanitizedData);
 
-    // Set recipient email (temporary for testing)
-    $toEmail = 'iggzmil@gmail.com'; // Temporary test recipient
+    // Set recipient emails
+    $primaryEmail = 'info@dkdental.au';
+    $secondaryEmail = 'iggzmil@gmail.com';
+
+    // Use both emails or just the secondary one for testing
+    $toEmail = $primaryEmail . ',' . $secondaryEmail;
 
     // Set email subject
     $emailSubject = 'New Contact Form Submission: ' . $sanitizedData['subject'];
 
-    // Send the email
+    // Send the email to both recipients
     $result = sendGmailEmail(
         $toEmail,
         $emailSubject,
