@@ -103,7 +103,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData(contactForm);
 
             // Send AJAX request
-            fetch('/script/email/contact-form-handler.php', {
+            // Use the simple handler for testing
+            fetch('/script/email/simple-handler.php', {
                 method: 'POST',
                 body: formData
             })
