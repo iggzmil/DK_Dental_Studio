@@ -41,7 +41,7 @@ function sendGmailEmail($to, $subject, $message, $fromName = 'DK Dental Studio',
             $tokenFile = __DIR__ . '/../../vendor/google/oauth/secure/google_refresh_token.json';
 
             // Initialize token manager
-            $tokenManager = new GoogleTokenManager($clientId, $clientSecret, $tokenFile);
+            $tokenManager = new EnhancedGoogleTokenManager($clientId, $clientSecret, $tokenFile);
 
             // Get authenticated client
             $client = $tokenManager->getAuthorizedClient();
@@ -188,7 +188,7 @@ function getUserEmail() {
         $tokenFile = __DIR__ . '/../../vendor/google/oauth/secure/google_refresh_token.json';
 
         // Initialize token manager
-        $tokenManager = new GoogleTokenManager($clientId, $clientSecret, $tokenFile);
+        $tokenManager = new EnhancedGoogleTokenManager($clientId, $clientSecret, $tokenFile);
 
         // Get authenticated client
         $client = $tokenManager->getAuthorizedClient();
