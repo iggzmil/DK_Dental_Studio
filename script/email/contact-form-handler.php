@@ -244,9 +244,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $errors = validateContactForm($sanitizedData);
 
     if (!empty($errors)) {
+        // Format the error message to be more user-friendly
+        $errorMessage = 'Please correct the following errors:';
+
+        // Return the detailed error information
         echo json_encode([
             'success' => false,
-            'message' => 'Please correct the following errors:',
+            'message' => $errorMessage,
             'errors' => $errors
         ]);
         exit;
