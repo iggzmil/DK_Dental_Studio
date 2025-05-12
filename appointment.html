@@ -476,24 +476,38 @@
           document.getElementById('admin-info').style.display = 'block';
         }
 
-        // Wait for Google API to be properly loaded before auto-selecting service
-        // This ensures the calendar isn't triggered before Google API is ready
-        function checkGapiLoaded() {
-          if (typeof gapi !== 'undefined' && gapi) {
-            // API is loaded, proceed with auto-selection
-            const denturesCard = document.querySelector('.service-card[data-service="dentures"]');
-            if (denturesCard) {
-              selectService(denturesCard, 'dentures');
-              updateAppointmentTypeText('dentures');
+        // Immediately select the dentures service and load the calendar
+        // This ensures the calendar loads properly on page load
+        setTimeout(function() {
+          console.log('Auto-selecting dentures service and loading calendar...');
+          const denturesCard = document.querySelector('.service-card[data-service="dentures"]');
+          if (denturesCard) {
+            // Set selected service (important for Google Calendar API)
+            window.selectedService = 'dentures';
+            
+            // Update UI
+            document.querySelectorAll('.service-card').forEach(card => {
+              card.classList.remove('selected');
+            });
+            denturesCard.classList.add('selected');
+            
+            // Update appointment type text
+            updateAppointmentTypeText('dentures');
+            
+            // Load the calendar directly (bypassing any basic mode)
+            if (typeof window.loadCalendarForService === 'function') {
+              window.loadCalendarForService('dentures');
+            } else {
+              // If the function isn't available yet, wait for it
+              const checkInterval = setInterval(function() {
+                if (typeof window.loadCalendarForService === 'function') {
+                  window.loadCalendarForService('dentures');
+                  clearInterval(checkInterval);
+                }
+              }, 500);
             }
-          } else {
-            // API not yet loaded, check again in 500ms
-            setTimeout(checkGapiLoaded, 500);
           }
-        }
-
-        // Start checking if Google API is loaded
-        setTimeout(checkGapiLoaded, 1000);
+        }, 500); // Give a small delay to ensure scripts are loaded
       });
 
       // Service selection function
@@ -509,22 +523,15 @@
         // Update appointment type text
         updateAppointmentTypeText(service);
 
-        // Check if there's an existing loading state
-        const calendarContainer = document.getElementById('appointment-calendar');
-        const isCalendarLoading = calendarContainer && calendarContainer.querySelector('.calendar-loading');
+        // Set the selected service in the window object for Google Calendar
+        window.selectedService = service;
 
         // Update calendar with selected service
         if (typeof loadCalendarForService === 'function') {
-          // If already in loading state, clear existing timeouts first
-          if (isCalendarLoading) {
-            console.log('Calendar already in loading state, forcing refresh');
-            // Clear any existing content to force a fresh load
-            calendarContainer.innerHTML = '';
-          }
-
           loadCalendarForService(service);
         } else {
           // Fallback if loadCalendarForService is not available
+          const calendarContainer = document.getElementById('appointment-calendar');
           if (calendarContainer) {
             calendarContainer.innerHTML = `
               <div class="alert alert-warning">
@@ -536,32 +543,6 @@
             `;
           }
         }
-
-        // Force calendar display after a short delay
-        setTimeout(() => {
-          const container = document.getElementById('appointment-calendar');
-          if (container) {
-            // If the calendar is still showing loading state after 3 seconds, force the fallback calendar
-            if (container.querySelector('.calendar-loading')) {
-              console.log('Forcing fallback calendar display');
-              if (typeof showFallbackCalendar === 'function') {
-                showFallbackCalendar();
-              } else {
-                // Create a very simple calendar if the showFallbackCalendar function isn't available
-                const today = new Date();
-                container.innerHTML = `
-                  <div class="alert alert-info mb-4">
-                    <p><strong>Note:</strong> The appointment calendar is currently in basic mode.</p>
-                    <p>Please contact us directly at (02) 9398 7578 to book an appointment.</p>
-                  </div>
-                  <div class="text-center mb-4">
-                    <a href="contact-us.html" class="btn btn-primary">Contact Us</a>
-                  </div>
-                `;
-              }
-            }
-          }
-        }, 3000);
       }
 
       // Function to update the appointment type text
