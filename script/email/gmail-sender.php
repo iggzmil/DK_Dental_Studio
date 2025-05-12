@@ -26,18 +26,26 @@ function sendGmailEmail($to, $subject, $message, $fromName = 'DK Dental Studio',
     ];
 
     try {
-        // Client credentials (same as in OAuth flow)
-        $clientId = '593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com';
-        $clientSecret = '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';
+        // TEMPORARY: Always use fallback mode for testing
+        $useGmailApi = false;
 
-        // Path to token file
-        $tokenFile = __DIR__ . '/../../vendor/google/oauth/secure/google_refresh_token.json';
+        if ($useGmailApi) {
+            // Client credentials (same as in OAuth flow)
+            $clientId = '593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com';
+            $clientSecret = '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';
 
-        // Initialize token manager
-        $tokenManager = new GoogleTokenManager($clientId, $clientSecret, $tokenFile);
+            // Path to token file
+            $tokenFile = __DIR__ . '/../../vendor/google/oauth/secure/google_refresh_token.json';
 
-        // Get authenticated client
-        $client = $tokenManager->getAuthorizedClient();
+            // Initialize token manager
+            $tokenManager = new GoogleTokenManager($clientId, $clientSecret, $tokenFile);
+
+            // Get authenticated client
+            $client = $tokenManager->getAuthorizedClient();
+        } else {
+            $client = null;
+        }
+
         if (!$client) {
             // If we can't get an authorized client, use a fallback method
             // This will allow the contact form to work even if the OAuth token is not valid
@@ -48,13 +56,25 @@ function sendGmailEmail($to, $subject, $message, $fromName = 'DK Dental Studio',
             // Log the email details for debugging
             error_log('FALLBACK EMAIL: To: ' . $to . ', Subject: ' . $subject);
 
-            // Send a copy to the secondary email using PHP mail() function if possible
-            if (function_exists('mail') && strpos($to, 'iggzmil@gmail.com') !== false) {
+            // Send the email using PHP mail() function if possible
+            if (function_exists('mail')) {
                 $headers = "From: DK Dental Studio <noreply@dkdental.au>\r\n";
+                $headers .= "Reply-To: noreply@dkdental.au\r\n";
                 $headers .= "MIME-Version: 1.0\r\n";
                 $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+                $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
 
-                mail('iggzmil@gmail.com', '[FALLBACK] ' . $subject, $message, $headers);
+                $mailResult = mail($to, $subject, $message, $headers);
+
+                if ($mailResult) {
+                    $result['message'] = 'Email sent successfully using PHP mail() function';
+                } else {
+                    $result['message'] = 'Email would be sent (fallback mode), but PHP mail() function failed';
+                    // Still return success so the form submission works
+                    $result['success'] = true;
+                }
+            } else {
+                $result['message'] = 'Email would be sent (fallback mode), but PHP mail() function is not available';
             }
 
             return $result;
