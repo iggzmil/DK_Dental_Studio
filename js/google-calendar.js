@@ -5,6 +5,9 @@
 // Debug mode - set to true to show detailed debug information
 const DEBUG_MODE = false;
 
+// Set default selected service on script load
+window.selectedService = 'dentures';
+
 // Google API credentials
 // const GOOGLE_API_KEY = 'AIzaSyDFoNqB7BIuoZrUQDRVhnpVLjXsUgT-6Ow'; // Replace with your API key - Not used with server-side OAuth
 const GOOGLE_CLIENT_ID = '593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com';
@@ -26,7 +29,6 @@ const SERVICE_DURATION = {
 };
 
 // Store selected service
-let selectedService = null;
 let selectedDateTime = null;
 let gapi = null;
 let tokenClient = null;
@@ -46,9 +48,36 @@ document.addEventListener('DOMContentLoaded', function() {
   // Expose gapi globally for easier access
   window.gapi = gapi;
   
+  // Immediately force load the calendar for dentures
+  debugLog('Attempting to load calendar for dentures on page load');
+  
+  // Set a slight delay to ensure the DOM is ready
+  setTimeout(function() {
+    // First set the selectedService if not already set
+    if (!window.selectedService) {
+      window.selectedService = 'dentures';
+    }
+    
+    // If loadCalendarForService is available, call it
+    if (typeof window.loadCalendarForService === 'function') {
+      debugLog('Calling loadCalendarForService directly');
+      window.loadCalendarForService('dentures');
+    } else {
+      // If not available yet, wait for it to be defined and then call it
+      debugLog('loadCalendarForService not available yet, setting up interval to wait for it');
+      const checkInterval = setInterval(function() {
+        if (typeof window.loadCalendarForService === 'function') {
+          debugLog('loadCalendarForService now available, calling it');
+          window.loadCalendarForService('dentures');
+          clearInterval(checkInterval);
+        }
+      }, 500);
+    }
+  }, 300);
+  
   // Check if calendar is loaded after a delay
   setTimeout(function() {
-    if (selectedService) {
+    if (window.selectedService) {
       checkCalendarLoaded();
     }
   }, 15000); // 15 second timeout
@@ -276,14 +305,79 @@ function initClient() {
 }
 
 /**
+ * Load the calendar for the selected service
+ */
+function loadCalendar(service) {
+  debugLog('loadCalendar called for service:', service);
+  
+  try {
+    // Make sure we have a service, using global selectedService as fallback
+    if (!service && window.selectedService) {
+      service = window.selectedService;
+      debugLog('No service specified, using global selected service:', service);
+    }
+    
+    // Get the calendar container
+    const calendarContainer = document.getElementById('appointment-calendar');
+    if (!calendarContainer) {
+      debugLog('ERROR: Calendar container not found!');
+      return;
+    }
+    
+    debugLog('Calendar container found, rendering calendar');
+    
+    // Get today's date
+    const today = new Date();
+    const month = today.getMonth();
+    const year = today.getFullYear();
+    
+    debugLog('Creating calendar for', month, year);
+    
+    // Create the calendar layout
+    calendarContainer.innerHTML = createCalendarHTML(month, year, service);
+    
+    // Add event listeners to calendar days
+    debugLog('Setting up calendar interactions');
+    setupCalendarInteraction();
+    
+    // Add a notice that the calendar is loaded successfully
+    const notice = document.createElement('div');
+    notice.className = 'alert alert-success mb-4';
+    notice.innerHTML = `
+      <p><strong>Success:</strong> The appointment calendar has been loaded successfully.
+      Please select a date to see available times.</p>
+    `;
+    
+    // Insert the notice at the top
+    if (calendarContainer.firstChild) {
+      calendarContainer.insertBefore(notice, calendarContainer.firstChild);
+    } else {
+      calendarContainer.appendChild(notice);
+    }
+    
+    debugLog('Calendar loaded and interactions set up');
+  } catch (error) {
+    debugLog('ERROR rendering calendar:', error);
+    
+    // Show a simple error message and fall back to the basic calendar
+    showError("We encountered an issue loading the calendar. Using basic calendar mode.");
+    showFallbackCalendar();
+  }
+}
+
+/**
  * Show a fallback calendar without Google Calendar integration
  */
 function showFallbackCalendar() {
   debugLog('Showing fallback calendar');
   
+  // Use the global selectedService if we don't have a local one
+  const serviceToUse = window.selectedService || 'dentures';
+  debugLog('Using service for fallback calendar:', serviceToUse);
+  
   // If Google Calendar integration fails, we can still show a basic calendar
   // that allows users to select dates and times, but booking will use the fallback method
-  if (selectedService) {
+  if (serviceToUse) {
     // Get the calendar container
     const calendarContainer = document.getElementById('appointment-calendar');
     if (!calendarContainer) {
@@ -305,7 +399,7 @@ function showFallbackCalendar() {
     const year = today.getFullYear();
     
     // Create the calendar layout
-    calendarContainer.innerHTML = createCalendarHTML(month, year, selectedService);
+    calendarContainer.innerHTML = createCalendarHTML(month, year, serviceToUse);
     
     // Insert the notice at the top
     if (calendarContainer.firstChild) {
@@ -353,7 +447,7 @@ function showFallbackCalendar() {
       // Define business hours
       let startHour, endHour;
       
-      if (selectedService === 'mouthguards' && (dayOfWeek >= 1 && dayOfWeek <= 3)) {
+      if (serviceToUse === 'mouthguards' && (dayOfWeek >= 1 && dayOfWeek <= 3)) {
         // Mon-Wed for mouthguards: 10am-6pm
         startHour = 10;
         endHour = 18;
@@ -389,7 +483,8 @@ function showFallbackCalendar() {
  * Expose the loadCalendarForService function globally
  */
 window.loadCalendarForService = function(service) {
-  selectedService = service;
+  // Set the global selectedService variable
+  window.selectedService = service;
   debugLog('Loading calendar for service:', service);
   
   // Update UI to show selected service
@@ -447,20 +542,17 @@ window.loadCalendarForService = function(service) {
   if (!gapi) {
     // First load - initialize the API
     debugLog('gapi not loaded, initializing API');
+    clearTimeout(loadingTimeout);
     loadGoogleAPI();
-    // Clear the timeout when loadGoogleAPI completes (it has its own timeout)
-    clearTimeout(loadingTimeout);
-  } else if (!gapi.client || !gapi.client.calendar) {
-    // API loaded but calendar not initialized
-    debugLog('gapi loaded but calendar not initialized');
-    initClient();
-    // Clear the timeout when initClient completes (it has its own error handling)
-    clearTimeout(loadingTimeout);
-  } else {
-    // Proceed to load the calendar
-    debugLog('gapi and calendar initialized, loading calendar');
-    loadCalendar(service);
-    clearTimeout(loadingTimeout);
+    
+    // Set a new timeout to try again after a delay
+    setTimeout(() => {
+      debugLog('Retrying calendar load after API initialization');
+      if (typeof loadCalendarForService === 'function') {
+        loadCalendarForService(service);
+      }
+    }, 2000);
+    return;
   }
 };
 
@@ -473,61 +565,6 @@ function requestAuthorization() {
     tokenClient.requestAccessToken();
   } else {
     showError("Authentication service not initialized. Please refresh the page and try again.");
-  }
-}
-
-/**
- * Load the calendar for the selected service
- */
-function loadCalendar(service) {
-  debugLog('loadCalendar called for service:', service);
-  
-  try {
-    // Get the calendar container
-    const calendarContainer = document.getElementById('appointment-calendar');
-    if (!calendarContainer) {
-      debugLog('ERROR: Calendar container not found!');
-      return;
-    }
-    
-    debugLog('Calendar container found, rendering calendar');
-    
-    // Get today's date
-    const today = new Date();
-    const month = today.getMonth();
-    const year = today.getFullYear();
-    
-    debugLog('Creating calendar for', month, year);
-    
-    // Create the calendar layout
-    calendarContainer.innerHTML = createCalendarHTML(month, year, service);
-    
-    // Add event listeners to calendar days
-    debugLog('Setting up calendar interactions');
-    setupCalendarInteraction();
-    
-    // Add a notice that the calendar is loaded successfully
-    const notice = document.createElement('div');
-    notice.className = 'alert alert-success mb-4';
-    notice.innerHTML = `
-      <p><strong>Success:</strong> The appointment calendar has been loaded successfully.
-      Please select a date to see available times.</p>
-    `;
-    
-    // Insert the notice at the top
-    if (calendarContainer.firstChild) {
-      calendarContainer.insertBefore(notice, calendarContainer.firstChild);
-    } else {
-      calendarContainer.appendChild(notice);
-    }
-    
-    debugLog('Calendar loaded and interactions set up');
-  } catch (error) {
-    debugLog('ERROR rendering calendar:', error);
-    
-    // Show a simple error message and fall back to the basic calendar
-    showError("We encountered an issue loading the calendar. Using basic calendar mode.");
-    showFallbackCalendar();
   }
 }
 
