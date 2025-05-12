@@ -74,6 +74,34 @@
       }
     }
 
+    /* Back to Top Button - Override default styling */
+    #back-to-top, .back-to-top {
+      position: fixed !important;
+      bottom: 20px !important;
+      left: 20px !important; /* Position to the left edge of screen */
+      right: auto !important;
+      width: 40px !important;
+      height: 40px !important;
+      background-color: #0576ee !important;
+      color: white !important;
+      border-radius: 50% !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      z-index: 9997 !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+      transition: all 0.3s ease !important;
+      text-decoration: none !important;
+    }
+    #back-to-top:hover, .back-to-top:hover {
+      background-color: #0461c7 !important;
+      transform: translateY(-2px) !important;
+    }
+    #back-to-top i, .back-to-top i {
+      font-size: 18px !important;
+      line-height: 40px !important;
+    }
+
     /* Mobile menu styling */
     @media (max-width: 991.98px) {
       .navbar-collapse.show {
@@ -187,7 +215,7 @@
 
 </head>
 
-<body>
+<body class="contact-page">
 
 <!--=================================
   header -->
@@ -325,7 +353,7 @@
             <div class="contact-form">
               <div class="section-title">
                 <h3 class="text-white">We'd love to hear from you</h3>
-                <p class="text-white">Whether you have a question, need help with a service, or just want to say hello — we’re here and ready to help.</p>
+                <p class="text-white">Whether you have a question, need help with a service, or just want to say hello — we're here and ready to help.</p>
               </div>
               <form id="contact-form" class="needs-validation" novalidate>
                 <div class="row">
@@ -543,8 +571,19 @@
     <!-- Template Scripts (Do not remove)-->
     <script src="js/custom.js"></script>
 
+    <!-- Chat Icon Script -->
+    <script src="js/function.js"></script>
+
     <!-- Clean Contact Form Script -->
     <script src="script/email/clean-form.js"></script>
+
+    <!-- Chat Widget Scripts -->
+    <link rel="stylesheet" href="css/chat-widget.css">
+    <script src="js/chat-widget.js"></script>
+    <script src="js/chat-widget-init.js"></script>
+
+    <!-- Chat Container -->
+    <div id="chat-container"></div>
 
     <!-- Initialize Bootstrap 5 components -->
     <script>
@@ -554,6 +593,28 @@
           var target = $(this).data('bs-target');
           $(target).toggleClass('show');
         });
+        
+        // Initialize back-to-top button functionality
+        const backToTop = document.getElementById('back-to-top') || document.querySelector('.back-to-top');
+        if (backToTop) {
+          // Initially hide the button
+          backToTop.style.opacity = '0';
+          backToTop.style.visibility = 'hidden';
+          
+          // Show/hide the button based on scroll position
+          window.addEventListener('scroll', function() {
+            if (window.pageYOffset > 300) {
+              backToTop.style.opacity = '1';
+              backToTop.style.visibility = 'visible';
+            } else {
+              backToTop.style.opacity = '0';
+              backToTop.style.visibility = 'hidden';
+            }
+          });
+          
+          // Force initial check of scroll position
+          window.dispatchEvent(new Event('scroll'));
+        }
       });
     </script>
   </body>

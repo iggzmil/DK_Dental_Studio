@@ -447,6 +447,9 @@
     <!-- Template Scripts (Do not remove)-->
     <script src="js/custom.js"></script>
 
+    <!-- Chat Icon Script -->
+    <script src="js/function.js"></script>
+
     <!-- Google Calendar Integration -->
     <script src="https://apis.google.com/js/api.js"></script>
     <script src="js/google-calendar.js"></script>
@@ -466,7 +469,7 @@
           var target = $(this).data('bs-target');
           $(target).toggleClass('show');
         });
-        
+
         // Show admin info for development environment
         // In production, this should be removed or properly secured
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('dev')) {
@@ -488,7 +491,7 @@
             setTimeout(checkGapiLoaded, 500);
           }
         }
-        
+
         // Start checking if Google API is loaded
         setTimeout(checkGapiLoaded, 1000);
       });
@@ -499,17 +502,17 @@
         document.querySelectorAll('.service-card').forEach(card => {
           card.classList.remove('selected');
         });
-        
+
         // Add selected class to clicked card
         element.classList.add('selected');
-        
+
         // Update appointment type text
         updateAppointmentTypeText(service);
-        
+
         // Check if there's an existing loading state
         const calendarContainer = document.getElementById('appointment-calendar');
         const isCalendarLoading = calendarContainer && calendarContainer.querySelector('.calendar-loading');
-        
+
         // Update calendar with selected service
         if (typeof loadCalendarForService === 'function') {
           // If already in loading state, clear existing timeouts first
@@ -518,7 +521,7 @@
             // Clear any existing content to force a fresh load
             calendarContainer.innerHTML = '';
           }
-          
+
           loadCalendarForService(service);
         } else {
           // Fallback if loadCalendarForService is not available
@@ -533,7 +536,7 @@
             `;
           }
         }
-        
+
         // Force calendar display after a short delay
         setTimeout(() => {
           const container = document.getElementById('appointment-calendar');
@@ -578,4 +581,4 @@
   </body>
 
 
-</html> 
+</html>
