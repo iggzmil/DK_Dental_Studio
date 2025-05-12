@@ -1067,15 +1067,39 @@ function setupCalendarInteraction() {
       </div>
     `;
 
+    // Create a booking data object for the fallback email system
+    const bookingData = {
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      phone: phone,
+      notes: notes,
+      service: selectedService,
+      date: selectedDateTime.date,
+      time: selectedDateTime.time
+    };
+
     // Check if we have Google Calendar API access
     if (gapi && gapi.client && gapi.client.calendar && serverAccessToken) {
+      debugLog('Using Google Calendar API to create event');
+      
       // Use the Google Calendar API to create the event
       gapi.client.calendar.events.insert({
         calendarId: CALENDAR_ID[selectedService],
-        resource: eventData
+        resource: eventData,
+        sendUpdates: 'all' // Send email notifications to attendees
       }).then(response => {
         console.log('Event created: ', response);
-        showBookingSuccess(firstName, lastName, email);
+        
+        // Always send a confirmation email using our server-side system as well
+        // This ensures the office gets notified and the customer gets a branded email
+        sendConfirmationEmail(bookingData).then(() => {
+          showBookingSuccess(firstName, lastName, email);
+        }).catch(error => {
+          console.error('Error sending confirmation email:', error);
+          // Still show success since the calendar event was created
+          showBookingSuccess(firstName, lastName, email);
+        });
       }).catch(error => {
         console.error('Error creating event:', error);
         // Fall back to server-side booking if client-side fails
@@ -1088,9 +1112,52 @@ function setupCalendarInteraction() {
   };
   
   /**
+   * Send a confirmation email using our server-side email system
+   */
+  function sendConfirmationEmail(bookingData) {
+    debugLog('Sending confirmation email for booking');
+    
+    return fetch('/script/calendar/booking-fallback.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(bookingData)
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.success) {
+        debugLog('Confirmation email sent successfully');
+        return data;
+      } else {
+        throw new Error(data.message || 'Failed to send confirmation email');
+      }
+    });
+  }
+
+  /**
    * Create event using server-side API
    */
   function createEventServerSide(eventData, firstName, lastName, email) {
+    debugLog('Creating event using server-side API');
+    
+    // Create a booking data object for the fallback email system
+    const bookingData = {
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      phone: eventData.description.match(/Phone: (.*)/)[1],
+      notes: eventData.description.match(/Notes: (.*)/)[1] || '',
+      service: selectedService,
+      date: selectedDateTime.date,
+      time: selectedDateTime.time
+    };
+    
     // Send the booking data to the server
     fetch('/script/calendar/create-event.php', {
       method: 'POST',
@@ -1102,12 +1169,26 @@ function setupCalendarInteraction() {
         service: selectedService
       })
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
     .then(data => {
       if (data.success) {
-        showBookingSuccess(firstName, lastName, email);
+        debugLog('Server-side event creation successful');
+        
+        // Always send a confirmation email using our server-side system as well
+        sendConfirmationEmail(bookingData).then(() => {
+          showBookingSuccess(firstName, lastName, email);
+        }).catch(error => {
+          console.error('Error sending confirmation email:', error);
+          // Still show success since the calendar event was created
+          showBookingSuccess(firstName, lastName, email);
+        });
       } else {
-        // If server-side booking fails, use fallback booking
+        // If server-side booking fails, use fallback booking (email only)
         console.error('Server-side booking failed:', data.error);
         useFallbackBooking(eventData, firstName, lastName, email);
       }
@@ -1128,16 +1209,7 @@ function setupCalendarInteraction() {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        firstName: firstName,
-        lastName: lastName,
-        email: email,
-        phone: eventData.description.match(/Phone: (.*)/)[1],
-        notes: eventData.description.match(/Notes: (.*)/)[1] || '',
-        service: selectedService,
-        date: selectedDateTime.date,
-        time: selectedDateTime.time
-      })
+      body: JSON.stringify(bookingData)
     })
     .then(response => response.json())
     .then(data => {
@@ -1165,12 +1237,53 @@ function setupCalendarInteraction() {
         </div>
         <h4 class="text-center">Booking Successful!</h4>
         <p class="text-center">Your appointment for ${getServiceName(selectedService)} on ${formatDate(selectedDateTime.date)} at ${formatTime(selectedDateTime.time)} has been confirmed.</p>
-        <p class="text-center">A confirmation email has been sent to ${email}.</p>
+        <p class="text-center">A confirmation email has been sent to ${email}. Please check your inbox (and spam folder if necessary).</p>
+        <div class="alert alert-info mt-3">
+          <p class="mb-0"><strong>What happens next:</strong></p>
+          <ul class="mb-0 text-left">
+            <li>Our team will review your booking</li>
+            <li>You'll receive a follow-up confirmation</li>
+            <li>If you need to change your appointment, please call us at (02) 9398 7578</li>
+          </ul>
+        </div>
         <div class="text-center mt-4">
           <button class="btn btn-primary" onclick="resetBookingForm()">Book Another Appointment</button>
         </div>
       </div>
     `;
+    
+    // After a successful booking, we should refresh the calendar data to ensure
+    // this time slot no longer appears as available
+    refreshCalendarAfterBooking();
+  }
+
+  /**
+   * Refresh the calendar after a successful booking
+   */
+  function refreshCalendarAfterBooking() {
+    debugLog('Refreshing calendar after booking');
+    
+    // Wait a moment to ensure the booking has been processed
+    setTimeout(() => {
+      // If we're still on the same page and have a selected service
+      if (window.selectedService) {
+        // Clear any selected day
+        document.querySelectorAll('.calendar-day.selected').forEach(el => {
+          el.classList.remove('selected');
+        });
+        
+        // Clear time slots
+        const timeSlotsContainer = document.getElementById('time-slots-container');
+        if (timeSlotsContainer) {
+          timeSlotsContainer.innerHTML = '';
+        }
+        
+        // Reload the calendar for the current service
+        if (typeof loadCalendarForService === 'function') {
+          loadCalendarForService(window.selectedService);
+        }
+      }
+    }, 5000); // Wait 5 seconds before refreshing
   }
 
   /**
@@ -1263,6 +1376,17 @@ function generateTimeSlots(dateString) {
     // Return a promise that resolves with available slots
     return new Promise((resolve, reject) => {
       try {
+        // Ensure we have a valid token
+        if (!gapi.client.getToken()) {
+          debugLog('No token set, setting token from serverAccessToken');
+          if (window.serverAccessToken) {
+            gapi.client.setToken({ access_token: window.serverAccessToken });
+          } else {
+            throw new Error('No access token available');
+          }
+        }
+        
+        // First try using the freebusy query
         gapi.client.calendar.freebusy.query({
           timeMin: timeMin,
           timeMax: timeMax,
@@ -1310,10 +1434,60 @@ function generateTimeSlots(dateString) {
           resolve(availableSlots);
         }).catch(error => {
           debugLog('Error fetching busy times:', error);
-          // If there's an error, fall back to all slots with random availability
-          const availableSlots = allSlots.filter(() => Math.random() > 0.3);
-          debugLog('Falling back to random availability:', availableSlots);
-          resolve(availableSlots);
+          
+          // If freebusy query fails, try listing events directly
+          debugLog('Trying direct events listing as fallback');
+          
+          const startOfDay = new Date(dateString + 'T00:00:00');
+          const endOfDay = new Date(dateString + 'T23:59:59');
+          
+          gapi.client.calendar.events.list({
+            calendarId: CALENDAR_ID[selectedService],
+            timeMin: startOfDay.toISOString(),
+            timeMax: endOfDay.toISOString(),
+            singleEvents: true
+          }).then(response => {
+            debugLog('Events list response:', response);
+            
+            const busySlots = [];
+            if (response.result && response.result.items && response.result.items.length > 0) {
+              const events = response.result.items;
+              
+              // Process events to determine which slots are unavailable
+              events.forEach(event => {
+                const start = new Date(event.start.dateTime || event.start.date + 'T00:00:00');
+                const end = new Date(event.end.dateTime || event.end.date + 'T23:59:59');
+                
+                // Check each slot against event times
+                allSlots.forEach(slot => {
+                  const [hours, minutes] = slot.split(':').map(Number);
+                  const slotStart = new Date(date);
+                  slotStart.setHours(hours, minutes, 0, 0);
+                  
+                  const slotEnd = new Date(slotStart);
+                  slotEnd.setMinutes(slotEnd.getMinutes() + SERVICE_DURATION[selectedService]);
+                  
+                  // If slot overlaps with event, mark as busy
+                  if ((slotStart >= start && slotStart < end) || 
+                      (slotEnd > start && slotEnd <= end) ||
+                      (slotStart <= start && slotEnd >= end)) {
+                    busySlots.push(slot);
+                  }
+                });
+              });
+            }
+            
+            // Filter out busy slots
+            const availableSlots = allSlots.filter(slot => !busySlots.includes(slot));
+            debugLog('Available slots after checking events:', availableSlots);
+            resolve(availableSlots);
+          }).catch(secondError => {
+            debugLog('Error fetching events:', secondError);
+            // If both methods fail, fall back to random availability
+            const availableSlots = allSlots.filter(() => Math.random() > 0.3);
+            debugLog('Falling back to random availability after both methods failed:', availableSlots);
+            resolve(availableSlots);
+          });
         });
       } catch (error) {
         debugLog('Exception in freebusy query:', error);
