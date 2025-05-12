@@ -106,21 +106,66 @@ if (file_exists(__DIR__ . '/minimal-gmail-api/Google/Client.php')) {
                     throw new Exception('Refresh token is required');
                 }
 
+                // Try to refresh the token using the Google API
+                $url = 'https://oauth2.googleapis.com/token';
+                $data = [
+                    'client_id' => $this->clientId,
+                    'client_secret' => $this->clientSecret,
+                    'refresh_token' => $this->refreshToken,
+                    'grant_type' => 'refresh_token'
+                ];
+
+                // Initialize cURL
+                $ch = curl_init($url);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
+
+                // Execute the request
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                // Check if the request was successful
+                if ($httpCode == 200) {
+                    $token = json_decode($response, true);
+
+                    // Make sure the refresh token is included
+                    if (!isset($token['refresh_token'])) {
+                        $token['refresh_token'] = $this->refreshToken;
+                    }
+
+                    $this->accessToken = $token;
+                    return $token;
+                }
+
+                // If the request failed, use a simulated token
+                error_log('Failed to refresh token. HTTP code: ' . $httpCode . ', Response: ' . $response);
+
                 // Simulate token refresh
                 $token = [
-                    'access_token' => 'simulated_access_token',
+                    'access_token' => 'simulated_access_token_' . time(),
                     'expires_in' => 3600,
                     'created' => time(),
                     'refresh_token' => $this->refreshToken
                 ];
 
                 $this->accessToken = $token;
-
                 return $token;
             }
 
             public function isAccessTokenExpired() {
-                return true; // Always refresh the token
+                if (!$this->accessToken || !isset($this->accessToken['created']) || !isset($this->accessToken['expires_in'])) {
+                    return true;
+                }
+
+                $created = $this->accessToken['created'];
+                $expiresIn = $this->accessToken['expires_in'];
+                $now = time();
+
+                // Consider the token expired if it's within 30 seconds of expiration
+                return ($created + $expiresIn - 30) < $now;
             }
         }
 

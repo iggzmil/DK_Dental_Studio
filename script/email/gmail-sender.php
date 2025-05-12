@@ -9,6 +9,9 @@
 // Always use the minimal autoloader to avoid dependency issues
 require_once __DIR__ . '/minimal-autoloader.php';
 
+// Include our custom GoogleTokenManager
+require_once __DIR__ . '/GoogleTokenManager.php';
+
 /**
  * Send an email using Gmail API
  *
