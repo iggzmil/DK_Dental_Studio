@@ -559,6 +559,62 @@
         }
       }
     </script>
+    
+    <!-- Direct calendar initialization script -->
+    <script>
+      // This script forcefully initializes the calendar without waiting for user interaction
+      document.addEventListener('DOMContentLoaded', function() {
+        // Force direct loading of the calendar - this bypasses the normal initialization
+        console.log('Force initializing calendar directly');
+        
+        // Set the global selectedService
+        window.selectedService = 'dentures';
+        
+        // Give enough time for all scripts to load
+        setTimeout(function() {
+          // First try the normal method
+          if (typeof window.loadCalendarForService === 'function') {
+            console.log('Directly calling loadCalendarForService');
+            window.loadCalendarForService('dentures');
+          } else {
+            console.log('Normal method not available, trying direct approach');
+            
+            // Direct approach to create the calendar
+            const calendarContainer = document.getElementById('appointment-calendar');
+            if (calendarContainer) {
+              // Get today's date
+              const today = new Date();
+              const month = today.getMonth();
+              const year = today.getFullYear();
+              
+              console.log('Directly creating calendar with service: dentures');
+              
+              // Update UI
+              document.querySelectorAll('.service-card').forEach(card => {
+                if (card.dataset.service === 'dentures') {
+                  card.classList.add('selected');
+                } else {
+                  card.classList.remove('selected');
+                }
+              });
+              
+              // Update heading
+              const appointmentTypeText = document.getElementById('appointment-type-text');
+              if (appointmentTypeText) {
+                appointmentTypeText.textContent = 'Booking: Dentures Consultation';
+              }
+              
+              // Force the calendar to load by simulating a click on the dentures card
+              const denturesCard = document.querySelector('.service-card[data-service="dentures"]');
+              if (denturesCard) {
+                console.log('Simulating click on dentures card');
+                denturesCard.click();
+              }
+            }
+          }
+        }, 1000);
+      });
+    </script>
   </body>
 
 

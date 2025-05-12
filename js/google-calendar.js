@@ -51,6 +51,33 @@ document.addEventListener('DOMContentLoaded', function() {
   // Immediately force load the calendar for dentures
   debugLog('Attempting to load calendar for dentures on page load');
   
+  // Force direct token fetch on page load - don't wait for UI interaction
+  setTimeout(function() {
+    debugLog('Force-triggering token fetch on page load');
+    
+    // Try to get the token directly
+    if (typeof fetchServerAccessToken === 'function') {
+      fetchServerAccessToken()
+        .then(token => {
+          debugLog('Successfully fetched token on page load:', token.substring(0, 10) + '...');
+          
+          // Set the access token for all future requests
+          if (gapi && gapi.client) {
+            gapi.client.setToken({ access_token: token });
+            debugLog('Server access token applied to gapi client on page load');
+            
+            // Try to load calendar with the token
+            if (typeof loadCalendar === 'function') {
+              loadCalendar('dentures');
+            }
+          }
+        })
+        .catch(error => {
+          debugLog('Failed to fetch token on page load:', error);
+        });
+    }
+  }, 1000);
+  
   // Set a slight delay to ensure the DOM is ready
   setTimeout(function() {
     // First set the selectedService if not already set
@@ -87,9 +114,9 @@ document.addEventListener('DOMContentLoaded', function() {
  * Fetch access token from server
  * This function gets the OAuth token from the server instead of using client-side auth
  */
-function fetchServerAccessToken() {
+function fetchServerAccessToken(retryCount = 0, maxRetries = 3) {
   return new Promise((resolve, reject) => {
-    debugLog('Fetching server access token...');
+    debugLog('Fetching server access token... (Attempt ' + (retryCount + 1) + ' of ' + (maxRetries + 1) + ')');
     
     // Use absolute path for production environment with proper protocol
     const apiUrl = window.location.protocol + '//' + window.location.host + '/script/calendar/get-access-token.php';
@@ -133,9 +160,20 @@ function fetchServerAccessToken() {
       .catch(error => {
         debugLog('Error fetching server access token:', error);
         console.error('Token fetch error details:', error);
-        showError("Could not connect to the booking system. Please try again later or contact us directly.");
-        showFallbackCalendar();
-        reject(error);
+        
+        // Retry logic
+        if (retryCount < maxRetries) {
+          debugLog(`Retrying token fetch (Attempt ${retryCount + 2} of ${maxRetries + 1})`);
+          setTimeout(() => {
+            fetchServerAccessToken(retryCount + 1, maxRetries)
+              .then(resolve)
+              .catch(reject);
+          }, 1500); // Wait 1.5 seconds before retrying
+        } else {
+          showError("Could not connect to the booking system. Please try again later or contact us directly.");
+          showFallbackCalendar();
+          reject(error);
+        }
       });
   });
 }
@@ -245,6 +283,12 @@ function initClient() {
           debugLog('Setting access token on gapi client');
           gapi.client.setToken({ access_token: token });
           debugLog('Server access token applied to gapi client');
+          
+          // Important: Always load the calendar for dentures on init,
+          // regardless of what service is selected in the UI
+          debugLog('Auto-loading dentures calendar after token fetch');
+          window.selectedService = 'dentures';
+          loadCalendar('dentures');
           
           // Test if the calendar API is available
           debugLog('Testing Google Calendar API access...');
