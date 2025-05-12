@@ -270,7 +270,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $toEmail = $primaryEmail . ',' . $secondaryEmail;
 
     // Set email subject
-    $emailSubject = 'New Contact Form Submission: ' . $sanitizedData['subject'];
+    $emailSubject = 'DK Dental Studio Website Contact Form: ' . $sanitizedData['subject'];
 
     // Send the email to both recipients
     $result = sendGmailEmail(

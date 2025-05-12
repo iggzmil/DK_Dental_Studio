@@ -122,11 +122,8 @@ function createEmail($to, $subject, $message, $fromName, $attachments = []) {
     // Create a unique boundary for MIME parts
     $boundary = md5(time());
 
-    // Get authenticated user email from token if available
-    $fromEmail = getUserEmail();
-    if (!$fromEmail) {
-        $fromEmail = 'appointments@dkdstudio.aaa-city.com';
-    }
+    // Use info@dkdental.au as the from email
+    $fromEmail = 'info@dkdental.au';
 
     // Headers
     $headers = [
