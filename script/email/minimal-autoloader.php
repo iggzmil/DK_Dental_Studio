@@ -15,15 +15,30 @@ if (!file_exists($minimalApiDir)) {
     mkdir($minimalApiDir . '/Google', 0755, true);
     mkdir($minimalApiDir . '/Google/Service', 0755, true);
     mkdir($minimalApiDir . '/Google/Service/Gmail', 0755, true);
+}
 
-    // Copy the files from the current directory
-    if (file_exists(__DIR__ . '/minimal-gmail-api/Google/Client.php')) {
-        // Files already exist, no need to define classes here
-        require_once __DIR__ . '/minimal-gmail-api/Google/Client.php';
-        require_once __DIR__ . '/minimal-gmail-api/Google/Service/Gmail.php';
-        require_once __DIR__ . '/minimal-gmail-api/Google/Service/Gmail/Message.php';
-        require_once __DIR__ . '/minimal-gmail-api/GoogleTokenManager.php';
-    } else {
+// Define the missing GetUniverseDomainInterface class to prevent errors
+if (!class_exists('Google\\Auth\\GetUniverseDomainInterface')) {
+    class Google_Auth_GetUniverseDomainInterface {
+        public function getUniverseDomain() {
+            return 'googleapis.com';
+        }
+    }
+
+    // Create an alias in the Google\Auth namespace
+    if (!class_exists('Google\\Auth\\GetUniverseDomainInterface')) {
+        class_alias('Google_Auth_GetUniverseDomainInterface', 'Google\\Auth\\GetUniverseDomainInterface');
+    }
+}
+
+// Check if we should use existing files or define classes inline
+if (file_exists(__DIR__ . '/minimal-gmail-api/Google/Client.php')) {
+    // Files already exist, no need to define classes here
+    require_once __DIR__ . '/minimal-gmail-api/Google/Client.php';
+    require_once __DIR__ . '/minimal-gmail-api/Google/Service/Gmail.php';
+    require_once __DIR__ . '/minimal-gmail-api/Google/Service/Gmail/Message.php';
+    require_once __DIR__ . '/minimal-gmail-api/GoogleTokenManager.php';
+} else {
         // Define the classes here
         // This is a more complete implementation than the previous stubs
 
@@ -216,7 +231,6 @@ if (!file_exists($minimalApiDir)) {
             }
         }
     }
-}
 
 // Log that the minimal autoloader was loaded
 error_log('Enhanced minimal Gmail API autoloader loaded');
