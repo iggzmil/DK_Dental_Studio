@@ -526,22 +526,55 @@
         // Set the selected service in the window object for Google Calendar
         window.selectedService = service;
 
-        // Update calendar with selected service
+        // Show loading state first
+        const calendarContainer = document.getElementById('appointment-calendar');
+        if (calendarContainer) {
+          calendarContainer.innerHTML = `
+            <div class="calendar-loading">
+              <div class="spinner"></div>
+              <p>Loading appointment calendar for ${getServiceName(service)}...</p>
+            </div>
+          `;
+        }
+
+        // Ensure we're using the token that was already fetched on page load
+        if (typeof window.serverAccessToken !== 'undefined' && window.serverAccessToken) {
+          console.log('Using existing token for service change');
+          
+          // If we already have a token, apply it before loading the calendar
+          if (window.gapi && window.gapi.client) {
+            window.gapi.client.setToken({ access_token: window.serverAccessToken });
+          }
+        }
+
+        // Update calendar with selected service - make sure we're using the already authorized API
         if (typeof loadCalendarForService === 'function') {
+          console.log('Loading calendar for service:', service);
           loadCalendarForService(service);
         } else {
           // Fallback if loadCalendarForService is not available
-          const calendarContainer = document.getElementById('appointment-calendar');
-          if (calendarContainer) {
-            calendarContainer.innerHTML = `
-              <div class="alert alert-warning">
-                <p>The calendar module is not loaded properly. Please try refreshing the page.</p>
-              </div>
-              <div class="text-center">
-                <button class="btn btn-primary" onclick="window.location.reload()">Refresh Page</button>
-              </div>
-            `;
-          }
+          calendarContainer.innerHTML = `
+            <div class="alert alert-warning">
+              <p>The calendar module is not loaded properly. Please try refreshing the page.</p>
+            </div>
+            <div class="text-center">
+              <button class="btn btn-primary" onclick="window.location.reload()">Refresh Page</button>
+            </div>
+          `;
+        }
+      }
+
+      // Helper function to get service name
+      function getServiceName(service) {
+        switch (service) {
+          case 'dentures':
+            return 'Dentures Consultation';
+          case 'repairs':
+            return 'Repairs & Maintenance';
+          case 'mouthguards':
+            return 'Mouthguards Consultation';
+          default:
+            return 'Appointment';
         }
       }
 

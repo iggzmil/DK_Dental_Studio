@@ -148,6 +148,8 @@ function fetchServerAccessToken(retryCount = 0, maxRetries = 3) {
         debugLog('Server response received:', data);
         if (data.success && data.access_token) {
           serverAccessToken = data.access_token;
+          // Store the token in the window object so it's accessible to other functions
+          window.serverAccessToken = data.access_token;
           debugLog('Access token successfully retrieved from server');
           resolve(serverAccessToken);
         } else {
@@ -399,6 +401,21 @@ function loadCalendar(service) {
       calendarContainer.appendChild(notice);
     }
     
+    // Update the UI to reflect the current service
+    document.querySelectorAll('.service-card').forEach(card => {
+      if (card.dataset.service === service) {
+        card.classList.add('selected');
+      } else {
+        card.classList.remove('selected');
+      }
+    });
+    
+    // Update the appointment type text
+    const appointmentTypeText = document.getElementById('appointment-type-text');
+    if (appointmentTypeText) {
+      appointmentTypeText.textContent = 'Booking: ' + getServiceName(service);
+    }
+    
     debugLog('Calendar loaded and interactions set up');
   } catch (error) {
     debugLog('ERROR rendering calendar:', error);
@@ -574,6 +591,16 @@ window.loadCalendarForService = function(service) {
     calendarContainer.appendChild(bookingFormContainer);
   } else {
     bookingFormContainer.style.display = 'none';
+  }
+  
+  // Check if we have an existing access token
+  if (window.serverAccessToken && gapi && gapi.client) {
+    debugLog('Using existing server access token for service change');
+    gapi.client.setToken({ access_token: window.serverAccessToken });
+    
+    // Load the calendar directly since we already have a token
+    loadCalendar(service);
+    return;
   }
   
   // Set a timeout to ensure we don't wait forever
