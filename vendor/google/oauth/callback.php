@@ -130,7 +130,7 @@ if (isset($_GET['code'])) {
             file_put_contents($tokenFile, $response);
             
             $success = true;
-            $message = "Authorization successful! Your website can now display your Google reviews.";
+            $message = "Authorization successful! Your website can now access your Google Calendar and Gmail services.";
             
             // Log success
             error_log('OAuth flow completed successfully. Refresh token obtained.');
@@ -179,7 +179,7 @@ if (isset($_GET['code'])) {
 </head>
 <body>
     <div class="container">
-        <h1>Google Reviews Authorization Result</h1>
+        <h1>Google API Authorization Result</h1>
         <div class="<?php echo $success ? 'success' : 'error'; ?>">
             <h2><?php echo $success ? 'Success!' : 'Error'; ?></h2>
             <p><?php echo $message; ?></p>
@@ -187,8 +187,8 @@ if (isset($_GET['code'])) {
         <?php if ($success): ?>
             <div>
                 <h3>What happens now?</h3>
-                <p>Your website is now connected to your Google Business Profile. You don't need to do anything else.</p>
-                <p>Google reviews will automatically appear on your website's testimonial section.</p>
+                <p>Your website is now connected to your Google Calendar and Gmail services.</p>
+                <p>The website can now access your calendar for appointment management and send emails on your behalf.</p>
                 <p>You can safely close this window and return to your website.</p>
             </div>
         <?php else: ?>

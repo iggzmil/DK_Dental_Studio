@@ -39,7 +39,7 @@ $clientSecret = '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';
 $redirectUri = 'https://dkdstudio.aaa-city.com/vendor/google/oauth/callback.php';
 
 // Include both Business Profile and Calendar scopes
-$scope = 'https://www.googleapis.com/auth/business.manage https://www.googleapis.com/auth/calendar https://mail.google.com/';
+$scope = 'https://www.googleapis.com/auth/business.manage https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.send';
 
 // Log redirect URI for debugging
 error_log('Using redirect URI: ' . $redirectUri);
@@ -63,7 +63,7 @@ error_log('Client ID: ' . $clientId);
 <!DOCTYPE html>
 <html>
 <head>
-    <title>DK Dental Studio - Google Reviews Authorization</title>
+    <title>DK Dental Studio - Google API Authorization</title>
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
         .container { border: 1px solid #ddd; padding: 20px; border-radius: 5px; }
@@ -73,9 +73,9 @@ error_log('Client ID: ' . $clientId);
 </head>
 <body>
     <div class="container">
-        <h1>Google Reviews Authorization</h1>
-        <p>This page will help you authorize DK Dental Studio's website to access your Google Business Profile reviews.</p>
-        <p><strong>Important:</strong> You only need to complete this process once. After authorization, the website will be able to display your Google reviews on the website.</p>
+        <h1>Google API Authorization</h1>
+        <p>This page will help you authorize DK Dental Studio's website to access your Google Calendar and Gmail services.</p>
+        <p><strong>Important:</strong> You only need to complete this process once. After authorization, the website will be able to access your calendar and send emails on your behalf.</p>
         <p>Click the button below to start the authorization process:</p>
         <p><a href="<?php echo $authUrl; ?>" class="btn">Authorize Google Access</a></p>
         <p>After clicking, you'll be redirected to Google's sign-in page. Sign in with the Google account that manages your business profile.</p>
