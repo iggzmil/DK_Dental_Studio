@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar Diagnostic Tool</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body { padding: 20px; }
+        .results { margin-top: 20px; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; }
+        .card { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Calendar Diagnostic Tool</h1>
+        <p class="lead">This tool helps diagnose issues with the calendar availability system</p>
+        
+        <div class="card">
+            <div class="card-header">
+                Test Parameters
+            </div>
+            <div class="card-body">
+                <form id="diagnostic-form">
+                    <div class="form-group">
+                        <label for="date-select">Date to check:</label>
+                        <input type="date" id="date-select" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="service-select">Service:</label>
+                        <select id="service-select" class="form-control">
+                            <option value="dentures">Dentures</option>
+                            <option value="repairs">Repairs</option>
+                            <option value="mouthguards">Mouthguards</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Run Diagnosis</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="results d-none" id="results-container">
+            <div class="card">
+                <div class="card-header">
+                    Diagnostic Results
+                </div>
+                <div class="card-body">
+                    <h5>Calendar Information</h5>
+                    <pre id="calendar-info"></pre>
+                    
+                    <h5>Raw Events Data</h5>
+                    <pre id="raw-events"></pre>
+                    
+                    <h5>Busy Periods</h5>
+                    <pre id="busy-periods"></pre>
+                    
+                    <h5>Available Time Slots</h5>
+                    <pre id="available-slots"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script>
+        // API credentials and config (copied from google-calendar.js)
+        const CALENDAR_ID = {
+            'dentures': 'info@dkdental.au',
+            'repairs': 'info@dkdental.au',
+            'mouthguards': 'info@dkdental.au'
+        };
+        const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
+        
+        // Service durations
+        const SERVICE_DURATION = {
+            'dentures': 60,
+            'repairs': 60,
+            'mouthguards': 60
+        };
+        
+        // Store access token
+        let accessToken = null;
+        
+        // Initialize the API client
+        function initClient() {
+            console.log('Initializing API client...');
+            return gapi.client.init({
+                discoveryDocs: DISCOVERY_DOCS,
+            }).then(() => {
+                console.log('API client initialized');
+                return fetchServerAccessToken();
+            }).catch(error => {
+                console.error('Error initializing API client:', error);
+                $('#calendar-info').text('Error initializing API client: ' + error.message);
+            });
+        }
+        
+        // Fetch access token from server
+        function fetchServerAccessToken() {
+            console.log('Fetching server access token...');
+            
+            // Use relative path for the test environment
+            const apiUrl = 'script/calendar/get-access-token.php';
+            const cacheBuster = new Date().getTime();
+            const urlWithNoCaching = apiUrl + '?nocache=' + cacheBuster;
+            
+            return fetch(urlWithNoCaching, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                console.log('Server response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch access token: ${response.status} ${response.statusText}`);
+                }
+                return response.text().then(text => {
+                    console.log('Raw response:', text);
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        throw new Error(`Invalid JSON: ${e.message}. Raw response: ${text}`);
+                    }
+                });
+            })
+            .then(data => {
+                console.log('Server response data:', data);
+                if (data.success && data.access_token) {
+                    accessToken = data.access_token;
+                    $('#calendar-info').append('✅ Token fetched successfully\n');
+                    $('#calendar-info').append(`Token: ${accessToken.substring(0, 10)}...\n`);
+                    
+                    // Set the token in gapi
+                    gapi.client.setToken({ access_token: accessToken });
+                    return accessToken;
+                } else {
+                    const errorMsg = data.error || 'Unknown error';
+                    const errorDetails = data.message || 'No details provided';
+                    throw new Error(`No access token in response: ${errorMsg} - ${errorDetails}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching token:', error);
+                $('#calendar-info').append('❌ Error fetching token: ' + error.message + '\n');
+                throw error;
+            });
+        }
+        
+        // Run diagnosis with selected parameters
+        function runDiagnosis(date, service) {
+            const resultsContainer = $('#results-container');
+            resultsContainer.removeClass('d-none');
+            
+            $('#calendar-info').text(`Date: ${date}\nService: ${service}\nCalendar ID: ${CALENDAR_ID[service]}\n\n`);
+            
+            // Load the gapi client
+            gapi.load('client', function() {
+                initClient().then(() => {
+                    testCalendarAccess(date, service);
+                }).catch(error => {
+                    $('#calendar-info').append('Failed to initialize: ' + error.message);
+                });
+            });
+        }
+        
+        // Test calendar access and get events
+        function testCalendarAccess(dateString, service) {
+            const date = new Date(dateString);
+            const formattedDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
+            
+            // 1. First, test basic calendar access
+            gapi.client.calendar.calendarList.list({
+                maxResults: 10
+            })
+            .then(response => {
+                $('#calendar-info').append('✅ Basic API access successful\n');
+                
+                // 2. Test access to the specific calendar
+                return gapi.client.calendar.calendars.get({
+                    calendarId: CALENDAR_ID[service]
+                });
+            })
+            .then(response => {
+                const calendarData = response.result;
+                $('#calendar-info').append(`✅ Calendar access successful\n`);
+                $('#calendar-info').append(`Calendar summary: ${calendarData.summary}\n`);
+                $('#calendar-info').append(`Calendar time zone: ${calendarData.timeZone}\n\n`);
+                
+                // 3. Get events for the selected date
+                const timeMin = new Date(dateString + 'T00:00:00').toISOString();
+                const timeMax = new Date(dateString + 'T23:59:59').toISOString();
+                
+                return gapi.client.calendar.events.list({
+                    calendarId: CALENDAR_ID[service],
+                    timeMin: timeMin,
+                    timeMax: timeMax,
+                    singleEvents: true,
+                    orderBy: 'startTime'
+                });
+            })
+            .then(response => {
+                const events = response.result.items;
+                
+                if (events && events.length > 0) {
+                    $('#calendar-info').append(`Found ${events.length} events on ${dateString}\n`);
+                    
+                    // Display raw events data
+                    $('#raw-events').text(JSON.stringify(events, null, 2));
+                    
+                    // Process events to show busy periods
+                    const busyPeriods = events.map(event => {
+                        return {
+                            summary: event.summary,
+                            start: new Date(event.start.dateTime || event.start.date + 'T00:00:00'),
+                            end: new Date(event.end.dateTime || event.end.date + 'T23:59:59')
+                        };
+                    });
+                    
+                    $('#busy-periods').text(JSON.stringify(busyPeriods.map(period => ({
+                        summary: period.summary,
+                        start: period.start.toLocaleTimeString(),
+                        end: period.end.toLocaleTimeString()
+                    })), null, 2));
+                    
+                    // Generate all possible time slots
+                    generatePossibleTimeSlots(date, service, busyPeriods);
+                } else {
+                    $('#calendar-info').append(`No events found on ${dateString}\n`);
+                    $('#raw-events').text('No events found');
+                    $('#busy-periods').text('No busy periods');
+                    
+                    // Generate all possible time slots with no busy periods
+                    generatePossibleTimeSlots(date, service, []);
+                }
+            })
+            .catch(error => {
+                console.error('Error testing calendar access:', error);
+                $('#calendar-info').append('❌ Error: ' + error.message + '\n');
+            });
+        }
+        
+        // Generate all possible time slots and show which are available
+        function generatePossibleTimeSlots(date, service, busyPeriods) {
+            const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+            
+            // Define business hours
+            let startHour, endHour;
+            
+            if (service === 'mouthguards' && (dayOfWeek >= 1 && dayOfWeek <= 3)) {
+                // Mon-Wed for mouthguards: 10am-6pm
+                startHour = 10;
+                endHour = 18;
+            } else {
+                // Other days or services: 10am-4pm
+                startHour = 10;
+                endHour = 16;
+            }
+            
+            // Generate all possible slots every hour
+            const allSlots = [];
+            for (let hour = startHour; hour < endHour; hour++) {
+                allSlots.push(`${String(hour).padStart(2, '0')}:00`);
+            }
+            
+            // Determine which slots are busy
+            const busySlots = [];
+            
+            allSlots.forEach(slot => {
+                const [hours, minutes] = slot.split(':').map(Number);
+                const slotStart = new Date(date);
+                slotStart.setHours(hours, minutes, 0, 0);
+                
+                const slotEnd = new Date(slotStart);
+                slotEnd.setMinutes(slotEnd.getMinutes() + SERVICE_DURATION[service]);
+                
+                // Check each slot against busy periods
+                for (const period of busyPeriods) {
+                    const isOverlapping = (
+                        // Slot starts during busy period
+                        (slotStart >= period.start && slotStart < period.end) || 
+                        // Slot ends during busy period
+                        (slotEnd > period.start && slotEnd <= period.end) || 
+                        // Slot completely contains busy period
+                        (slotStart <= period.start && slotEnd >= period.end) ||
+                        // Within 5 minutes buffer
+                        (Math.abs(slotStart - period.end) < 5 * 60 * 1000) ||
+                        (Math.abs(slotEnd - period.start) < 5 * 60 * 1000)
+                    );
+                    
+                    if (isOverlapping) {
+                        busySlots.push({
+                            time: slot,
+                            reason: period.summary,
+                            slotStart: slotStart.toLocaleTimeString(),
+                            slotEnd: slotEnd.toLocaleTimeString(),
+                            eventStart: period.start.toLocaleTimeString(),
+                            eventEnd: period.end.toLocaleTimeString()
+                        });
+                        break;
+                    }
+                }
+            });
+            
+            // Determine available slots
+            const availableSlots = allSlots.filter(slot => 
+                !busySlots.some(busySlot => busySlot.time === slot)
+            );
+            
+            // Display results
+            const results = {
+                businessHours: `${startHour}:00 - ${endHour}:00`,
+                allPossibleSlots: allSlots,
+                busySlots: busySlots,
+                availableSlots: availableSlots
+            };
+            
+            $('#available-slots').text(JSON.stringify(results, null, 2));
+        }
+        
+        // Form submission handler
+        $(document).ready(function() {
+            $('#diagnostic-form').on('submit', function(e) {
+                e.preventDefault();
+                const date = $('#date-select').val();
+                const service = $('#service-select').val();
+                runDiagnosis(date, service);
+            });
+            
+            // Default to today's date
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            $('#date-select').val(formattedDate);
+        });
+    </script>
+</body>
+</html> 
