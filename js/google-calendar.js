@@ -12,9 +12,9 @@ window.selectedService = 'dentures';
 // const GOOGLE_API_KEY = 'AIzaSyDFoNqB7BIuoZrUQDRVhnpVLjXsUgT-6Ow'; // Replace with your API key - Not used with server-side OAuth
 const GOOGLE_CLIENT_ID = '593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com';
 const CALENDAR_ID = {
-  'dentures': 'primary', // Replace with actual calendar ID for dentures
-  'repairs': 'primary',  // Replace with actual calendar ID for repairs
-  'mouthguards': 'primary' // Replace with actual calendar ID for mouthguards
+  'dentures': 'info@dkdental.au',
+  'repairs': 'info@dkdental.au',
+  'mouthguards': 'info@dkdental.au'
 };
 
 // Google API discovery docs and scope
