@@ -144,7 +144,9 @@ $calendarId = isset($calendarIds[$data['service']]) ? $calendarIds[$data['servic
 
 // Create the event using the Google Calendar API
 $eventData = $data['event'];
-$apiUrl = "https://www.googleapis.com/calendar/v3/calendars/{$calendarId}/events";
+
+// Add a parameter to prevent adding the event to attendees' calendars
+$apiUrl = "https://www.googleapis.com/calendar/v3/calendars/{$calendarId}/events?sendUpdates=none";
 
 // Initialize cURL session
 $ch = curl_init($apiUrl);

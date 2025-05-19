@@ -1392,14 +1392,10 @@ window.submitBookingForm = function() {
       'end': {
         'dateTime': endDateTimeIso
       },
-      'attendees': [
-        {'email': email}
-      ],
       'reminders': {
         'useDefault': false,
         'overrides': [
-          {'method': 'email', 'minutes': 24 * 60}, // 24 hours
-          {'method': 'popup', 'minutes': 60} // 1 hour
+          {'method': 'popup', 'minutes': 60} // 1 hour before
         ]
       }
     };
