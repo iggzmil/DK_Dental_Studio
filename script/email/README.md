@@ -1,68 +1,90 @@
-# DK Dental Studio Contact Form Email System
+# DK Dental Studio - Appointment Reminder System
 
-This directory contains the PHP scripts and JavaScript files needed to handle contact form submissions from the DK Dental Studio website and send emails using the Gmail API with OAuth authentication.
+This system sends automated reminder emails to clients 24 hours before their scheduled appointments.
 
-## Files
+## Components
 
-- `contact-form-handler.php`: Processes form submissions and sends emails
-- `gmail-sender.php`: Core functionality for sending emails via Gmail API
-- `session-handler.php`: Manages sessions and CSRF protection
-- `contact-form.js`: Client-side JavaScript for form submission and validation
-- `test-email.php`: Test script for sending emails manually
+1. **Database Table**: Stores appointment information for reminders
+2. **Storage Script**: Saves appointment information when bookings are made
+3. **Reminder Script**: Checks for upcoming appointments and sends emails
+4. **Cron Job**: Runs the reminder script automatically once per day
 
-## Implementation Details
+## Setup Instructions
 
-### Authentication
+### 1. Database Setup
 
-The system uses OAuth 2.0 to authenticate with the Gmail API. The authentication flow is handled by the `GoogleTokenManager` class located in `vendor/google/oauth/GoogleTokenManager.php`. The token is stored in a secure location on the webserver.
+The database table has already been created with:
 
-### Email Sending
+```sql
+CREATE TABLE appointments (
+    id SERIAL PRIMARY KEY,
+    appointment_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    recipient_email VARCHAR(255) NOT NULL,
+    subject VARCHAR(255),
+    message TEXT,
+    reminder_sent BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
 
-Emails are sent using the Gmail API through the authenticated user's account. The system supports HTML emails and file attachments.
+### 2. File Permissions
 
-### Security
+Ensure the scripts have proper execution permissions:
 
-- CSRF protection is implemented to prevent cross-site request forgery attacks
-- Input validation is performed on all form fields
-- Error handling and logging are implemented
+```bash
+chmod +x /path/to/script/email/run_reminder.sh
+chmod 755 /path/to/script/email/*.php
+```
 
-## Usage
+### 3. Configure Database Credentials
 
-### Contact Form
+Open the following files and update the database credentials if needed:
+- `store_appointment.php`
+- `send_appointment_reminders.php`
 
-The contact form on the website (`contact-us.html`) is configured to submit to the `contact-form-handler.php` script via AJAX. The form includes the following fields:
+Update these lines in both files:
+```php
+$dbHost = 'localhost';
+$dbName = 'dkds_mailing_list';
+$dbUser = 'postgres';
+$dbPass = ''; // Add password in production environment
+```
 
-- First Name
-- Email
-- Phone Number
-- Subject
-- Message
+### 4. Set Up Cron Job
 
-### Testing
+Add a cron job to run the reminder script once a day. For example, to run it every day at 10:00 AM:
 
-You can test the email functionality using the `test-email.php` script, which provides a simple web interface for sending test emails.
+```bash
+# Edit the crontab
+crontab -e
 
-## Dependencies
+# Add this line (adjust the path to your actual server path)
+0 10 * * * /path/to/script/email/run_reminder.sh
+```
 
-- Google API PHP Client Library
-- PHP 7.4 or higher
-- JavaScript (ES6)
+### 5. Testing the System
 
-## Server Requirements
+To test the system:
 
-- PHP with cURL extension enabled
-- Access to the secure token directory
-- Proper file permissions for reading/writing token files
+1. **Test storing an appointment:**
+   ```bash
+   php store_appointment.php "2023-06-15T10:00:00" "test@example.com" "Test User" "Dentures Consultation"
+   ```
+
+2. **Test sending reminder emails:**
+   ```bash
+   php send_appointment_reminders.php
+   ```
 
 ## Troubleshooting
 
-If emails are not being sent, check the following:
+Check the log files for errors:
+- `reminder_log.txt` - Logs from the reminder script
+- `appointment_storage_log.txt` - Logs from appointment storage
+- `cron_execution.log` - Logs from the cron job execution
 
-1. Verify that the OAuth token is valid and not expired
-2. Check server error logs for any PHP errors
-3. Ensure the Gmail API is enabled in the Google Cloud Console
-4. Verify that the authenticated user has permission to send emails
+## Security Notes
 
-## Live Implementation
-
-This system is designed to work on the live webserver where the OAuth token is stored in the secure directory. Local testing may not work without proper configuration.
+1. Store database passwords securely in production environments
+2. Consider adding IP restrictions or authentication to the APIs
+3. Test email delivery to ensure messages aren't flagged as spam

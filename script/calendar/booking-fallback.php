@@ -108,6 +108,10 @@ $message = "
                     <td>$formattedTime</td>
                 </tr>
                 <tr>
+                    <td class='label'>Duration:</td>
+                    <td>60 minutes</td>
+                </tr>
+                <tr>
                     <td class='label'>Name:</td>
                     <td>$firstName $lastName</td>
                 </tr>
@@ -167,7 +171,8 @@ $patientMessage = "
             <p>
                 <strong>Service:</strong> $serviceName<br>
                 <strong>Date:</strong> $formattedDate<br>
-                <strong>Time:</strong> $formattedTime
+                <strong>Time:</strong> $formattedTime<br>
+                <strong>Duration:</strong> 60 minutes
             </p>";
 
 if ($isFullyLoaded) {

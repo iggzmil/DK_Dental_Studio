@@ -1469,6 +1469,18 @@ function showBookingSuccess(firstName, lastName, email) {
   const bookingFormContainer = document.getElementById('booking-form-container');
   if (!bookingFormContainer) return;
   
+  // Store appointment for reminder email
+  if (selectedDateTime && selectedDateTime.date && selectedDateTime.time) {
+    storeAppointmentForReminder(
+      firstName, 
+      lastName, 
+      email, 
+      selectedDateTime.date, 
+      selectedDateTime.time, 
+      window.selectedService
+    );
+  }
+  
   bookingFormContainer.innerHTML = `
     <div class="booking-success">
       <div class="text-center mb-4">
@@ -1482,6 +1494,7 @@ function showBookingSuccess(firstName, lastName, email) {
         <ul class="mb-0 text-left">
           <li>Our team will review your booking</li>
           <li>You'll receive a confirmation email</li>
+          <li>You'll receive a reminder email 24 hours before your appointment</li>
           <li>If you need to change your appointment, please call us at (02) 9398 7578</li>
         </ul>
       </div>
@@ -1495,6 +1508,46 @@ function showBookingSuccess(firstName, lastName, email) {
   setTimeout(() => {
     reloadCalendarAfterBooking();
   }, 3000);
+}
+
+/**
+ * Store appointment for reminder email
+ */
+function storeAppointmentForReminder(firstName, lastName, email, date, time, service) {
+  // Format the date and time for the API
+  const appointmentDateTime = new Date(`${date}T${time}`);
+  const isoDateTime = appointmentDateTime.toISOString();
+  
+  // Get the service name
+  const serviceName = getServiceName(service);
+  
+  // Create the data to send
+  const reminderData = {
+    datetime: isoDateTime,
+    email: email,
+    firstName: firstName,
+    service: serviceName
+  };
+  
+  // Send the data to the server
+  fetch('/script/email/save_reminder.php', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(reminderData)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      debugLog('Reminder scheduled successfully');
+    } else {
+      debugLog('Failed to schedule reminder:', data.error);
+    }
+  })
+  .catch(error => {
+    debugLog('Error scheduling reminder:', error);
+  });
 }
 
 /**
