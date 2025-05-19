@@ -1401,11 +1401,17 @@ function generateTimeSlots(dateString) {
               response.result.calendars[CALENDAR_ID[selectedService]].busy) {
             
             const busyPeriods = response.result.calendars[CALENDAR_ID[selectedService]].busy;
+            debugLog('Found busy periods:', busyPeriods);
             
             // Process busy periods to determine which slots are unavailable
             busyPeriods.forEach(period => {
               const start = new Date(period.start);
               const end = new Date(period.end);
+              
+              debugLog('Processing busy period:', { 
+                start: start.toLocaleTimeString(), 
+                end: end.toLocaleTimeString() 
+              });
               
               // Check each slot against busy periods
               allSlots.forEach(slot => {
@@ -1416,10 +1422,21 @@ function generateTimeSlots(dateString) {
                 const slotEnd = new Date(slotStart);
                 slotEnd.setMinutes(slotEnd.getMinutes() + SERVICE_DURATION[selectedService]);
                 
-                // If slot overlaps with busy period, mark as busy
-                if ((slotStart >= start && slotStart < end) || 
-                    (slotEnd > start && slotEnd <= end) ||
-                    (slotStart <= start && slotEnd >= end)) {
+                // Enhanced overlap detection with more precise checks
+                const isSlotBusy = (
+                  // Case 1: Slot starts during a busy period
+                  (slotStart >= start && slotStart < end) || 
+                  // Case 2: Slot ends during a busy period
+                  (slotEnd > start && slotEnd <= end) || 
+                  // Case 3: Slot completely contains a busy period
+                  (slotStart <= start && slotEnd >= end) ||
+                  // Case 4: Slot is extremely close to busy period (within 5 minutes)
+                  (Math.abs(slotStart - end) < 300000) || // 5 minutes in milliseconds
+                  (Math.abs(slotEnd - start) < 300000)
+                );
+                
+                if (isSlotBusy && !busySlots.includes(slot)) {
+                  debugLog(`Marking slot ${slot} as busy due to overlap with ${start.toLocaleTimeString()}-${end.toLocaleTimeString()}`);
                   busySlots.push(slot);
                 }
               });
@@ -1430,7 +1447,8 @@ function generateTimeSlots(dateString) {
           
           // Filter out busy slots
           const availableSlots = allSlots.filter(slot => !busySlots.includes(slot));
-          debugLog('Available slots after checking busy times:', availableSlots);
+          debugLog('Final available slots after checking busy times:', availableSlots);
+          debugLog('Marked as busy:', busySlots);
           resolve(availableSlots);
         }).catch(error => {
           debugLog('Error fetching busy times:', error);
@@ -1452,11 +1470,23 @@ function generateTimeSlots(dateString) {
             const busySlots = [];
             if (response.result && response.result.items && response.result.items.length > 0) {
               const events = response.result.items;
+              debugLog('Found events:', events);
               
               // Process events to determine which slots are unavailable
               events.forEach(event => {
+                if (!event.start || !event.end) {
+                  debugLog('Skipping event with missing start/end times:', event);
+                  return;
+                }
+                
                 const start = new Date(event.start.dateTime || event.start.date + 'T00:00:00');
                 const end = new Date(event.end.dateTime || event.end.date + 'T23:59:59');
+                
+                debugLog('Processing event:', { 
+                  summary: event.summary,
+                  start: start.toLocaleTimeString(), 
+                  end: end.toLocaleTimeString() 
+                });
                 
                 // Check each slot against event times
                 allSlots.forEach(slot => {
@@ -1467,42 +1497,55 @@ function generateTimeSlots(dateString) {
                   const slotEnd = new Date(slotStart);
                   slotEnd.setMinutes(slotEnd.getMinutes() + SERVICE_DURATION[selectedService]);
                   
-                  // If slot overlaps with event, mark as busy
-                  if ((slotStart >= start && slotStart < end) || 
-                      (slotEnd > start && slotEnd <= end) ||
-                      (slotStart <= start && slotEnd >= end)) {
+                  // Enhanced overlap detection with more precise checks
+                  const isSlotBusy = (
+                    // Case 1: Slot starts during an event
+                    (slotStart >= start && slotStart < end) || 
+                    // Case 2: Slot ends during an event
+                    (slotEnd > start && slotEnd <= end) || 
+                    // Case 3: Slot completely contains an event
+                    (slotStart <= start && slotEnd >= end) ||
+                    // Case 4: Slot is extremely close to event (within 5 minutes)
+                    (Math.abs(slotStart - end) < 300000) || // 5 minutes in milliseconds
+                    (Math.abs(slotEnd - start) < 300000)
+                  );
+                  
+                  if (isSlotBusy && !busySlots.includes(slot)) {
+                    debugLog(`Marking slot ${slot} as busy due to overlap with event ${event.summary}`);
                     busySlots.push(slot);
                   }
                 });
               });
+            } else {
+              debugLog('No events found or invalid response structure');
             }
             
             // Filter out busy slots
             const availableSlots = allSlots.filter(slot => !busySlots.includes(slot));
-            debugLog('Available slots after checking events:', availableSlots);
+            debugLog('Final available slots after checking events:', availableSlots);
+            debugLog('Marked as busy from events:', busySlots);
             resolve(availableSlots);
           }).catch(secondError => {
             debugLog('Error fetching events:', secondError);
-            // If both methods fail, fall back to random availability
-            const availableSlots = allSlots.filter(() => Math.random() > 0.3);
-            debugLog('Falling back to random availability after both methods failed:', availableSlots);
-            resolve(availableSlots);
+            // If both methods fail, use a more reliable fallback
+            // Instead of random availability, show all slots with a warning
+            debugLog('Both freebusy and events methods failed');
+            showError("Calendar availability information could not be retrieved. Some time slots shown may already be booked.");
+            resolve(allSlots);
           });
         });
       } catch (error) {
         debugLog('Exception in freebusy query:', error);
-        // If there's an exception, fall back to all slots with random availability
-        const availableSlots = allSlots.filter(() => Math.random() > 0.3);
-        debugLog('Falling back to random availability due to exception:', availableSlots);
-        resolve(availableSlots);
+        // If there's an exception, fall back to all slots with a warning
+        showError("Calendar availability cannot be verified. Please confirm your booking by phone after submission.");
+        resolve(allSlots);
       }
     });
   } else {
     debugLog('Google Calendar API not available, using fallback time slots');
-    // If Google Calendar API is not available, generate mock availability
-    const availableSlots = allSlots.filter(() => Math.random() > 0.3);
-    debugLog('Generated fallback time slots:', availableSlots);
-    return Promise.resolve(availableSlots);
+    // If Google Calendar API is not available, show all slots with a warning
+    showError("Calendar availability cannot be verified. Please confirm your booking by phone after submission.");
+    return Promise.resolve(allSlots);
   }
 }
 
