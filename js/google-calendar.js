@@ -460,22 +460,17 @@ function markAvailableDates() {
  */
 function hasAvailableSlotsForDate(dateString) {
   if (!availabilityLoaded) {
-    // In fallback mode, assume weekdays have availability
+    // In fallback mode, all weekdays have availability
     const date = new Date(dateString);
     const dayOfWeek = date.getDay();
     return dayOfWeek >= 1 && dayOfWeek <= 5; // Monday to Friday
   }
   
-  // Get month data based on date
-  const date = new Date(dateString);
-  const month = date.getMonth();
-  const year = date.getFullYear();
-  
-  const today = new Date();
-  const isCurrentMonth = month === today.getMonth() && year === today.getFullYear();
-  
-  // Get data from the appropriate month
-  const monthData = isCurrentMonth ? availabilityData.currentMonth : availabilityData.nextMonth;
+  // Get the combined data
+  const monthData = {
+    ...availabilityData.currentMonth,
+    ...availabilityData.nextMonth
+  };
   
   // Check if this date has slots
   return monthData[dateString] && monthData[dateString].length > 0;
@@ -738,24 +733,20 @@ function showBasicCalendar() {
 function createFallbackAvailabilityData() {
   debugLog('Creating fallback availability data');
   
-  // Get current and next month
+  // Get dates for the next 3 weeks
   const today = new Date();
-  const currentMonth = {
-    year: today.getFullYear(),
-    month: today.getMonth()
-  };
+  const threeWeeksLater = new Date();
+  threeWeeksLater.setDate(today.getDate() + 21); // 21 days = 3 weeks
   
-  const nextMonth = {
-    year: today.getMonth() === 11 ? today.getFullYear() + 1 : today.getFullYear(),
-    month: today.getMonth() === 11 ? 0 : today.getMonth() + 1
-  };
+  // Create fallback data
+  const fallbackData = createFallbackPeriodData(today, threeWeeksLater);
   
-  // Create fallback data for both months
-  availabilityData.currentMonth = createFallbackMonthData(currentMonth.year, currentMonth.month);
-  availabilityData.nextMonth = createFallbackMonthData(nextMonth.year, nextMonth.month);
+  // Store in both current and next month objects for compatibility
+  availabilityData.currentMonth = fallbackData;
+  availabilityData.nextMonth = fallbackData;
   
   // Mark as loaded with fallback data
-  availabilityLoaded = true;
+  availabilityLoaded = false; // Set to false to trigger fallback warning message
 }
 
 /**
@@ -1388,7 +1379,7 @@ function showBookingError() {
 }
 
 /**
- * Load all availability data for current and next month
+ * Load all availability data for the next 3 weeks only
  */
 function loadAllAvailabilityData() {
   debugLog('Loading all availability data');
@@ -1402,58 +1393,45 @@ function loadAllAvailabilityData() {
   isLoadingAvailability = true;
   
   return new Promise((resolve, reject) => {
-    // Get current and next month
+    // Get dates for the next 3 weeks
     const today = new Date();
-    const currentMonth = {
-      year: today.getFullYear(),
-      month: today.getMonth()
-    };
+    const threeWeeksLater = new Date();
+    threeWeeksLater.setDate(today.getDate() + 21); // 21 days = 3 weeks
     
-    const nextMonth = {
-      year: today.getMonth() === 11 ? today.getFullYear() + 1 : today.getFullYear(),
-      month: today.getMonth() === 11 ? 0 : today.getMonth() + 1
-    };
+    debugLog('Loading availability from', today.toISOString(), 'to', threeWeeksLater.toISOString());
     
-    debugLog('Loading availability for current month:', currentMonth.year, currentMonth.month + 1);
-    debugLog('Loading availability for next month:', nextMonth.year, nextMonth.month + 1);
-    
-    // Load both months
-    Promise.all([
-      loadMonthAvailability(currentMonth.year, currentMonth.month),
-      loadMonthAvailability(nextMonth.year, nextMonth.month)
-    ])
-    .then(([currentMonthData, nextMonthData]) => {
-      availabilityData.currentMonth = currentMonthData;
-      availabilityData.nextMonth = nextMonthData;
-      availabilityLoaded = true;
-      isLoadingAvailability = false;
-      debugLog('All availability data loaded successfully');
-      resolve();
-    })
-    .catch(err => {
-      isLoadingAvailability = false;
-      debugLog('Error loading availability data:', err);
-      reject(err);
-    });
+    // Load only the next 3 weeks
+    loadAvailabilityPeriod(today, threeWeeksLater)
+      .then((data) => {
+        // Store the data in both current and next month 
+        // (for compatibility with existing code)
+        availabilityData.currentMonth = data;
+        availabilityData.nextMonth = data;
+        availabilityLoaded = true;
+        isLoadingAvailability = false;
+        debugLog('All availability data loaded successfully');
+        resolve();
+      })
+      .catch(err => {
+        isLoadingAvailability = false;
+        debugLog('Error loading availability data:', err);
+        reject(err);
+      });
   });
 }
 
 /**
- * Load availability data for a specific month
+ * Load availability data for a specific period
  */
-function loadMonthAvailability(year, month) {
+function loadAvailabilityPeriod(startDate, endDate) {
   return new Promise((resolve, reject) => {
-    // Get the first and last day of the month
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    
     // Format dates for the API
-    const timeMin = firstDay.toISOString();
-    const timeMax = new Date(lastDay.getFullYear(), lastDay.getMonth(), lastDay.getDate(), 23, 59, 59).toISOString();
+    const timeMin = startDate.toISOString();
+    const timeMax = endDate.toISOString();
     
     debugLog('Fetching calendar events from', timeMin, 'to', timeMax);
     
-    // Get all events for the month
+    // Get all events for the period
     gapi.client.calendar.events.list({
       calendarId: CALENDAR_ID[window.selectedService],
       timeMin: timeMin,
@@ -1462,7 +1440,7 @@ function loadMonthAvailability(year, month) {
       orderBy: 'startTime'
     })
     .then(response => {
-      debugLog('Received events for month', month + 1, ':', response.result.items ? response.result.items.length : 0);
+      debugLog('Received events:', response.result.items ? response.result.items.length : 0);
       
       // Process all events into busy periods
       const busyPeriods = {};
@@ -1508,13 +1486,17 @@ function loadMonthAvailability(year, month) {
         });
       }
       
-      // Now generate all available slots for each weekday of the month
-      const monthData = {};
+      // Now generate all available slots for each weekday in the period
+      const periodData = {};
       
-      // Loop through each day of the month
-      for (let day = 1; day <= lastDay.getDate(); day++) {
-        const date = new Date(year, month, day);
-        const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      // Get the range of days to process
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      // Loop through each day in the period
+      for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
+        const dateObj = new Date(day);
+        const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 1 = Monday, etc.
         
         // Skip weekends
         if (dayOfWeek === 0 || dayOfWeek === 6) {
@@ -1522,29 +1504,58 @@ function loadMonthAvailability(year, month) {
         }
         
         // Create the day key
-        const dayKey = date.toISOString().split('T')[0];
+        const dayKey = dateObj.toISOString().split('T')[0];
         
         // Get all possible time slots for this day
-        const allSlots = getAllPossibleTimeSlots(date);
+        const allSlots = getAllPossibleTimeSlots(dateObj);
         
         // Filter available slots based on busy periods
-        const availableSlots = filterAvailableSlots(allSlots, date, busyPeriods[dayKey] || []);
+        const availableSlots = filterAvailableSlots(allSlots, dateObj, busyPeriods[dayKey] || []);
         
         // Store the available slots for this day
-        monthData[dayKey] = availableSlots;
+        periodData[dayKey] = availableSlots;
       }
       
-      resolve(monthData);
+      resolve(periodData);
     })
     .catch(err => {
-      debugLog('Error fetching events for month', month + 1, ':', err);
+      debugLog('Error fetching events:', err);
       
-      // Create fallback data with business hours
-      const fallbackData = createFallbackMonthData(year, month);
+      // Create fallback data for the period
+      const fallbackData = createFallbackPeriodData(startDate, endDate);
       
       resolve(fallbackData);
     });
   });
+}
+
+/**
+ * Create fallback data for a specific period
+ */
+function createFallbackPeriodData(startDate, endDate) {
+  const periodData = {};
+  
+  // Loop through each day in the period
+  for (let day = new Date(startDate); day <= endDate; day.setDate(day.getDate() + 1)) {
+    const dateObj = new Date(day);
+    const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    
+    // Skip weekends
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      continue;
+    }
+    
+    // Create the day key
+    const dayKey = dateObj.toISOString().split('T')[0];
+    
+    // Get all possible time slots for this day
+    const allSlots = getAllPossibleTimeSlots(dateObj);
+    
+    // In fallback mode, all slots are available
+    periodData[dayKey] = allSlots;
+  }
+  
+  return periodData;
 }
 
 /**
@@ -1617,38 +1628,6 @@ function filterAvailableSlots(allSlots, date, busyPeriods) {
   
   // Filter out busy slots to get available slots
   return allSlots.filter(slot => !busySlots.includes(slot));
-}
-
-/**
- * Create fallback month data with business hours
- */
-function createFallbackMonthData(year, month) {
-  const monthData = {};
-  
-  // Get the last day of the month
-  const lastDay = new Date(year, month + 1, 0).getDate();
-  
-  // Loop through each day of the month
-  for (let day = 1; day <= lastDay; day++) {
-    const date = new Date(year, month, day);
-    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    
-    // Skip weekends
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-      continue;
-    }
-    
-    // Create the day key
-    const dayKey = date.toISOString().split('T')[0];
-    
-    // Get all possible time slots for this day
-    const allSlots = getAllPossibleTimeSlots(date);
-    
-    // In fallback mode, all time slots are available
-    monthData[dayKey] = allSlots;
-  }
-  
-  return monthData;
 }
 
 /**
