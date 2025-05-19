@@ -1362,7 +1362,89 @@ window.submitBookingForm = function() {
     isFullyLoaded: availabilityLoaded // Add the calendar status
   };
   
-  // Send the booking data to the server
+  // Create Google Calendar event if calendar is fully loaded
+  if (availabilityLoaded) {
+    debugLog('Creating Google Calendar event');
+    
+    // Format date and time for Google Calendar
+    const startDateTime = new Date(`${selectedDateTime.date}T${selectedDateTime.time}`);
+    const endDateTime = new Date(startDateTime);
+    endDateTime.setMinutes(endDateTime.getMinutes() + SERVICE_DURATION[window.selectedService]);
+    
+    // Format the dates in ISO format
+    const startDateTimeIso = startDateTime.toISOString();
+    const endDateTimeIso = endDateTime.toISOString();
+    
+    // Create event object
+    const eventData = {
+      'summary': `${getServiceName(window.selectedService)} - ${firstName} ${lastName}`,
+      'description': `
+        Appointment Details:
+        Service: ${getServiceName(window.selectedService)}
+        Name: ${firstName} ${lastName}
+        Email: ${email}
+        Phone: ${phone}
+        Notes: ${notes}
+      `,
+      'start': {
+        'dateTime': startDateTimeIso
+      },
+      'end': {
+        'dateTime': endDateTimeIso
+      },
+      'attendees': [
+        {'email': email}
+      ],
+      'reminders': {
+        'useDefault': false,
+        'overrides': [
+          {'method': 'email', 'minutes': 24 * 60}, // 24 hours
+          {'method': 'popup', 'minutes': 60} // 1 hour
+        ]
+      }
+    };
+    
+    // Send the event data to the server to create the calendar event
+    fetch('/script/calendar/create-event.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        event: eventData,
+        service: window.selectedService
+      })
+    })
+    .then(response => response.json())
+    .then(eventResult => {
+      debugLog('Calendar event creation result:', eventResult);
+      
+      if (!eventResult.success) {
+        debugLog('Warning: Calendar event creation failed:', eventResult.error);
+        console.warn('Calendar event creation failed:', eventResult.error);
+      }
+      
+      // Proceed with email confirmation regardless of calendar event success
+      sendBookingConfirmation(bookingData);
+    })
+    .catch(error => {
+      debugLog('Error creating calendar event:', error);
+      console.error('Error creating calendar event:', error);
+      
+      // Proceed with email confirmation even if calendar event fails
+      sendBookingConfirmation(bookingData);
+    });
+  } else {
+    // If in basic mode, just send the email confirmation
+    sendBookingConfirmation(bookingData);
+  }
+};
+
+/**
+ * Send booking confirmation email
+ */
+function sendBookingConfirmation(bookingData) {
+  // Send the booking data to the server for email confirmation
   fetch('/script/calendar/booking-fallback.php', {
     method: 'POST',
     headers: {
@@ -1373,7 +1455,7 @@ window.submitBookingForm = function() {
   .then(response => response.json())
   .then(data => {
     if (data.success) {
-      showBookingSuccess(firstName, lastName, email);
+      showBookingSuccess(bookingData.firstName, bookingData.lastName, bookingData.email);
     } else {
       showBookingError();
     }
@@ -1382,7 +1464,7 @@ window.submitBookingForm = function() {
     console.error('Error submitting booking:', error);
     showBookingError();
   });
-};
+}
 
 /**
  * Show booking success message
