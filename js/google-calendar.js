@@ -35,6 +35,7 @@ let tokenClient = null;
 let serverAccessToken = null;
 let isInitialized = false;
 let calendarInitialized = false;
+let isInitializing = false; // Add a flag to track when initialization is in progress
 
 // Store all availability data for current and next month
 let availabilityData = {
@@ -45,6 +46,12 @@ let availabilityData = {
 // Set flag for data loading status
 let isLoadingAvailability = false;
 let availabilityLoaded = false;
+
+// Global token fetching promise to prevent duplicate requests
+let tokenFetchPromise = null;
+
+// Keep track of the availability loading promise
+let availabilityLoadingPromise = null;
 
 /**
  * Debug logging function - only logs when DEBUG_MODE is true
@@ -175,9 +182,8 @@ document.addEventListener('DOMContentLoaded', function() {
     window.selectedService = 'dentures';
   }
   
-  // Initialize once
-  if (!isInitialized) {
-    isInitialized = true;
+  // Initialize once and prevent multiple initializations
+  if (!isInitialized && !isInitializing) {
     initializeCalendar();
   }
 });
@@ -186,12 +192,20 @@ document.addEventListener('DOMContentLoaded', function() {
  * Initialize the calendar system
  */
 function initializeCalendar() {
+  // Prevent multiple initializations
+  if (isInitializing) {
+    debugLog('Calendar initialization already in progress, skipping duplicate initialization');
+    return;
+  }
+  
+  isInitializing = true;
   debugLog('Initializing calendar system');
   
   // Get gapi from window
   gapi = window.gapi;
   if (!gapi) {
     debugLog('Google API client not available');
+    isInitializing = false;
     showBasicCalendar();
     return;
   }
@@ -219,20 +233,26 @@ function initializeCalendar() {
           // Load all availability data first
           loadAllAvailabilityData().then(() => {
             // Load the calendar with the current selected service
+            isInitialized = true;
             calendarInitialized = true;
+            isInitializing = false;
             loadCalendar(window.selectedService);
           }).catch(err => {
             debugLog('Failed to load availability data:', err);
+            isInitialized = true;
+            isInitializing = false;
             showBasicCalendar();
           });
         })
         .catch(err => {
           debugLog('Token fetch failed:', err);
+          isInitializing = false;
           showBasicCalendar();
         });
     })
     .catch(err => {
       debugLog('API client initialization failed:', err);
+      isInitializing = false;
       showBasicCalendar();
     });
   });
@@ -242,7 +262,14 @@ function initializeCalendar() {
  * Fetch access token from server
  */
 function fetchServerAccessToken() {
-  return new Promise((resolve, reject) => {
+  // If we already have a token fetch in progress, return that promise
+  if (tokenFetchPromise) {
+    debugLog('Reusing existing token fetch promise');
+    return tokenFetchPromise;
+  }
+  
+  // Create a new token fetch promise
+  tokenFetchPromise = new Promise((resolve, reject) => {
     debugLog('Fetching server access token...');
     console.log('Attempting to fetch server access token...');
     
@@ -296,12 +323,26 @@ function fetchServerAccessToken() {
           throw new Error(data.error || 'No access token in response');
         }
       })
-      .then(resolve)
+      .then(token => {
+        // Clear the promise reference after a short delay to prevent immediate duplicate requests
+        // but allow future refresh operations
+        setTimeout(() => {
+          tokenFetchPromise = null;
+        }, 5000);
+        
+        resolve(token);
+      })
       .catch(error => {
         console.error('Error fetching token:', error);
+        
+        // Clear the promise on error so future attempts can be made
+        tokenFetchPromise = null;
+        
         reject(error);
       });
   });
+  
+  return tokenFetchPromise;
 }
 
 /**
@@ -328,8 +369,30 @@ function loadCalendar(service) {
     </div>
   `;
   
+  // If initialization is not complete, wait for it
+  if (!isInitialized && isInitializing) {
+    debugLog('Waiting for initialization to complete before loading calendar');
+    const checkInterval = setInterval(() => {
+      if (isInitialized) {
+        clearInterval(checkInterval);
+        loadCalendar(service);
+      }
+    }, 500);
+    
+    // Add a timeout to prevent infinite waiting
+    setTimeout(() => {
+      clearInterval(checkInterval);
+      if (!isInitialized) {
+        debugLog('Initialization timeout, showing basic calendar');
+        showBasicCalendar();
+      }
+    }, 10000);
+    
+    return;
+  }
+  
   // Wait until availability data is loaded
-  if (!availabilityLoaded) {
+  if (!availabilityLoaded && isInitialized) {
     debugLog('Waiting for availability data to load');
     
     // If not already loading, start loading
@@ -353,12 +416,12 @@ function loadCalendar(service) {
         }
       }, 500);
       
-      // Timeout after 10 seconds
+      // Timeout after 15 seconds instead of 10
       setTimeout(() => {
         clearInterval(checkInterval);
         debugLog('Timeout waiting for availability data, rendering calendar with fallback');
         renderCalendar(service);
-      }, 10000);
+      }, 15000);
     }
   } else {
     // Data already loaded, render immediately
@@ -725,6 +788,13 @@ function showBasicCalendar() {
   
   // Render the calendar
   renderCalendar(service);
+  
+  // Show a network connectivity error message
+  showError(
+    "We're having trouble connecting to our appointment system. " +
+    "The calendar is now in basic mode where all times are shown as available. " +
+    "Please call us at (02) 9398 7578 to confirm your appointment."
+  );
 }
 
 /**
@@ -747,6 +817,10 @@ function createFallbackAvailabilityData() {
   
   // Mark as loaded with fallback data
   availabilityLoaded = false; // Set to false to trigger fallback warning message
+  
+  // Log the failure
+  debugLog('⚠️ Using fallback availability data due to API connectivity issues');
+  console.warn('Calendar is in fallback mode due to API connectivity issues. All times shown as available.');
 }
 
 /**
@@ -798,6 +872,17 @@ window.loadCalendarForService = function(service) {
     </div>
   `;
   
+  // If initialization is not complete, we need to wait
+  if (!isInitialized) {
+    if (!isInitializing) {
+      // Start initialization if not already in progress
+      initializeCalendar();
+    } else {
+      debugLog('Initialization already in progress, waiting before loading service');
+    }
+    return;
+  }
+  
   // If service changed, we need to reload availability data
   if (serviceChanged && calendarInitialized) {
     debugLog('Service changed, reloading availability data');
@@ -822,9 +907,6 @@ window.loadCalendarForService = function(service) {
   } else if (calendarInitialized) {
     // Just re-render with existing data
     renderCalendar(service);
-  } else {
-    // Initialize calendar system
-    initializeCalendar();
   }
 };
 
@@ -1386,13 +1468,19 @@ function loadAllAvailabilityData() {
   
   // Prevent multiple simultaneous loading
   if (isLoadingAvailability) {
-    debugLog('Already loading availability data');
-    return Promise.resolve();
+    debugLog('Already loading availability data, returning existing promise');
+    if (availabilityLoadingPromise) {
+      return availabilityLoadingPromise;
+    }
+    // If we don't have a promise but the flag is set, something went wrong
+    // Reset the flag and try again
+    isLoadingAvailability = false;
   }
   
   isLoadingAvailability = true;
   
-  return new Promise((resolve, reject) => {
+  // Create the promise
+  availabilityLoadingPromise = new Promise((resolve, reject) => {
     // Get dates for the next 3 weeks
     const today = new Date();
     const threeWeeksLater = new Date();
@@ -1400,24 +1488,54 @@ function loadAllAvailabilityData() {
     
     debugLog('Loading availability from', today.toISOString(), 'to', threeWeeksLater.toISOString());
     
+    // Set a timeout for the loading process
+    const timeoutId = setTimeout(() => {
+      debugLog('Availability loading timed out after 20 seconds');
+      
+      // Create fallback data
+      createFallbackAvailabilityData();
+      
+      // Mark as loaded, but with fallback data
+      isLoadingAvailability = false;
+      availabilityLoaded = false;
+      availabilityLoadingPromise = null;
+      
+      // Resolve with the fallback data
+      resolve(availabilityData);
+    }, 20000);
+    
     // Load only the next 3 weeks
     loadAvailabilityPeriod(today, threeWeeksLater)
       .then((data) => {
+        // Clear the timeout
+        clearTimeout(timeoutId);
+        
         // Store the data in both current and next month 
         // (for compatibility with existing code)
         availabilityData.currentMonth = data;
         availabilityData.nextMonth = data;
         availabilityLoaded = true;
         isLoadingAvailability = false;
+        availabilityLoadingPromise = null;
         debugLog('All availability data loaded successfully');
-        resolve();
+        resolve(data);
       })
       .catch(err => {
+        // Clear the timeout
+        clearTimeout(timeoutId);
+        
         isLoadingAvailability = false;
+        availabilityLoadingPromise = null;
         debugLog('Error loading availability data:', err);
+        
+        // Create fallback data
+        createFallbackAvailabilityData();
+        
         reject(err);
       });
   });
+  
+  return availabilityLoadingPromise;
 }
 
 /**
@@ -1431,102 +1549,157 @@ function loadAvailabilityPeriod(startDate, endDate) {
     
     debugLog('Fetching calendar events from', timeMin, 'to', timeMax);
     
-    // Get all events for the period
-    gapi.client.calendar.events.list({
-      calendarId: CALENDAR_ID[window.selectedService],
-      timeMin: timeMin,
-      timeMax: timeMax,
-      singleEvents: true,
-      orderBy: 'startTime'
-    })
-    .then(response => {
-      debugLog('Received events:', response.result.items ? response.result.items.length : 0);
+    // Make sure we have a valid token before proceeding
+    if (!gapi.client.getToken()) {
+      debugLog('No token available for calendar API call, getting a new one');
       
-      // Process all events into busy periods
-      const busyPeriods = {};
-      
-      if (response.result && response.result.items && response.result.items.length > 0) {
-        response.result.items.forEach(event => {
-          // Skip certain types of events
-          if (event.eventType === 'workingLocation' || 
-              event.transparency === 'transparent' ||
-              (event.start.date && !event.start.dateTime)) {
-            debugLog('Skipping non-blocking event:', event.summary);
-            return;
-          }
+      fetchServerAccessToken()
+        .then(token => {
+          debugLog('Token refreshed for calendar API call');
+          serverAccessToken = token;
+          window.serverAccessToken = token;
           
-          // Skip events with zero duration
-          if (event.start && event.end && event.start.dateTime === event.end.dateTime) {
-            debugLog('Skipping zero-duration event:', event.summary);
-            return;
-          }
+          // Set the token for API calls
+          gapi.client.setToken({ access_token: token });
           
-          // Only process events with dateTime (not all-day events)
-          if (event.start.dateTime && event.end.dateTime) {
-            const startDate = new Date(event.start.dateTime);
-            const endDate = new Date(event.end.dateTime);
-            
-            // Get the day key (YYYY-MM-DD)
-            const dayKey = startDate.toISOString().split('T')[0];
-            
-            // Initialize the busy periods array for this day if needed
-            if (!busyPeriods[dayKey]) {
-              busyPeriods[dayKey] = [];
-            }
-            
-            // Add the busy period
-            busyPeriods[dayKey].push({
-              summary: event.summary,
-              start: startDate,
-              end: endDate
-            });
-            
-            debugLog('Added busy period for', dayKey, ':', event.summary);
-          }
+          // Now make the calendar API call
+          return getCalendarEvents(timeMin, timeMax);
+        })
+        .then(response => processCalendarData(response, startDate, endDate, resolve))
+        .catch(err => {
+          debugLog('Error with token refresh or calendar API call:', err);
+          reject(err);
         });
+    } else {
+      // We have a token, proceed with the API call
+      getCalendarEvents(timeMin, timeMax)
+        .then(response => processCalendarData(response, startDate, endDate, resolve))
+        .catch(err => {
+          debugLog('Error fetching events:', err);
+          
+          // Try refreshing the token once
+          debugLog('Attempting to refresh token and retry');
+          
+          fetchServerAccessToken()
+            .then(token => {
+              debugLog('Token refreshed, retrying calendar API call');
+              serverAccessToken = token;
+              window.serverAccessToken = token;
+              
+              // Set the token for API calls
+              gapi.client.setToken({ access_token: token });
+              
+              // Retry the calendar API call
+              return getCalendarEvents(timeMin, timeMax);
+            })
+            .then(response => processCalendarData(response, startDate, endDate, resolve))
+            .catch(retryErr => {
+              debugLog('Retry failed:', retryErr);
+              
+              // Create fallback data for the period
+              const fallbackData = createFallbackPeriodData(startDate, endDate);
+              
+              resolve(fallbackData);
+            });
+        });
+    }
+  });
+}
+
+/**
+ * Make the actual API call to get calendar events
+ */
+function getCalendarEvents(timeMin, timeMax) {
+  return gapi.client.calendar.events.list({
+    calendarId: CALENDAR_ID[window.selectedService],
+    timeMin: timeMin,
+    timeMax: timeMax,
+    singleEvents: true,
+    orderBy: 'startTime'
+  });
+}
+
+/**
+ * Process calendar data from API response
+ */
+function processCalendarData(response, startDate, endDate, resolve) {
+  debugLog('Received events:', response.result.items ? response.result.items.length : 0);
+  
+  // Process all events into busy periods
+  const busyPeriods = {};
+  
+  if (response.result && response.result.items && response.result.items.length > 0) {
+    response.result.items.forEach(event => {
+      // Skip certain types of events
+      if (event.eventType === 'workingLocation' || 
+          event.transparency === 'transparent' ||
+          (event.start.date && !event.start.dateTime)) {
+        debugLog('Skipping non-blocking event:', event.summary);
+        return;
       }
       
-      // Now generate all available slots for each weekday in the period
-      const periodData = {};
+      // Skip events with zero duration
+      if (event.start && event.end && event.start.dateTime === event.end.dateTime) {
+        debugLog('Skipping zero-duration event:', event.summary);
+        return;
+      }
       
-      // Get the range of days to process
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      
-      // Loop through each day in the period
-      for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
-        const dateObj = new Date(day);
-        const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      // Only process events with dateTime (not all-day events)
+      if (event.start.dateTime && event.end.dateTime) {
+        const startDate = new Date(event.start.dateTime);
+        const endDate = new Date(event.end.dateTime);
         
-        // Skip weekends
-        if (dayOfWeek === 0 || dayOfWeek === 6) {
-          continue;
+        // Get the day key (YYYY-MM-DD)
+        const dayKey = startDate.toISOString().split('T')[0];
+        
+        // Initialize the busy periods array for this day if needed
+        if (!busyPeriods[dayKey]) {
+          busyPeriods[dayKey] = [];
         }
         
-        // Create the day key
-        const dayKey = dateObj.toISOString().split('T')[0];
+        // Add the busy period
+        busyPeriods[dayKey].push({
+          summary: event.summary,
+          start: startDate,
+          end: endDate
+        });
         
-        // Get all possible time slots for this day
-        const allSlots = getAllPossibleTimeSlots(dateObj);
-        
-        // Filter available slots based on busy periods
-        const availableSlots = filterAvailableSlots(allSlots, dateObj, busyPeriods[dayKey] || []);
-        
-        // Store the available slots for this day
-        periodData[dayKey] = availableSlots;
+        debugLog('Added busy period for', dayKey, ':', event.summary);
       }
-      
-      resolve(periodData);
-    })
-    .catch(err => {
-      debugLog('Error fetching events:', err);
-      
-      // Create fallback data for the period
-      const fallbackData = createFallbackPeriodData(startDate, endDate);
-      
-      resolve(fallbackData);
     });
-  });
+  }
+  
+  // Now generate all available slots for each weekday in the period
+  const periodData = {};
+  
+  // Get the range of days to process
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  // Loop through each day in the period
+  for (let day = new Date(start); day <= end; day.setDate(day.getDate() + 1)) {
+    const dateObj = new Date(day);
+    const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    
+    // Skip weekends
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      continue;
+    }
+    
+    // Create the day key
+    const dayKey = dateObj.toISOString().split('T')[0];
+    
+    // Get all possible time slots for this day
+    const allSlots = getAllPossibleTimeSlots(dateObj);
+    
+    // Filter available slots based on busy periods
+    const availableSlots = filterAvailableSlots(allSlots, dateObj, busyPeriods[dayKey] || []);
+    
+    // Store the available slots for this day
+    periodData[dayKey] = availableSlots;
+  }
+  
+  resolve(periodData);
 }
 
 /**
