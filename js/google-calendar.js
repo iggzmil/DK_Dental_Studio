@@ -457,15 +457,21 @@ function renderCalendar(service) {
   // Mark dates with available slots
   markAvailableDates();
   
-  // Show success message
+  // Add appropriate notice based on calendar mode
   const notice = document.createElement('div');
   
   if (availabilityLoaded) {
     notice.className = 'alert alert-success mb-4';
-    notice.innerHTML = `<p><strong>Calendar loaded successfully.</strong> Please select a date to see available times.</p>`;
+    notice.innerHTML = `
+      <p><strong>Calendar loaded successfully.</strong> Please select a date to see available appointment times.</p>
+      <p class="mb-0 small">Green dates have available slots. Click on a date to view available time slots.</p>
+    `;
   } else {
     notice.className = 'alert alert-warning mb-4';
-    notice.innerHTML = `<p><strong>Note:</strong> The calendar is in basic mode. All time slots are shown as available. Your booking will need to be confirmed by our staff before it is finalized.</p>`;
+    notice.innerHTML = `
+      <p><strong>Note:</strong> The calendar is showing all possible appointment times. Your booking will be confirmed by our staff after submission.</p>
+      <p class="mb-0 small">All weekdays show available slots in this mode. Select any date to view available times.</p>
+    `;
   }
   
   if (calendarContainer.firstChild) {
@@ -522,20 +528,22 @@ function markAvailableDates() {
  * Check if a date has available slots
  */
 function hasAvailableSlotsForDate(dateString) {
+  // In fallback/basic mode, all weekdays should show as available
   if (!availabilityLoaded) {
-    // In fallback mode, all weekdays have availability
     const date = new Date(dateString);
     const dayOfWeek = date.getDay();
-    return dayOfWeek >= 1 && dayOfWeek <= 5; // Monday to Friday
+    // Monday to Friday (1-5) are always available in basic mode
+    return dayOfWeek >= 1 && dayOfWeek <= 5;
   }
   
-  // Get the combined data
+  // When properly connected to Google Calendar, check the actual availability data
+  // Get the combined data from both months
   const monthData = {
     ...availabilityData.currentMonth,
     ...availabilityData.nextMonth
   };
   
-  // Check if this date has slots
+  // Check if this date has available slots
   return monthData[dateString] && monthData[dateString].length > 0;
 }
 
@@ -789,12 +797,22 @@ function showBasicCalendar() {
   // Render the calendar
   renderCalendar(service);
   
-  // Show a network connectivity error message
-  showError(
-    "We're having trouble connecting to our appointment system. " +
-    "The calendar is now in basic mode where all times are shown as available. " +
-    "Please call us at (02) 9398 7578 to confirm your appointment."
-  );
+  // Show a network connectivity notice
+  const calendarContainer = document.getElementById('appointment-calendar');
+  if (calendarContainer) {
+    const notice = document.createElement('div');
+    notice.className = 'alert alert-warning mb-4';
+    notice.innerHTML = `
+      <p><strong>Note:</strong> The calendar is in basic mode. All weekday time slots are shown as available. 
+      Your booking will need to be confirmed by our staff before it is finalized.</p>
+    `;
+    
+    if (calendarContainer.firstChild) {
+      calendarContainer.insertBefore(notice, calendarContainer.firstChild);
+    } else {
+      calendarContainer.appendChild(notice);
+    }
+  }
 }
 
 /**
@@ -803,24 +821,24 @@ function showBasicCalendar() {
 function createFallbackAvailabilityData() {
   debugLog('Creating fallback availability data');
   
-  // Get dates for the next 3 weeks
+  // Get dates for the next 3 months (not just 3 weeks)
   const today = new Date();
-  const threeWeeksLater = new Date();
-  threeWeeksLater.setDate(today.getDate() + 21); // 21 days = 3 weeks
+  const threeMonthsLater = new Date();
+  threeMonthsLater.setMonth(today.getMonth() + 3);
   
   // Create fallback data
-  const fallbackData = createFallbackPeriodData(today, threeWeeksLater);
+  const fallbackData = createFallbackPeriodData(today, threeMonthsLater);
   
   // Store in both current and next month objects for compatibility
   availabilityData.currentMonth = fallbackData;
   availabilityData.nextMonth = fallbackData;
   
   // Mark as loaded with fallback data
-  availabilityLoaded = false; // Set to false to trigger fallback warning message
+  availabilityLoaded = false; // This triggers fallback mode behavior
   
-  // Log the failure
-  debugLog('⚠️ Using fallback availability data due to API connectivity issues');
-  console.warn('Calendar is in fallback mode due to API connectivity issues. All times shown as available.');
+  // Log the state
+  debugLog('Using fallback availability data in basic mode');
+  console.warn('Calendar is in basic mode. All weekday times are shown as available.');
 }
 
 /**
@@ -1593,7 +1611,7 @@ function showBookingError() {
 }
 
 /**
- * Load all availability data for the next 3 weeks only
+ * Load all availability data for the next 3 months
  */
 function loadAllAvailabilityData() {
   debugLog('Loading all availability data');
@@ -1613,16 +1631,16 @@ function loadAllAvailabilityData() {
   
   // Create the promise
   availabilityLoadingPromise = new Promise((resolve, reject) => {
-    // Get dates for the next 3 weeks
+    // Get dates for the next 3 months
     const today = new Date();
-    const threeWeeksLater = new Date();
-    threeWeeksLater.setDate(today.getDate() + 21); // 21 days = 3 weeks
+    const threeMonthsLater = new Date();
+    threeMonthsLater.setMonth(today.getMonth() + 3);
     
-    debugLog('Loading availability from', today.toISOString(), 'to', threeWeeksLater.toISOString());
+    debugLog('Loading availability from', today.toISOString(), 'to', threeMonthsLater.toISOString());
     
-    // Set a timeout for the loading process
+    // Set a longer timeout for the loading process (30 seconds)
     const timeoutId = setTimeout(() => {
-      debugLog('Availability loading timed out after 20 seconds');
+      debugLog('Availability loading timed out after 30 seconds');
       
       // Create fallback data
       createFallbackAvailabilityData();
@@ -1632,18 +1650,17 @@ function loadAllAvailabilityData() {
       availabilityLoaded = false;
       availabilityLoadingPromise = null;
       
-      // Resolve with the fallback data
+      // Resolve with the fallback data to continue
       resolve(availabilityData);
-    }, 20000);
+    }, 30000);
     
-    // Load only the next 3 weeks
-    loadAvailabilityPeriod(today, threeWeeksLater)
+    // Load availability data for the next 3 months
+    loadAvailabilityPeriod(today, threeMonthsLater)
       .then((data) => {
         // Clear the timeout
         clearTimeout(timeoutId);
         
-        // Store the data in both current and next month 
-        // (for compatibility with existing code)
+        // Store the data in both current and next month objects
         availabilityData.currentMonth = data;
         availabilityData.nextMonth = data;
         availabilityLoaded = true;
@@ -1663,7 +1680,9 @@ function loadAllAvailabilityData() {
         // Create fallback data
         createFallbackAvailabilityData();
         
-        reject(err);
+        // Still resolve (with fallback data) rather than reject
+        // to prevent calendar from breaking completely
+        resolve(availabilityData);
       });
   });
   
@@ -1856,7 +1875,7 @@ function createFallbackPeriodData(startDate, endDate) {
     // Get all possible time slots for this day
     const allSlots = getAllPossibleTimeSlots(dateObj);
     
-    // In fallback mode, all slots are available
+    // In fallback mode, all slots are available for weekdays
     periodData[dayKey] = allSlots;
   }
   
