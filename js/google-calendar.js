@@ -396,13 +396,13 @@ function renderCalendar(service) {
   
   // Show success message
   const notice = document.createElement('div');
-  notice.className = 'alert alert-success mb-4';
   
   if (availabilityLoaded) {
+    notice.className = 'alert alert-success mb-4';
     notice.innerHTML = `<p><strong>Calendar loaded successfully.</strong> Please select a date to see available times.</p>`;
   } else {
     notice.className = 'alert alert-warning mb-4';
-    notice.innerHTML = `<p><strong>Note:</strong> The calendar is in basic mode. Your booking will be sent to our staff for confirmation.</p>`;
+    notice.innerHTML = `<p><strong>Note:</strong> The calendar is in basic mode. All time slots are shown as available. Your booking will need to be confirmed by our staff before it is finalized.</p>`;
   }
   
   if (calendarContainer.firstChild) {
@@ -1644,11 +1644,8 @@ function createFallbackMonthData(year, month) {
     // Get all possible time slots for this day
     const allSlots = getAllPossibleTimeSlots(date);
     
-    // Create some random busy periods based on day of week for more realistic data
-    const availableSlots = createDefaultBusyPeriodsForDay(allSlots, dayOfWeek);
-    
-    // Store the available slots for this day
-    monthData[dayKey] = availableSlots;
+    // In fallback mode, all time slots are available
+    monthData[dayKey] = allSlots;
   }
   
   return monthData;
@@ -1656,26 +1653,11 @@ function createFallbackMonthData(year, month) {
 
 /**
  * Create default busy periods for a day based on day of week
+ * In the new version, all slots are available in fallback mode
  */
 function createDefaultBusyPeriodsForDay(allSlots, dayOfWeek) {
-  // Copy all slots
-  const availableSlots = [...allSlots];
-  
-  // Remove some slots based on day of week to simulate busy periods
-  switch (dayOfWeek) {
-    case 1: // Monday - remove lunch and one afternoon slot
-      return availableSlots.filter(slot => slot !== '12:00' && slot !== '14:00');
-    case 2: // Tuesday - remove morning slot
-      return availableSlots.filter(slot => slot !== '10:00');
-    case 3: // Wednesday - remove afternoon slots
-      return availableSlots.filter(slot => slot !== '14:00' && slot !== '15:00');
-    case 4: // Thursday - remove lunch time
-      return availableSlots.filter(slot => slot !== '12:00' && slot !== '13:00');
-    case 5: // Friday - remove morning slots
-      return availableSlots.filter(slot => slot !== '10:00' && slot !== '11:00');
-    default:
-      return availableSlots;
-  }
+  // Return all slots as available in fallback mode
+  return allSlots;
 }
 
 /**
