@@ -3,7 +3,7 @@
  */
 
 // Debug mode - set to true to show detailed debug information
-const DEBUG_MODE = false;
+const DEBUG_MODE = true;
 
 // Set default selected service on script load
 window.selectedService = 'dentures';
@@ -35,6 +35,16 @@ let tokenClient = null;
 let serverAccessToken = null;
 let isInitialized = false;
 let calendarInitialized = false;
+
+// Store all availability data for current and next month
+let availabilityData = {
+  currentMonth: {},
+  nextMonth: {}
+};
+
+// Set flag for data loading status
+let isLoadingAvailability = false;
+let availabilityLoaded = false;
 
 /**
  * On page load, initialize Google API client
@@ -92,9 +102,15 @@ function initializeCalendar() {
           // Set the token for API calls
           gapi.client.setToken({ access_token: token });
           
-          // Load the calendar with the current selected service
-          calendarInitialized = true;
-          loadCalendar(window.selectedService);
+          // Load all availability data first
+          loadAllAvailabilityData().then(() => {
+            // Load the calendar with the current selected service
+            calendarInitialized = true;
+            loadCalendar(window.selectedService);
+          }).catch(err => {
+            debugLog('Failed to load availability data:', err);
+            showBasicCalendar();
+          });
         })
         .catch(err => {
           debugLog('Token fetch failed:', err);
@@ -114,9 +130,22 @@ function initializeCalendar() {
 function fetchServerAccessToken() {
   return new Promise((resolve, reject) => {
     debugLog('Fetching server access token...');
+    console.log('Attempting to fetch server access token...');
     
-    // Use absolute path for production environment with proper protocol
-    const apiUrl = '/script/calendar/get-access-token.php';
+    // Use relative path for better compatibility
+    let apiUrl = 'script/calendar/get-access-token.php';
+    
+    // Check if we're in a subdirectory and adjust path
+    if (window.location.pathname.includes('/appointment.html')) {
+      apiUrl = 'script/calendar/get-access-token.php';
+    } else {
+      // Handle other potential path situations
+      apiUrl = 'script/calendar/get-access-token.php';
+    }
+    
+    console.log('Token fetch URL:', apiUrl);
+    debugLog('Token fetch URL:', apiUrl);
+    
     const cacheBuster = new Date().getTime();
     const urlWithNoCaching = apiUrl + '?nocache=' + cacheBuster;
     
@@ -129,20 +158,35 @@ function fetchServerAccessToken() {
       credentials: 'same-origin'
     })
       .then(response => {
+        debugLog('Token fetch response status:', response.status);
+        console.log('Token fetch response status:', response.status);
+        
         if (!response.ok) {
           throw new Error(`Failed to fetch token: ${response.status}`);
         }
-        return response.json();
+        return response.text().then(text => {
+          try {
+            return JSON.parse(text);
+          } catch (e) {
+            console.error('Invalid JSON in token response:', text);
+            throw new Error('Invalid JSON response from token endpoint');
+          }
+        });
       })
       .then(data => {
         if (data.success && data.access_token) {
+          console.log('Successfully retrieved access token');
           return data.access_token;
         } else {
+          console.error('Token response did not contain valid access token:', data);
           throw new Error(data.error || 'No access token in response');
         }
       })
       .then(resolve)
-      .catch(reject);
+      .catch(error => {
+        console.error('Error fetching token:', error);
+        reject(error);
+      });
   });
 }
 
@@ -162,26 +206,49 @@ function loadCalendar(service) {
     return;
   }
   
-  // Get today's date for initial view
-  const today = new Date();
-  const month = today.getMonth();
-  const year = today.getFullYear();
+  // Show loading state
+  calendarContainer.innerHTML = `
+    <div class="calendar-loading">
+      <div class="spinner"></div>
+      <p>Loading appointment calendar...</p>
+    </div>
+  `;
   
-  // Create and render the calendar
-  calendarContainer.innerHTML = createCalendarHTML(month, year, service);
-  
-  // Setup calendar interactions
-  setupCalendarInteraction();
-  
-  // Show success message
-  const notice = document.createElement('div');
-  notice.className = 'alert alert-success mb-4';
-  notice.innerHTML = `<p><strong>Calendar loaded successfully.</strong> Please select a date to see available times.</p>`;
-  
-  if (calendarContainer.firstChild) {
-    calendarContainer.insertBefore(notice, calendarContainer.firstChild);
+  // Wait until availability data is loaded
+  if (!availabilityLoaded) {
+    debugLog('Waiting for availability data to load');
+    
+    // If not already loading, start loading
+    if (!isLoadingAvailability) {
+      loadAllAvailabilityData()
+        .then(() => {
+          debugLog('Availability data loaded, rendering calendar');
+          renderCalendar(service);
+        })
+        .catch(err => {
+          debugLog('Failed to load availability data:', err);
+          renderCalendar(service); // Render with fallback data
+        });
+    } else {
+      // Check every 500ms if data is loaded
+      const checkInterval = setInterval(() => {
+        if (availabilityLoaded) {
+          clearInterval(checkInterval);
+          debugLog('Availability data loaded, rendering calendar');
+          renderCalendar(service);
+        }
+      }, 500);
+      
+      // Timeout after 10 seconds
+      setTimeout(() => {
+        clearInterval(checkInterval);
+        debugLog('Timeout waiting for availability data, rendering calendar with fallback');
+        renderCalendar(service);
+      }, 10000);
+    }
   } else {
-    calendarContainer.appendChild(notice);
+    // Data already loaded, render immediately
+    renderCalendar(service);
   }
   
   // Update UI to match selected service
@@ -189,14 +256,9 @@ function loadCalendar(service) {
 }
 
 /**
- * Show basic calendar without API integration
+ * Render the calendar UI with available data
  */
-function showBasicCalendar() {
-  debugLog('Showing basic calendar');
-  
-  // Get the service to use for the calendar
-  const service = window.selectedService || 'dentures';
-  
+function renderCalendar(service) {
   // Get the calendar container
   const calendarContainer = document.getElementById('appointment-calendar');
   if (!calendarContainer) {
@@ -209,22 +271,341 @@ function showBasicCalendar() {
   const month = today.getMonth();
   const year = today.getFullYear();
   
-  // Create notice for basic mode
-  const notice = document.createElement('div');
-  notice.className = 'alert alert-info mb-4';
-  notice.innerHTML = `<p><strong>Note:</strong> The calendar is in basic mode. Your booking will be sent to our staff for confirmation.</p>`;
-  
   // Create and render the calendar
   calendarContainer.innerHTML = createCalendarHTML(month, year, service);
-  
-  // Add the notice
-  calendarContainer.insertBefore(notice, calendarContainer.firstChild);
   
   // Setup calendar interactions
   setupCalendarInteraction();
   
-  // Update UI to match selected service
-  updateServiceSelectionUI(service);
+  // Mark dates with available slots
+  markAvailableDates();
+  
+  // Show success message
+  const notice = document.createElement('div');
+  notice.className = 'alert alert-success mb-4';
+  
+  if (availabilityLoaded) {
+    notice.innerHTML = `<p><strong>Calendar loaded successfully.</strong> Please select a date to see available times.</p>`;
+  } else {
+    notice.className = 'alert alert-warning mb-4';
+    notice.innerHTML = `<p><strong>Note:</strong> The calendar is in basic mode. Your booking will be sent to our staff for confirmation.</p>`;
+  }
+  
+  if (calendarContainer.firstChild) {
+    calendarContainer.insertBefore(notice, calendarContainer.firstChild);
+  } else {
+    calendarContainer.appendChild(notice);
+  }
+}
+
+/**
+ * Mark calendar dates that have available slots
+ */
+function markAvailableDates() {
+  // Get all calendar day elements
+  const calendarDays = document.querySelectorAll('.calendar-day:not(.empty)');
+  
+  // Process each day
+  calendarDays.forEach(dayElement => {
+    // Get the date from the day element
+    const dateString = dayElement.getAttribute('data-date');
+    if (!dateString) return;
+    
+    // Skip if already marked
+    if (dayElement.classList.contains('past') || dayElement.classList.contains('weekend')) {
+      return;
+    }
+    
+    // Check if this date has available slots
+    const hasAvailableSlots = hasAvailableSlotsForDate(dateString);
+    
+    // Mark as available or fully booked
+    if (hasAvailableSlots) {
+      dayElement.classList.add('available');
+      
+      // Add availability indicator
+      const availabilityDiv = dayElement.querySelector('.availability');
+      if (availabilityDiv) {
+        availabilityDiv.textContent = 'Available';
+      }
+    } else {
+      dayElement.classList.add('fully-booked');
+      
+      // Update availability indicator
+      const availabilityDiv = dayElement.querySelector('.availability');
+      if (availabilityDiv) {
+        availabilityDiv.textContent = 'Fully Booked';
+        availabilityDiv.style.color = '#f44336';
+      }
+    }
+  });
+}
+
+/**
+ * Check if a date has available slots
+ */
+function hasAvailableSlotsForDate(dateString) {
+  if (!availabilityLoaded) {
+    // In fallback mode, assume weekdays have availability
+    const date = new Date(dateString);
+    const dayOfWeek = date.getDay();
+    return dayOfWeek >= 1 && dayOfWeek <= 5; // Monday to Friday
+  }
+  
+  // Get month data based on date
+  const date = new Date(dateString);
+  const month = date.getMonth();
+  const year = date.getFullYear();
+  
+  const today = new Date();
+  const isCurrentMonth = month === today.getMonth() && year === today.getFullYear();
+  
+  // Get data from the appropriate month
+  const monthData = isCurrentMonth ? availabilityData.currentMonth : availabilityData.nextMonth;
+  
+  // Check if this date has slots
+  return monthData[dateString] && monthData[dateString].length > 0;
+}
+
+/**
+ * Set up interaction for calendar days and time slots
+ */
+function setupCalendarInteraction() {
+  // Define the global functions for calendar navigation
+  window.prevMonth = function() {
+    // Get the current displayed month and year
+    const headerText = document.querySelector('.calendar-header h3').textContent;
+    const [monthName, year] = headerText.split(' ');
+    
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+                        "July", "August", "September", "October", "November", "December"];
+    
+    let month = monthNames.indexOf(monthName);
+    let newYear = parseInt(year, 10);
+    
+    // Calculate previous month
+    if (month === 0) {
+      month = 11;
+      newYear--;
+    } else {
+      month--;
+    }
+    
+    // Don't allow navigating to past months
+    const today = new Date();
+    if (newYear < today.getFullYear() || (newYear === today.getFullYear() && month < today.getMonth())) {
+      alert('Cannot navigate to past months');
+      return;
+    }
+    
+    // Re-render the calendar
+    const calendarContainer = document.getElementById('appointment-calendar');
+    
+    // Get the success message if it exists (to preserve it)
+    const successMessage = calendarContainer.querySelector('.alert');
+    
+    // Re-render the calendar
+    calendarContainer.innerHTML = createCalendarHTML(month, newYear, window.selectedService);
+    
+    // Re-add the success message if it existed
+    if (successMessage) {
+      calendarContainer.insertBefore(successMessage, calendarContainer.firstChild);
+    }
+    
+    // Re-setup the interactions
+    setupCalendarInteraction();
+    
+    // Mark available dates
+    markAvailableDates();
+    
+    // Clear time slots and booking form
+    document.getElementById('time-slots-container').innerHTML = '';
+    const bookingForm = document.getElementById('booking-form-container');
+    if (bookingForm) {
+      bookingForm.style.display = 'none';
+    }
+  };
+  
+  window.nextMonth = function() {
+    // Get the current displayed month and year
+    const headerText = document.querySelector('.calendar-header h3').textContent;
+    const [monthName, year] = headerText.split(' ');
+    
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+                        "July", "August", "September", "October", "November", "December"];
+    
+    let month = monthNames.indexOf(monthName);
+    let newYear = parseInt(year, 10);
+    
+    // Calculate next month
+    if (month === 11) {
+      month = 0;
+      newYear++;
+    } else {
+      month++;
+    }
+    
+    // Limit how far in the future users can book (for example, 3 months)
+    const today = new Date();
+    const maxDate = new Date(today.getFullYear(), today.getMonth() + 3, 1);
+    
+    if (newYear > maxDate.getFullYear() || 
+        (newYear === maxDate.getFullYear() && month > maxDate.getMonth())) {
+      alert('Cannot book appointments more than 3 months in advance');
+      return;
+    }
+    
+    // Re-render the calendar
+    const calendarContainer = document.getElementById('appointment-calendar');
+    
+    // Get the success message if it exists (to preserve it)
+    const successMessage = calendarContainer.querySelector('.alert');
+    
+    // Re-render the calendar
+    calendarContainer.innerHTML = createCalendarHTML(month, newYear, window.selectedService);
+    
+    // Re-add the success message if it existed
+    if (successMessage) {
+      calendarContainer.insertBefore(successMessage, calendarContainer.firstChild);
+    }
+    
+    // Re-setup the interactions
+    setupCalendarInteraction();
+    
+    // Mark available dates
+    markAvailableDates();
+    
+    // Clear time slots and booking form
+    document.getElementById('time-slots-container').innerHTML = '';
+    const bookingForm = document.getElementById('booking-form-container');
+    if (bookingForm) {
+      bookingForm.style.display = 'none';
+    }
+  };
+  
+  // Define the function to show time slots
+  window.showTimeSlots = function(dayElement) {
+    // Clear any previously selected days
+    document.querySelectorAll('.calendar-day.selected').forEach(el => {
+      el.classList.remove('selected');
+    });
+    
+    // Mark this day as selected
+    dayElement.classList.add('selected');
+    
+    // Get the date from the day element
+    const dateString = dayElement.getAttribute('data-date');
+    
+    // Show loading state
+    const timeSlotsContainer = document.getElementById('time-slots-container');
+    if (!timeSlotsContainer) {
+      debugLog('ERROR: Time slots container not found!');
+      return;
+    }
+    
+    timeSlotsContainer.innerHTML = `
+      <h4 class="text-center">Loading available times...</h4>
+      <div class="text-center">
+          <div class="spinner"></div>
+      </div>
+    `;
+
+    // Get time slots from pre-loaded data
+    const timeSlots = getTimeSlotsFromCache(dateString);
+    
+    // Show the time slots
+    timeSlotsContainer.innerHTML = createTimeSlotsHTML(dateString, timeSlots);
+    
+    // Scroll to the time slots
+    timeSlotsContainer.scrollIntoView({ behavior: 'smooth' });
+    
+    // Clear any booking form
+    const bookingFormContainer = document.getElementById('booking-form-container');
+    if (bookingFormContainer) {
+      bookingFormContainer.style.display = 'none';
+    }
+  };
+}
+
+/**
+ * Get time slots from the pre-loaded cache
+ */
+function getTimeSlotsFromCache(dateString) {
+  // If data isn't loaded yet, use fallback
+  if (!availabilityLoaded) {
+    return getFallbackTimeSlots(dateString);
+  }
+  
+  // Determine which month data to use
+  const date = new Date(dateString);
+  const today = new Date();
+  
+  const isCurrentMonth = 
+    date.getMonth() === today.getMonth() && 
+    date.getFullYear() === today.getFullYear();
+  
+  const monthData = isCurrentMonth ? 
+    availabilityData.currentMonth : 
+    availabilityData.nextMonth;
+  
+  // Return the cached slots or empty array if none
+  return monthData[dateString] || [];
+}
+
+/**
+ * Get fallback time slots for a date
+ */
+function getFallbackTimeSlots(dateString) {
+  const date = new Date(dateString);
+  const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  
+  // Business hours
+  let allSlots = getAllPossibleTimeSlots(date);
+  
+  // Apply default busy periods
+  return createDefaultBusyPeriodsForDay(allSlots, dayOfWeek);
+}
+
+/**
+ * Show basic calendar without API integration
+ */
+function showBasicCalendar() {
+  debugLog('Showing basic calendar');
+  
+  // Get the service to use for the calendar
+  const service = window.selectedService || 'dentures';
+  
+  // Create fallback data for basic mode
+  createFallbackAvailabilityData();
+  
+  // Render the calendar
+  renderCalendar(service);
+}
+
+/**
+ * Create fallback availability data when API access fails
+ */
+function createFallbackAvailabilityData() {
+  debugLog('Creating fallback availability data');
+  
+  // Get current and next month
+  const today = new Date();
+  const currentMonth = {
+    year: today.getFullYear(),
+    month: today.getMonth()
+  };
+  
+  const nextMonth = {
+    year: today.getMonth() === 11 ? today.getFullYear() + 1 : today.getFullYear(),
+    month: today.getMonth() === 11 ? 0 : today.getMonth() + 1
+  };
+  
+  // Create fallback data for both months
+  availabilityData.currentMonth = createFallbackMonthData(currentMonth.year, currentMonth.month);
+  availabilityData.nextMonth = createFallbackMonthData(nextMonth.year, nextMonth.month);
+  
+  // Mark as loaded with fallback data
+  availabilityLoaded = true;
 }
 
 /**
@@ -253,6 +634,9 @@ function updateServiceSelectionUI(service) {
 window.loadCalendarForService = function(service) {
   debugLog('loadCalendarForService called for', service);
   
+  // Only reload data if service changed
+  const serviceChanged = window.selectedService !== service;
+  
   // Update the global selected service
   window.selectedService = service;
   
@@ -273,11 +657,32 @@ window.loadCalendarForService = function(service) {
     </div>
   `;
   
-  // If calendar is already initialized, just load for the new service
-  if (calendarInitialized && serverAccessToken) {
-    loadCalendar(service);
+  // If service changed, we need to reload availability data
+  if (serviceChanged && calendarInitialized) {
+    debugLog('Service changed, reloading availability data');
+    
+    // Reset availability data
+    availabilityData = {
+      currentMonth: {},
+      nextMonth: {}
+    };
+    availabilityLoaded = false;
+    
+    // Reload availability data
+    loadAllAvailabilityData()
+      .then(() => {
+        debugLog('Availability data reloaded for new service');
+        renderCalendar(service);
+      })
+      .catch(err => {
+        debugLog('Failed to reload availability data for new service:', err);
+        renderCalendar(service); // Render with fallback data
+      });
+  } else if (calendarInitialized) {
+    // Just re-render with existing data
+    renderCalendar(service);
   } else {
-    // Try to initialize
+    // Initialize calendar system
     initializeCalendar();
   }
 };
@@ -545,408 +950,6 @@ function getCalendarStyles() {
 }
 
 /**
- * Set up interaction for calendar days and time slots
- */
-function setupCalendarInteraction() {
-  // Define the global functions for calendar navigation
-  window.prevMonth = function() {
-    // Get the current displayed month and year
-    const headerText = document.querySelector('.calendar-header h3').textContent;
-    const [monthName, year] = headerText.split(' ');
-    
-    const monthNames = ["January", "February", "March", "April", "May", "June",
-                        "July", "August", "September", "October", "November", "December"];
-    
-    let month = monthNames.indexOf(monthName);
-    let newYear = parseInt(year, 10);
-    
-    // Calculate previous month
-    if (month === 0) {
-      month = 11;
-      newYear--;
-    } else {
-      month--;
-    }
-    
-    // Don't allow navigating to past months
-    const today = new Date();
-    if (newYear < today.getFullYear() || (newYear === today.getFullYear() && month < today.getMonth())) {
-      alert('Cannot navigate to past months');
-      return;
-    }
-    
-    // Re-render the calendar
-    const calendarContainer = document.getElementById('appointment-calendar');
-    
-    // Get the success message if it exists (to preserve it)
-    const successMessage = calendarContainer.querySelector('.alert-success');
-    
-    // Re-render the calendar
-    calendarContainer.innerHTML = createCalendarHTML(month, newYear, window.selectedService);
-    
-    // Re-add the success message if it existed
-    if (successMessage) {
-      calendarContainer.insertBefore(successMessage, calendarContainer.firstChild);
-    }
-    
-    // Re-setup the interactions
-    setupCalendarInteraction();
-    
-    // Clear time slots and booking form
-    document.getElementById('time-slots-container').innerHTML = '';
-    const bookingForm = document.getElementById('booking-form-container');
-    if (bookingForm) {
-      bookingForm.style.display = 'none';
-    }
-  };
-  
-  window.nextMonth = function() {
-    // Get the current displayed month and year
-    const headerText = document.querySelector('.calendar-header h3').textContent;
-    const [monthName, year] = headerText.split(' ');
-    
-    const monthNames = ["January", "February", "March", "April", "May", "June",
-                        "July", "August", "September", "October", "November", "December"];
-    
-    let month = monthNames.indexOf(monthName);
-    let newYear = parseInt(year, 10);
-    
-    // Calculate next month
-    if (month === 11) {
-      month = 0;
-      newYear++;
-    } else {
-      month++;
-    }
-    
-    // Limit how far in the future users can book (for example, 3 months)
-    const today = new Date();
-    const maxDate = new Date(today.getFullYear(), today.getMonth() + 3, 1);
-    
-    if (newYear > maxDate.getFullYear() || 
-        (newYear === maxDate.getFullYear() && month > maxDate.getMonth())) {
-      alert('Cannot book appointments more than 3 months in advance');
-      return;
-    }
-    
-    // Re-render the calendar
-    const calendarContainer = document.getElementById('appointment-calendar');
-    
-    // Get the success message if it exists (to preserve it)
-    const successMessage = calendarContainer.querySelector('.alert-success');
-    
-    // Re-render the calendar
-    calendarContainer.innerHTML = createCalendarHTML(month, newYear, window.selectedService);
-    
-    // Re-add the success message if it existed
-    if (successMessage) {
-      calendarContainer.insertBefore(successMessage, calendarContainer.firstChild);
-    }
-    
-    // Re-setup the interactions
-    setupCalendarInteraction();
-    
-    // Clear time slots and booking form
-    document.getElementById('time-slots-container').innerHTML = '';
-    const bookingForm = document.getElementById('booking-form-container');
-    if (bookingForm) {
-      bookingForm.style.display = 'none';
-    }
-  };
-  
-  // Define the function to show time slots
-  window.showTimeSlots = function(dayElement) {
-    // Clear any previously selected days
-    document.querySelectorAll('.calendar-day.selected').forEach(el => {
-      el.classList.remove('selected');
-    });
-    
-    // Mark this day as selected
-    dayElement.classList.add('selected');
-    
-    // Get the date from the day element
-    const dateString = dayElement.getAttribute('data-date');
-    
-    // Show loading state
-    const timeSlotsContainer = document.getElementById('time-slots-container');
-    if (!timeSlotsContainer) {
-      debugLog('ERROR: Time slots container not found!');
-      return;
-    }
-    
-    timeSlotsContainer.innerHTML = `
-      <h4 class="text-center">Loading available times...</h4>
-      <div class="text-center">
-        <div class="spinner"></div>
-      </div>
-    `;
-    
-    // Generate the time slots for this date
-    generateTimeSlots(dateString)
-      .then(timeSlots => {
-        // Show the time slots
-        timeSlotsContainer.innerHTML = createTimeSlotsHTML(dateString, timeSlots);
-        
-        // Scroll to the time slots
-        timeSlotsContainer.scrollIntoView({ behavior: 'smooth' });
-      })
-      .catch(error => {
-        debugLog('Error generating time slots:', error);
-        
-        // Show error message
-        timeSlotsContainer.innerHTML = `
-          <div class="alert alert-warning">
-            <p>We encountered an issue loading available times. Please try again or select another date.</p>
-            <div class="text-center mt-3">
-              <button class="btn btn-primary" onclick="showTimeSlots(document.querySelector('.calendar-day.selected'))">Retry</button>
-            </div>
-          </div>
-        `;
-      });
-    
-    // Clear any booking form
-    const bookingFormContainer = document.getElementById('booking-form-container');
-    if (bookingFormContainer) {
-      bookingFormContainer.style.display = 'none';
-    }
-  };
-}
-
-/**
- * Generate time slots for a given date
- */
-function generateTimeSlots(dateString) {
-  debugLog('Generating time slots for date:', dateString);
-  
-  // Define business hours based on service and day of week
-  const date = new Date(dateString);
-  const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
-  
-  // Define business hours
-  let startHour, endHour;
-  
-  // Check for weekends first
-  if (dayOfWeek === 0 || dayOfWeek === 6) {
-    // No appointments on weekends
-    return Promise.resolve([]);
-  }
-  
-  if (window.selectedService === 'mouthguards' && (dayOfWeek >= 1 && dayOfWeek <= 3)) {
-    // Mon-Wed for mouthguards: 10am-6pm
-    startHour = 10;
-    endHour = 18;
-  } else {
-    // Other days or services: 10am-4pm
-    // This covers:
-    // - Dentures (Mon-Fri): 10am-4pm
-    // - Repairs (Mon-Fri): 10am-4pm (same as dentures)
-    // - Mouthguards (Thu-Fri): 10am-4pm
-    startHour = 10;
-    endHour = 16;
-  }
-  
-  // Generate all possible slots every hour (60 minutes)
-  const allSlots = [];
-  for (let hour = startHour; hour < endHour; hour++) {
-    allSlots.push(`${String(hour).padStart(2, '0')}:00`);
-  }
-  
-  debugLog('Generated all possible time slots:', allSlots);
-  
-  // Get available time slots from the calendar
-  return getAvailableSlots(allSlots, date, dateString);
-}
-
-/**
- * Get available time slots from the calendar for a given date
- */
-function getAvailableSlots(allSlots, date, dateString) {
-  // If Google Calendar API is not available, show all slots
-  if (!gapi || !gapi.client || !gapi.client.calendar || !serverAccessToken) {
-    debugLog('Google Calendar API not available, showing all slots');
-    return Promise.resolve(allSlots);
-  }
-  
-  debugLog('Checking calendar availability for date:', dateString);
-  
-  // Create time range for the entire day
-  const timeMin = new Date(dateString + 'T00:00:00').toISOString();
-  const timeMax = new Date(dateString + 'T23:59:59').toISOString();
-  
-  // Return a promise that resolves with available slots
-  return new Promise((resolve, reject) => {
-    // Reset the token to prevent caching issues
-    if (window.serverAccessToken) {
-      gapi.client.setToken({ access_token: window.serverAccessToken });
-      debugLog('Reset access token');
-    }
-    
-    // Get events for the specified date
-    gapi.client.calendar.events.list({
-      calendarId: CALENDAR_ID[window.selectedService],
-      timeMin: timeMin,
-      timeMax: timeMax,
-      singleEvents: true,
-      orderBy: 'startTime'
-    }).then(response => {
-      debugLog('Calendar events response:', response);
-      
-      // Extract busy periods from events
-      const busyPeriods = [];
-      
-      if (response.result && response.result.items && response.result.items.length > 0) {
-        response.result.items.forEach(event => {
-          // Skip certain types of events
-          if (event.eventType === 'workingLocation' || 
-              event.transparency === 'transparent' ||
-              (event.start.date && !event.start.dateTime)) {
-            debugLog('Skipping non-blocking event:', event.summary);
-            return;
-          }
-          
-          // Skip events with zero duration
-          if (event.start && event.end && event.start.dateTime === event.end.dateTime) {
-            debugLog('Skipping zero-duration event:', event.summary);
-            return;
-          }
-          
-          // Add this event as a busy period
-          if (event.start.dateTime && event.end.dateTime) {
-            busyPeriods.push({
-              summary: event.summary,
-              start: new Date(event.start.dateTime),
-              end: new Date(event.end.dateTime)
-            });
-            debugLog('Added busy period:', event.summary);
-          }
-        });
-      }
-      
-      // Check each slot against busy periods to determine availability
-      const busySlots = [];
-      allSlots.forEach(slot => {
-        const [hours, minutes] = slot.split(':').map(Number);
-        const slotStart = new Date(date);
-        slotStart.setHours(hours, minutes, 0, 0);
-        
-        const slotEnd = new Date(slotStart);
-        slotEnd.setMinutes(slotEnd.getMinutes() + SERVICE_DURATION[window.selectedService]);
-        
-        // Check if this slot overlaps with any busy period
-        for (const period of busyPeriods) {
-          const isOverlap = (
-            (slotStart >= period.start && slotStart < period.end) || 
-            (slotEnd > period.start && slotEnd <= period.end) || 
-            (slotStart <= period.start && slotEnd >= period.end)
-          );
-          
-          if (isOverlap) {
-            debugLog(`Slot ${slot} is busy due to event: ${period.summary}`);
-            busySlots.push(slot);
-            break;
-          }
-        }
-      });
-      
-      // Filter out busy slots to get available slots
-      const availableSlots = allSlots.filter(slot => !busySlots.includes(slot));
-      debugLog('Final available slots:', availableSlots);
-      
-      resolve(availableSlots);
-    }).catch(error => {
-      debugLog('Error fetching calendar data:', error);
-      resolve(allSlots); // Show all slots if there's an error
-    });
-  });
-}
-
-/**
- * Create HTML for time slots
- */
-function createTimeSlotsHTML(dateString, timeSlots) {
-  const date = new Date(dateString);
-  const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' });
-  const formattedDate = formatDate(dateString);
-  
-  // If no time slots available
-  if (!timeSlots || timeSlots.length === 0) {
-    return `
-      <h4 class="text-center mb-4">Available Times for ${dayOfWeek}, ${formattedDate}</h4>
-      <div class="alert alert-info">
-        <p class="text-center mb-0">No available appointments for this date. Please select another date.</p>
-      </div>
-    `;
-  }
-  
-  // Show available slots
-  let html = `
-    <h4 class="text-center mb-4">Available Times for ${dayOfWeek}, ${formattedDate}</h4>
-    <div class="time-slots-grid">
-  `;
-  
-  timeSlots.forEach(slot => {
-    html += `
-      <div class="time-slot" onclick="selectTimeSlot(this, '${dateString}', '${slot}')">
-        ${formatTime(slot)}
-      </div>
-    `;
-  });
-  
-  html += `</div>`;
-  return html;
-}
-
-/**
- * Debug logging function - only logs when DEBUG_MODE is true
- */
-function debugLog(...args) {
-  if (DEBUG_MODE) {
-    console.log('[Calendar Debug]', ...args);
-    
-    // Also add to debug display if it exists
-    const debugLog = document.getElementById('calendar-debug-log');
-    if (debugLog) {
-      const now = new Date();
-      const timestamp = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}.${now.getMilliseconds()}`;
-      const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
-      
-      const logEntry = document.createElement('div');
-      logEntry.innerHTML = `<span style="color:#999;">${timestamp}</span> ${message}`;
-      debugLog.appendChild(logEntry);
-      
-      // Auto-scroll to bottom
-      debugLog.scrollTop = debugLog.scrollHeight;
-    }
-  }
-}
-
-/**
- * Format a date string for display
- */
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
-/**
- * Format a time string for display
- */
-function formatTime(timeString) {
-  const [hours, minutes] = timeString.split(':');
-  const hour = parseInt(hours, 10);
-  
-  if (hour === 0) {
-    return `12:${minutes}am`;
-  } else if (hour < 12) {
-    return `${hour}:${minutes}am`;
-  } else if (hour === 12) {
-    return `12:${minutes}pm`;
-  } else {
-    return `${hour - 12}:${minutes}pm`;
-  }
-}
-
-/**
  * Get the name of a service
  */
 function getServiceName(service) {
@@ -1016,7 +1019,7 @@ function addDebugDisplay() {
     
     const content = document.createElement('div');
     content.id = 'calendar-debug-content';
-    content.style.display = 'none';
+    content.style.display = 'block'; // Show debug content by default
     
     const log = document.createElement('div');
     log.id = 'calendar-debug-log';
@@ -1296,4 +1299,295 @@ function showBookingError() {
       </div>
     </div>
   `;
+}
+
+/**
+ * Load all availability data for current and next month
+ */
+function loadAllAvailabilityData() {
+  debugLog('Loading all availability data');
+  
+  // Prevent multiple simultaneous loading
+  if (isLoadingAvailability) {
+    debugLog('Already loading availability data');
+    return Promise.resolve();
+  }
+  
+  isLoadingAvailability = true;
+  
+  return new Promise((resolve, reject) => {
+    // Get current and next month
+    const today = new Date();
+    const currentMonth = {
+      year: today.getFullYear(),
+      month: today.getMonth()
+    };
+    
+    const nextMonth = {
+      year: today.getMonth() === 11 ? today.getFullYear() + 1 : today.getFullYear(),
+      month: today.getMonth() === 11 ? 0 : today.getMonth() + 1
+    };
+    
+    debugLog('Loading availability for current month:', currentMonth.year, currentMonth.month + 1);
+    debugLog('Loading availability for next month:', nextMonth.year, nextMonth.month + 1);
+    
+    // Load both months
+    Promise.all([
+      loadMonthAvailability(currentMonth.year, currentMonth.month),
+      loadMonthAvailability(nextMonth.year, nextMonth.month)
+    ])
+    .then(([currentMonthData, nextMonthData]) => {
+      availabilityData.currentMonth = currentMonthData;
+      availabilityData.nextMonth = nextMonthData;
+      availabilityLoaded = true;
+      isLoadingAvailability = false;
+      debugLog('All availability data loaded successfully');
+      resolve();
+    })
+    .catch(err => {
+      isLoadingAvailability = false;
+      debugLog('Error loading availability data:', err);
+      reject(err);
+    });
+  });
+}
+
+/**
+ * Load availability data for a specific month
+ */
+function loadMonthAvailability(year, month) {
+  return new Promise((resolve, reject) => {
+    // Get the first and last day of the month
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    
+    // Format dates for the API
+    const timeMin = firstDay.toISOString();
+    const timeMax = new Date(lastDay.getFullYear(), lastDay.getMonth(), lastDay.getDate(), 23, 59, 59).toISOString();
+    
+    debugLog('Fetching calendar events from', timeMin, 'to', timeMax);
+    
+    // Get all events for the month
+    gapi.client.calendar.events.list({
+      calendarId: CALENDAR_ID[window.selectedService],
+      timeMin: timeMin,
+      timeMax: timeMax,
+      singleEvents: true,
+      orderBy: 'startTime'
+    })
+    .then(response => {
+      debugLog('Received events for month', month + 1, ':', response.result.items ? response.result.items.length : 0);
+      
+      // Process all events into busy periods
+      const busyPeriods = {};
+      
+      if (response.result && response.result.items && response.result.items.length > 0) {
+        response.result.items.forEach(event => {
+          // Skip certain types of events
+          if (event.eventType === 'workingLocation' || 
+              event.transparency === 'transparent' ||
+              (event.start.date && !event.start.dateTime)) {
+            debugLog('Skipping non-blocking event:', event.summary);
+            return;
+          }
+          
+          // Skip events with zero duration
+          if (event.start && event.end && event.start.dateTime === event.end.dateTime) {
+            debugLog('Skipping zero-duration event:', event.summary);
+            return;
+          }
+          
+          // Only process events with dateTime (not all-day events)
+          if (event.start.dateTime && event.end.dateTime) {
+            const startDate = new Date(event.start.dateTime);
+            const endDate = new Date(event.end.dateTime);
+            
+            // Get the day key (YYYY-MM-DD)
+            const dayKey = startDate.toISOString().split('T')[0];
+            
+            // Initialize the busy periods array for this day if needed
+            if (!busyPeriods[dayKey]) {
+              busyPeriods[dayKey] = [];
+            }
+            
+            // Add the busy period
+            busyPeriods[dayKey].push({
+              summary: event.summary,
+              start: startDate,
+              end: endDate
+            });
+            
+            debugLog('Added busy period for', dayKey, ':', event.summary);
+          }
+        });
+      }
+      
+      // Now generate all available slots for each weekday of the month
+      const monthData = {};
+      
+      // Loop through each day of the month
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        const date = new Date(year, month, day);
+        const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        
+        // Skip weekends
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+          continue;
+        }
+        
+        // Create the day key
+        const dayKey = date.toISOString().split('T')[0];
+        
+        // Get all possible time slots for this day
+        const allSlots = getAllPossibleTimeSlots(date);
+        
+        // Filter available slots based on busy periods
+        const availableSlots = filterAvailableSlots(allSlots, date, busyPeriods[dayKey] || []);
+        
+        // Store the available slots for this day
+        monthData[dayKey] = availableSlots;
+      }
+      
+      resolve(monthData);
+    })
+    .catch(err => {
+      debugLog('Error fetching events for month', month + 1, ':', err);
+      
+      // Create fallback data with business hours
+      const fallbackData = createFallbackMonthData(year, month);
+      
+      resolve(fallbackData);
+    });
+  });
+}
+
+/**
+ * Get all possible time slots for a day
+ */
+function getAllPossibleTimeSlots(date) {
+  const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  
+  // Define business hours based on service and day of week
+  let startHour, endHour;
+  
+  // Check for weekends first
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    // No appointments on weekends
+    return [];
+  }
+  
+  if (window.selectedService === 'mouthguards' && (dayOfWeek >= 1 && dayOfWeek <= 3)) {
+    // Mon-Wed for mouthguards: 10am-6pm
+    startHour = 10;
+    endHour = 18;
+  } else {
+    // Other days or services: 10am-4pm
+    startHour = 10;
+    endHour = 16;
+  }
+  
+  // Generate all possible slots every hour (60 minutes)
+  const allSlots = [];
+  for (let hour = startHour; hour < endHour; hour++) {
+    allSlots.push(`${String(hour).padStart(2, '0')}:00`);
+  }
+  
+  return allSlots;
+}
+
+/**
+ * Filter available slots based on busy periods
+ */
+function filterAvailableSlots(allSlots, date, busyPeriods) {
+  if (!busyPeriods || !busyPeriods.length) {
+    return allSlots; // No busy periods, all slots available
+  }
+  
+  const busySlots = [];
+  
+  // Check each slot against busy periods
+  allSlots.forEach(slot => {
+    const [hours, minutes] = slot.split(':').map(Number);
+    const slotStart = new Date(date);
+    slotStart.setHours(hours, minutes, 0, 0);
+    
+    const slotEnd = new Date(slotStart);
+    slotEnd.setMinutes(slotEnd.getMinutes() + SERVICE_DURATION[window.selectedService]);
+    
+    // Check if this slot overlaps with any busy period
+    for (const period of busyPeriods) {
+      const isOverlap = (
+        (slotStart >= period.start && slotStart < period.end) || 
+        (slotEnd > period.start && slotEnd <= period.end) || 
+        (slotStart <= period.start && slotEnd >= period.end)
+      );
+      
+      if (isOverlap) {
+        busySlots.push(slot);
+        break;
+      }
+    }
+  });
+  
+  // Filter out busy slots to get available slots
+  return allSlots.filter(slot => !busySlots.includes(slot));
+}
+
+/**
+ * Create fallback month data with business hours
+ */
+function createFallbackMonthData(year, month) {
+  const monthData = {};
+  
+  // Get the last day of the month
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  
+  // Loop through each day of the month
+  for (let day = 1; day <= lastDay; day++) {
+    const date = new Date(year, month, day);
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    
+    // Skip weekends
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      continue;
+    }
+    
+    // Create the day key
+    const dayKey = date.toISOString().split('T')[0];
+    
+    // Get all possible time slots for this day
+    const allSlots = getAllPossibleTimeSlots(date);
+    
+    // Create some random busy periods based on day of week for more realistic data
+    const availableSlots = createDefaultBusyPeriodsForDay(allSlots, dayOfWeek);
+    
+    // Store the available slots for this day
+    monthData[dayKey] = availableSlots;
+  }
+  
+  return monthData;
+}
+
+/**
+ * Create default busy periods for a day based on day of week
+ */
+function createDefaultBusyPeriodsForDay(allSlots, dayOfWeek) {
+  // Copy all slots
+  const availableSlots = [...allSlots];
+  
+  // Remove some slots based on day of week to simulate busy periods
+  switch (dayOfWeek) {
+    case 1: // Monday - remove lunch and one afternoon slot
+      return availableSlots.filter(slot => slot !== '12:00' && slot !== '14:00');
+    case 2: // Tuesday - remove morning slot
+      return availableSlots.filter(slot => slot !== '10:00');
+    case 3: // Wednesday - remove afternoon slots
+      return availableSlots.filter(slot => slot !== '14:00' && slot !== '15:00');
+    case 4: // Thursday - remove lunch time
+      return availableSlots.filter(slot => slot !== '12:00' && slot !== '13:00');
+    case 5: // Friday - remove morning slots
+      return availableSlots.filter(slot => slot !== '10:00' && slot !== '11:00');
+    default:
+      return availableSlots;
+  }
 } 
