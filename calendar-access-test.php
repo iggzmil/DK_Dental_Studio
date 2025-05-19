@@ -56,11 +56,59 @@ echo '<p>Token file exists: ' . ($tokenExists ? 'Yes' : 'No') . '</p>';
 
 // Try to read the token
 $accessToken = null;
+$refreshToken = null;
 if ($tokenExists && is_readable($tokenFile)) {
     try {
         $tokenData = json_decode(file_get_contents($tokenFile), true);
         if (isset($tokenData['access_token'])) {
             $accessToken = $tokenData['access_token'];
+            $refreshToken = $tokenData['refresh_token'] ?? null;
+            
+            // Check if we need to refresh the token
+            if ($refreshToken) {
+                // Load client credentials
+                $clientSecretsFile = __DIR__ . '/vendor/google/oauth/secure/client_secrets.json';
+                if (file_exists($clientSecretsFile)) {
+                    $clientSecrets = json_decode(file_get_contents($clientSecretsFile), true);
+                    $clientId = $clientSecrets['web']['client_id'];
+                    $clientSecret = $clientSecrets['web']['client_secret'];
+                    
+                    // Try to refresh the token
+                    $ch = curl_init('https://oauth2.googleapis.com/token');
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_POST, true);
+                    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+                        'client_id' => $clientId,
+                        'client_secret' => $clientSecret,
+                        'refresh_token' => $refreshToken,
+                        'grant_type' => 'refresh_token'
+                    ]));
+                    
+                    $response = curl_exec($ch);
+                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    curl_close($ch);
+                    
+                    if ($httpCode == 200) {
+                        $newTokenData = json_decode($response, true);
+                        if (isset($newTokenData['access_token'])) {
+                            // Update the access token
+                            $accessToken = $newTokenData['access_token'];
+                            
+                            // Save the new token data while preserving the refresh token
+                            $tokenData['access_token'] = $newTokenData['access_token'];
+                            $tokenData['expires_in'] = $newTokenData['expires_in'];
+                            file_put_contents($tokenFile, json_encode($tokenData));
+                            
+                            outputResult(true, 'Access token refreshed successfully');
+                        }
+                    } else {
+                        outputResult(false, 'Failed to refresh token', json_decode($response, true));
+                    }
+                } else {
+                    outputResult(false, 'Client secrets file not found');
+                }
+            }
+            
             // Show partial token for verification without revealing the complete value
             $maskedToken = substr($accessToken, 0, 10) . '...' . substr($accessToken, -10);
             outputResult(true, 'Access token retrieved successfully', 'Token: ' . $maskedToken);
