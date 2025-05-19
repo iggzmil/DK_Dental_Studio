@@ -1364,157 +1364,112 @@ function generateTimeSlots(dateString) {
   }
   
   debugLog('Generated all possible time slots:', allSlots);
+  
+  // Get available time slots from the calendar
+  return getAvailableSlots(allSlots, date, dateString);
+}
 
-  // Create consistent standard slots based on business hours
-  // This ensures we always return the same slots for a given service and day
-  // We'll use these as fallback if there are issues with the API
-  const standardSlots = [];
-  if (startHour <= 10 && endHour > 10) standardSlots.push('10:00');
-  if (startHour <= 11 && endHour > 11) standardSlots.push('11:00');
-  if (startHour <= 13 && endHour > 13) standardSlots.push('13:00');
-  if (startHour <= 14 && endHour > 14) standardSlots.push('14:00');
-  if (startHour <= 15 && endHour > 15) standardSlots.push('15:00');
-  
-  debugLog('Standard slots for this service/day:', standardSlots);
-  
-  // Use the standardSlots as the default
-  // Only try to get real calendar data if we have a proper API connection
-  // This ensures consistent behavior when navigating between dates
-  if (gapi && gapi.client && gapi.client.calendar && serverAccessToken) {
-    debugLog('Using Google Calendar API to check busy times');
-    
-    // Create time range for the entire day
-    const timeMin = new Date(dateString + 'T00:00:00').toISOString();
-    const timeMax = new Date(dateString + 'T23:59:59').toISOString();
-    
-    // Return a promise that resolves with available slots
-    return new Promise((resolve, reject) => {
-      try {
-        // Clear any previous token state to prevent caching issues
-        if (window.serverAccessToken) {
-          gapi.client.setToken({ access_token: window.serverAccessToken });
-          debugLog('Reset access token to prevent caching issues');
-        } else {
-          debugLog('No server access token available');
-          resolve(standardSlots);
-          return;
-        }
-        
-        // Get direct events instead of using freebusy to get more details about events
-        gapi.client.calendar.events.list({
-          calendarId: CALENDAR_ID[selectedService],
-          timeMin: timeMin,
-          timeMax: timeMax,
-          singleEvents: true,
-          orderBy: 'startTime'
-        }).then(response => {
-          debugLog('Events list response:', response);
-          
-          const busySlots = [];
-          const realEvents = [];
-          
-          if (response.result && response.result.items && response.result.items.length > 0) {
-            const events = response.result.items;
-            debugLog('Found events:', events);
-            
-            // First pass: identify actual calendar events (not markers)
-            events.forEach(event => {
-              // Skip non-appointment events
-              if (event.eventType === "workingLocation" || 
-                  event.workingLocationProperties ||
-                  event.transparency === "transparent") {
-                debugLog('Skipping non-blocking event:', event.summary, event.eventType);
-                return;
-              }
-              
-              // Skip events with zero duration (like "Open" and "Close" markers)
-              if (event.start && event.end && 
-                  event.start.dateTime && event.end.dateTime &&
-                  event.start.dateTime === event.end.dateTime) {
-                debugLog('Skipping zero-duration event:', event.summary);
-                return;
-              }
-              
-              // Skip all-day events
-              if (event.start.date && !event.start.dateTime) {
-                debugLog('Skipping all-day event:', event.summary);
-                return;
-              }
-              
-              // This is a real appointment or blocking event
-              if (event.start.dateTime && event.end.dateTime) {
-                realEvents.push({
-                  summary: event.summary,
-                  start: new Date(event.start.dateTime),
-                  end: new Date(event.end.dateTime)
-                });
-                debugLog('Found real appointment:', event.summary);
-              }
-            });
-            
-            // If we found real appointments, process them
-            if (realEvents.length > 0) {
-              debugLog('Processing ' + realEvents.length + ' real appointments');
-              
-              // Check each standard slot against real appointments
-              standardSlots.forEach(slot => {
-                const [hours, minutes] = slot.split(':').map(Number);
-                const slotStart = new Date(date);
-                slotStart.setHours(hours, minutes, 0, 0);
-                
-                const slotEnd = new Date(slotStart);
-                slotEnd.setMinutes(slotEnd.getMinutes() + SERVICE_DURATION[selectedService]);
-                
-                // Check if this slot overlaps with any real appointment
-                for (const event of realEvents) {
-                  const isOverlap = (
-                    (slotStart >= event.start && slotStart < event.end) || 
-                    (slotEnd > event.start && slotEnd <= event.end) || 
-                    (slotStart <= event.start && slotEnd >= event.end)
-                  );
-                  
-                  if (isOverlap) {
-                    debugLog(`Slot ${slot} overlaps with appointment: ${event.summary}`);
-                    busySlots.push(slot);
-                    break; // No need to check other events for this slot
-                  }
-                }
-              });
-              
-              // Filter out busy slots from standard slots
-              const availableSlots = standardSlots.filter(slot => !busySlots.includes(slot));
-              debugLog('Final available slots after filtering real appointments:', availableSlots);
-              
-              if (availableSlots.length === 0) {
-                debugLog('No slots available after filtering, using a subset of standard slots');
-                // If no slots available, provide a subset to ensure some availability
-                resolve(standardSlots.filter((_, index) => index % 2 === 0)); // every other slot
-              } else {
-                resolve(availableSlots);
-              }
-            } else {
-              // No real appointments found, use standard slots
-              debugLog('No real appointments found, using standard slots');
-              resolve(standardSlots);
-            }
-          } else {
-            // No events found, use standard slots
-            debugLog('No calendar events found, using standard slots');
-            resolve(standardSlots);
-          }
-        }).catch(error => {
-          debugLog('Error fetching events, using standard slots:', error);
-          resolve(standardSlots);
-        });
-      } catch (error) {
-        debugLog('Exception in calendar access, using standard slots:', error);
-        resolve(standardSlots);
-      }
-    });
-  } else {
-    debugLog('Google Calendar API not available, using standard slots');
-    return Promise.resolve(standardSlots);
+/**
+ * Get available time slots from the calendar for a given date
+ */
+function getAvailableSlots(allSlots, date, dateString) {
+  // If Google Calendar API is not available, show all slots
+  if (!gapi || !gapi.client || !gapi.client.calendar || !serverAccessToken) {
+    debugLog('Google Calendar API not available, showing all slots');
+    return Promise.resolve(allSlots);
   }
+  
+  debugLog('Checking calendar availability for date:', dateString);
+  
+  // Create time range for the entire day
+  const timeMin = new Date(dateString + 'T00:00:00').toISOString();
+  const timeMax = new Date(dateString + 'T23:59:59').toISOString();
+  
+  // Return a promise that resolves with available slots
+  return new Promise((resolve, reject) => {
+    // Reset the token to prevent caching issues
+    if (window.serverAccessToken) {
+      gapi.client.setToken({ access_token: window.serverAccessToken });
+      debugLog('Reset access token');
+    }
+    
+    // Get events for the specified date
+    gapi.client.calendar.events.list({
+      calendarId: CALENDAR_ID[selectedService],
+      timeMin: timeMin,
+      timeMax: timeMax,
+      singleEvents: true,
+      orderBy: 'startTime'
+    }).then(response => {
+      debugLog('Calendar events response:', response);
+      
+      // Extract busy periods from events
+      const busyPeriods = [];
+      
+      if (response.result && response.result.items && response.result.items.length > 0) {
+        response.result.items.forEach(event => {
+          // Skip certain types of events
+          if (event.eventType === 'workingLocation' || 
+              event.transparency === 'transparent' ||
+              (event.start.date && !event.start.dateTime)) {
+            debugLog('Skipping non-blocking event:', event.summary);
+            return;
+          }
+          
+          // Skip events with zero duration
+          if (event.start && event.end && event.start.dateTime === event.end.dateTime) {
+            debugLog('Skipping zero-duration event:', event.summary);
+            return;
+          }
+          
+          // Add this event as a busy period
+          if (event.start.dateTime && event.end.dateTime) {
+            busyPeriods.push({
+              summary: event.summary,
+              start: new Date(event.start.dateTime),
+              end: new Date(event.end.dateTime)
+            });
+            debugLog('Added busy period:', event.summary);
+          }
+        });
+      }
+      
+      // Check each slot against busy periods to determine availability
+      const busySlots = [];
+      allSlots.forEach(slot => {
+        const [hours, minutes] = slot.split(':').map(Number);
+        const slotStart = new Date(date);
+        slotStart.setHours(hours, minutes, 0, 0);
+        
+        const slotEnd = new Date(slotStart);
+        slotEnd.setMinutes(slotEnd.getMinutes() + SERVICE_DURATION[selectedService]);
+        
+        // Check if this slot overlaps with any busy period
+        for (const period of busyPeriods) {
+          const isOverlap = (
+            (slotStart >= period.start && slotStart < period.end) || 
+            (slotEnd > period.start && slotEnd <= period.end) || 
+            (slotStart <= period.start && slotEnd >= period.end)
+          );
+          
+          if (isOverlap) {
+            debugLog(`Slot ${slot} is busy due to event: ${period.summary}`);
+            busySlots.push(slot);
+            break;
+          }
+        }
+      });
+      
+      // Filter out busy slots to get available slots
+      const availableSlots = allSlots.filter(slot => !busySlots.includes(slot));
+      debugLog('Final available slots:', availableSlots);
+      
+      resolve(availableSlots);
+    }).catch(error => {
+      debugLog('Error fetching calendar data:', error);
+      resolve(allSlots); // Show all slots if there's an error
+    });
+  });
 }
 
 /**
