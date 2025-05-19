@@ -40,6 +40,7 @@ $service = filter_var($data['service'], FILTER_SANITIZE_STRING);
 $date = filter_var($data['date'], FILTER_SANITIZE_STRING);
 $time = filter_var($data['time'], FILTER_SANITIZE_STRING);
 $notes = isset($data['notes']) ? filter_var($data['notes'], FILTER_SANITIZE_STRING) : '';
+$isFullyLoaded = isset($data['isFullyLoaded']) ? filter_var($data['isFullyLoaded'], FILTER_VALIDATE_BOOLEAN) : false;
 
 // Validate email
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -65,13 +66,15 @@ $serviceName = isset($serviceNames[$service]) ? $serviceNames[$service] : 'Appoi
 $to = 'info@dkdental.au';
 
 // Email subject
-$subject = "New Appointment Request: $serviceName - $firstName $lastName";
+$subject = $isFullyLoaded ? 
+    "New Appointment Confirmed: $serviceName - $firstName $lastName" : 
+    "New Appointment Request: $serviceName - $firstName $lastName";
 
 // Email message
 $message = "
 <html>
 <head>
-    <title>New Appointment Request</title>
+    <title>New Appointment " . ($isFullyLoaded ? "Confirmed" : "Request") . "</title>
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -86,10 +89,10 @@ $message = "
 <body>
     <div class='container'>
         <div class='header'>
-            <h2>New Appointment Request</h2>
+            <h2>New Appointment " . ($isFullyLoaded ? "Confirmed" : "Request") . "</h2>
         </div>
         <div class='content'>
-            <p>A new appointment request has been submitted through the website:</p>
+            <p>A new appointment " . ($isFullyLoaded ? "has been confirmed" : "request has been submitted") . " through the website:</p>
             
             <table>
                 <tr>
@@ -122,7 +125,7 @@ $message = "
                 </tr>
             </table>
             
-            <p>Please contact the patient to confirm this appointment.</p>
+            <p>" . ($isFullyLoaded ? "The appointment has been confirmed." : "Please contact the patient to confirm this appointment.") . "</p>
         </div>
         <div class='footer'>
             <p>This is an automated message from the DK Dental Studio website.</p>
@@ -133,46 +136,61 @@ $message = "
 ";
 
 // Email content for patient
-$patientSubject = "Appointment Request Confirmation - DK Dental Studio";
+$patientSubject = $isFullyLoaded ? 
+    "Appointment Confirmation - DK Dental Studio" : 
+    "Appointment Request Confirmation - DK Dental Studio";
+
 $patientMessage = "
 <html>
 <head>
-    <title>Appointment Request Confirmation</title>
+    <title>" . ($isFullyLoaded ? "Appointment Confirmation" : "Appointment Request Confirmation") . "</title>
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
         .header { background-color: #0576ee; color: white; padding: 10px; text-align: center; }
         .content { padding: 20px; }
         .footer { font-size: 12px; text-align: center; margin-top: 20px; color: #666; }
-        .button { display: inline-block; background-color: #0576ee; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }
+        .button { display: inline-block; background-color: #0576ee; color: white !important; padding: 10px 20px; text-decoration: none; border-radius: 5px; }
     </style>
 </head>
 <body>
     <div class='container'>
         <div class='header'>
-            <h2>Appointment Request Confirmation</h2>
+            <h2>" . ($isFullyLoaded ? "Appointment Confirmation" : "Appointment Request Confirmation") . "</h2>
         </div>
         <div class='content'>
             <p>Dear $firstName,</p>
             
-            <p>Thank you for requesting an appointment at DK Dental Studio. We have received your request for:</p>
+            <p>Thank you for " . ($isFullyLoaded ? "booking" : "requesting") . " an appointment at DK Dental Studio. " . 
+            ($isFullyLoaded ? "Your appointment has been confirmed:" : "We have received your request for:") . "</p>
             
             <p>
                 <strong>Service:</strong> $serviceName<br>
                 <strong>Date:</strong> $formattedDate<br>
                 <strong>Time:</strong> $formattedTime
-            </p>
+            </p>";
+
+if ($isFullyLoaded) {
+    // Confirmed appointment message
+    $patientMessage .= "
+            <p>Your appointment is now confirmed. You will receive a reminder email 24 hours prior to your appointment.</p>
             
+            <p>If you need to reschedule or cancel your appointment, please contact us as soon as possible at (02) 9398 7578.</p>";
+} else {
+    // Appointment request message (calendar in basic mode)
+    $patientMessage .= "
             <p>Our team will contact you shortly to confirm your appointment. If you don't hear from us within 24 hours, please call us at (02) 9398 7578.</p>
             
-            <p>If you need to make any changes to your appointment request, please contact us as soon as possible.</p>
-            
+            <p>If you need to make any changes to your appointment request, please contact us as soon as possible.</p>";
+}
+
+$patientMessage .= "
             <p>We look forward to seeing you!</p>
             
             <p>Best regards,<br>DK Dental Studio Team</p>
             
             <p style='text-align: center; margin-top: 30px;'>
-                <a href='https://www.dkdental.au' class='button'>Visit Our Website</a>
+                <a href='https://www.dkdental.au' class='button' style='color: white !important;'>Visit Our Website</a>
             </p>
         </div>
         <div class='footer'>
@@ -236,7 +254,9 @@ if ($useGmailApi) {
 if ($mailSent) {
     echo json_encode([
         'success' => true, 
-        'message' => 'Appointment request received. Our team will contact you shortly to confirm.'
+        'message' => $isFullyLoaded ? 
+            'Your appointment has been confirmed. You will receive a confirmation email shortly.' : 
+            'Appointment request received. Our team will contact you shortly to confirm.'
     ]);
 } else {
     http_response_code(500); // Internal Server Error

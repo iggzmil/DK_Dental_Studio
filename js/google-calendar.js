@@ -1358,7 +1358,8 @@ window.submitBookingForm = function() {
     notes: notes,
     service: window.selectedService,
     date: selectedDateTime.date,
-    time: selectedDateTime.time
+    time: selectedDateTime.time,
+    isFullyLoaded: availabilityLoaded // Add the calendar status
   };
   
   // Send the booking data to the server
