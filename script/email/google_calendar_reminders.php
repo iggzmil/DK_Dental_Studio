@@ -138,169 +138,153 @@ $clientAppointmentCount = 0; // Count for actual client appointments
 foreach ($calendarIds as $service => $calendarId) {
     logMessage("Checking calendar: $calendarId");
     
-    // Get events from Google Calendar for tomorrow
-    $apiUrl = "https://www.googleapis.com/calendar/v3/calendars/" . urlencode($calendarId) . "/events";
-    $apiUrl .= "?singleEvents=true";
-    $apiUrl .= "&orderBy=startTime";
-    $apiUrl .= "&timeMin=" . urlencode($tomorrowStart);
-    $apiUrl .= "&timeMax=" . urlencode($tomorrowEnd);
+    // Get events for tomorrow
+    $url = "https://www.googleapis.com/calendar/v3/calendars/" . urlencode($calendarId) . "/events?" . http_build_query([
+        'timeMin' => $tomorrowStart,
+        'timeMax' => $tomorrowEnd,
+        'singleEvents' => 'true',
+        'orderBy' => 'startTime'
+    ]);
     
-    // Initialize cURL session
-    $ch = curl_init($apiUrl);
-    
-    // Set cURL options
+    $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         'Authorization: Bearer ' . $accessToken,
         'Accept: application/json'
     ]);
     
-    // Execute cURL request
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
     
-    // Process the response
-    if ($httpCode >= 200 && $httpCode < 300) {
-        $data = json_decode($response, true);
+    if ($httpCode == 200) {
+        $events = json_decode($response, true);
         
-        if (isset($data['items']) && is_array($data['items'])) {
-            $events = $data['items'];
-            logMessage("Found " . count($events) . " total calendar items for date");
+        if (isset($events['items']) && !empty($events['items'])) {
+            logMessage("Found " . count($events['items']) . " events for $service");
             
-            foreach ($events as $event) {
+            foreach ($events['items'] as $event) {
                 $appointmentCount++;
                 
-                // Extract event details
-                $eventSummary = $event['summary'] ?? 'Unnamed Appointment';
+                $eventSummary = isset($event['summary']) ? $event['summary'] : 'Unnamed event';
+                $eventTime = isset($event['start']['dateTime']) ? date('g:ia', strtotime($event['start']['dateTime'])) : 'No time specified';
                 
-                // Check if this is a timed event or a business hours/closure event
-                if (!isset($event['start']['dateTime'])) {
-                    // This is likely a business hours marker or closure - not an actual appointment
-                    logMessage("Skipping business hours event: $eventSummary - Not a client appointment");
-                    $businessEventCount++;
-                    continue;
-                }
+                logMessage("Processing event: $eventSummary at $eventTime");
                 
-                // Check if this is a business-related event
-                $businessEventKeywords = ['lunch', 'office', 'open', 'close', 'meeting', 'break', 'away'];
+                // Skip known internal/business events
+                $skipKeywords = ['lunch', 'office', 'closed', 'meeting', 'break', 'staff'];
                 $isBusinessEvent = false;
                 
-                foreach ($businessEventKeywords as $keyword) {
+                foreach ($skipKeywords as $keyword) {
                     if (stripos($eventSummary, $keyword) !== false) {
                         $isBusinessEvent = true;
+                        logMessage("Skipping business event: $eventSummary");
+                        $businessEventCount++;
                         break;
                     }
                 }
                 
                 if ($isBusinessEvent) {
-                    logMessage("Skipping internal business event: $eventSummary");
-                    $businessEventCount++;
                     continue;
                 }
                 
-                // Increment client appointment counter for actual appointments
-                $clientAppointmentCount++;
-                
-                // Safe to process the dateTime now
-                $eventStart = new DateTime($event['start']['dateTime']);
-                $eventTime = $eventStart->format('g:ia');
-                
-                // Get attendee information
-                $attendees = $event['attendees'] ?? [];
+                // Try to extract client information from event
                 $clientName = null;
                 $clientEmail = null;
+                $serviceName = null;
                 
-                // Skip events without attendees
-                if (empty($attendees)) {
-                    // Look for client info in event title/description
-                    $clientName = null;
-                    $clientEmail = null;
-                    
-                    // Extract name from event summary as fallback
-                    // Assuming format like "Service - FirstName LastName"
-                    if (strpos($eventSummary, ' - ') !== false) {
-                        $namePart = explode(' - ', $eventSummary, 2)[1];
-                        $clientName = trim($namePart);
-                    }
-                    
-                    // Try to extract email from description if available
-                    if (isset($event['description'])) {
-                        $description = $event['description'];
-                        
-                        // Look for email pattern in description
-                        if (preg_match('/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/', $description, $matches)) {
-                            $clientEmail = $matches[0];
-                            logMessage("Found client email in description: $clientEmail");
-                        }
-                        
-                        // Look for "Email:" field in description
-                        if (preg_match('/Email:\s*([^\s,;<>]+@[^\s,;<>]+)/', $description, $matches)) {
-                            $clientEmail = $matches[1];
-                            logMessage("Found client email in Email field: $clientEmail");
-                        }
-                    }
-                    
-                    // If we found a name but no email, see if there are any common naming patterns we can use
-                    if ($clientName && !$clientEmail && $eventSummary !== 'Lunch' && 
-                        strpos($eventSummary, 'Open') === false && 
-                        strpos($eventSummary, 'Close') === false) {
-                        
-                        logMessage("Found client name ($clientName) but no email. Checking well-known clients.");
-                        
-                        // Check for specific known clients - add more as needed
-                        if (stripos($clientName, 'Igor Milgrom') !== false) {
-                            $clientEmail = 'iggzmil@gmail.com';
-                            logMessage("Matched known client: Igor Milgrom -> $clientEmail");
-                        }
-                        // Add more known clients here
-                    }
-                    
-                    // Still no client email found
-                    if (!$clientEmail) {
-                        logMessage("No attendees found for event: $eventSummary at $eventTime - Cannot send reminder");
-                        continue;
-                    }
+                // Extract client name and service name from summary (e.g., "Dentures - John Smith")
+                if (strpos($eventSummary, '-') !== false) {
+                    list($serviceName, $clientName) = array_map('trim', explode('-', $eventSummary, 2));
                 } else {
-                    // Find the client attendee (not the organizer)
-                    foreach ($attendees as $attendee) {
-                        // Skip the organizer (usually the dental office email)
-                        if (isset($attendee['organizer']) && $attendee['organizer']) {
+                    $clientName = $eventSummary;
+                    $serviceName = "Appointment"; // Default if not specified
+                }
+                
+                // Calculate event duration in minutes
+                $duration = 60; // Default duration of 60 minutes
+                if (isset($event['start']['dateTime']) && isset($event['end']['dateTime'])) {
+                    $startTime = new DateTime($event['start']['dateTime']);
+                    $endTime = new DateTime($event['end']['dateTime']);
+                    $interval = $startTime->diff($endTime);
+                    $duration = ($interval->h * 60) + $interval->i;
+                }
+                // Format duration text
+                $durationText = $duration . " minutes";
+                
+                // Extract email from attendees if available
+                if (isset($event['attendees']) && is_array($event['attendees'])) {
+                    foreach ($event['attendees'] as $attendee) {
+                        // Skip the calendar owner (us) and resources
+                        if (isset($attendee['self']) && $attendee['self'] === true) {
+                            continue;
+                        }
+                        if (isset($attendee['resource']) && $attendee['resource'] === true) {
                             continue;
                         }
                         
+                        // Use the first attendee that isn't us or a resource
                         if (isset($attendee['email'])) {
                             $clientEmail = $attendee['email'];
-                            // Use name from attendee data if available
+                            
+                            // If attendee has a display name, use it
                             if (isset($attendee['displayName']) && !empty($attendee['displayName'])) {
                                 $clientName = $attendee['displayName'];
-                            } else {
-                                // Extract first name from email as fallback
-                                $nameParts = explode('@', $clientEmail);
-                                $clientName = ucfirst($nameParts[0]);
                             }
+                            
                             break;
                         }
                     }
                 }
                 
-                // Extract service name from event summary or use default
-                $serviceName = $service;
-                if (strpos($eventSummary, 'Dentures') !== false) {
-                    $serviceName = 'Dentures Consultation';
-                } else if (strpos($eventSummary, 'Repairs') !== false) {
-                    $serviceName = 'Repairs & Maintenance';
-                } else if (strpos($eventSummary, 'Mouthguards') !== false) {
-                    $serviceName = 'Mouthguards';
+                // Check description for email address if not found in attendees
+                if (!$clientEmail && isset($event['description'])) {
+                    $description = $event['description'];
+                    // Look for email pattern in description
+                    if (preg_match('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/', $description, $matches)) {
+                        $clientEmail = $matches[0];
+                    }
+                    
+                    // Extract client name from the description if not already set
+                    if (!$clientName || $clientName === $eventSummary) {
+                        if (preg_match('/Name:\s*([^\r\n]+)/i', $description, $matches)) {
+                            $clientName = trim($matches[1]);
+                        }
+                    }
+                    
+                    // Extract service from the description if not already set
+                    if (!$serviceName || $serviceName === "Appointment") {
+                        if (preg_match('/Service:\s*([^\r\n]+)/i', $description, $matches)) {
+                            $serviceName = trim($matches[1]);
+                        }
+                    }
                 }
                 
-                // Format date and time for the email
-                $formattedDate = $eventStart->format('l, j F Y');
-                $formattedTime = $eventStart->format('g:ia');
+                // Try to extract first name from client name
+                $firstName = $clientName;
+                if (strpos($clientName, ' ') !== false) {
+                    $nameParts = explode(' ', $clientName, 2);
+                    $firstName = $nameParts[0];
+                }
+                
+                // Format date for display
+                $formattedDate = date('l, j F Y', strtotime($event['start']['dateTime']));
+                
+                // Format time for display
+                $formattedTime = date('g:ia', strtotime($event['start']['dateTime']));
+                
+                // If we don't have an email, we can't send a reminder
+                if (!$clientEmail) {
+                    logMessage("No email found for event: $eventSummary - Cannot send reminder");
+                    continue;
+                }
+                
+                // Count this as a valid client appointment
+                $clientAppointmentCount++;
                 
                 // Generate email subject and body
                 $subject = "Appointment Reminder - DK Dental Studio";
-                $message = generateReminderEmailBody($clientName, $formattedDate, $formattedTime, $serviceName);
+                $message = generateReminderEmailBody($firstName, $formattedDate, $formattedTime, $serviceName, $durationText);
                 
                 // Send the reminder email
                 if (sendReminderEmail($clientEmail, $subject, $message)) {
@@ -333,9 +317,10 @@ logMessage("- Reminder emails " . (LOG_ONLY_MODE ? "that would be sent" : "sent"
  * @param string $formattedDate Formatted appointment date
  * @param string $formattedTime Formatted appointment time
  * @param string $service Service name/type
+ * @param string $duration Appointment duration
  * @return string HTML email body
  */
-function generateReminderEmailBody($firstName, $formattedDate, $formattedTime, $service) {
+function generateReminderEmailBody($firstName, $formattedDate, $formattedTime, $service, $duration = "60 minutes") {
     // Default service name if not provided
     if (empty($service)) {
         $service = "Appointment";
@@ -344,6 +329,13 @@ function generateReminderEmailBody($firstName, $formattedDate, $formattedTime, $
     // Default to "Customer" if name not provided
     if (empty($firstName)) {
         $firstName = "Customer";
+    }
+    
+    // Get first name from email if it contains @ (meaning the name field has an email address)
+    if (strpos($firstName, '@') !== false) {
+        // Extract the part before @ for the first name
+        $parts = explode('@', $firstName);
+        $firstName = $parts[0];
     }
     
     return "
@@ -368,6 +360,8 @@ function generateReminderEmailBody($firstName, $formattedDate, $formattedTime, $
             <p>Dear $firstName,</p>
             
             <p>This is a friendly reminder that you have an appointment for <strong>$service</strong> scheduled at DK Dental Studio tomorrow on <strong>$formattedDate</strong> at <strong>$formattedTime</strong>.</p>
+            
+            <p><strong>Duration:</strong> $duration</p>
             
             <p>Please arrive 5-10 minutes before your scheduled time. If you need to reschedule or cancel your appointment, please contact us as soon as possible at (02) 9398 7578.</p>
             

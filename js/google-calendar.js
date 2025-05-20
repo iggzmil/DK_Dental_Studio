@@ -1627,17 +1627,7 @@ function showBookingSuccess(firstName, lastName, email) {
   const bookingFormContainer = document.getElementById('booking-form-container');
   if (!bookingFormContainer) return;
   
-  // Store appointment for reminder email
-  if (selectedDateTime && selectedDateTime.date && selectedDateTime.time) {
-    storeAppointmentForReminder(
-      firstName, 
-      lastName, 
-      email, 
-      selectedDateTime.date, 
-      selectedDateTime.time, 
-      window.selectedService
-    );
-  }
+  // Remove store appointment for reminder email functionality
   
   bookingFormContainer.innerHTML = `
     <div class="booking-success">
@@ -1666,46 +1656,6 @@ function showBookingSuccess(firstName, lastName, email) {
   setTimeout(() => {
     reloadCalendarAfterBooking();
   }, 3000);
-}
-
-/**
- * Store appointment for reminder email
- */
-function storeAppointmentForReminder(firstName, lastName, email, date, time, service) {
-  // Format the date and time for the API
-  const appointmentDateTime = new Date(`${date}T${time}`);
-  const isoDateTime = appointmentDateTime.toISOString();
-  
-  // Get the service name
-  const serviceName = getServiceName(service);
-  
-  // Create the data to send
-  const reminderData = {
-    datetime: isoDateTime,
-    email: email,
-    firstName: firstName,
-    service: serviceName
-  };
-  
-  // Send the data to the server
-  fetch('/script/email/save_reminder.php', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(reminderData)
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      debugLog('Reminder scheduled successfully');
-    } else {
-      debugLog('Failed to schedule reminder:', data.error);
-    }
-  })
-  .catch(error => {
-    debugLog('Error scheduling reminder:', error);
-  });
 }
 
 /**
