@@ -593,22 +593,27 @@ function hasAvailableSlotsForDate(dateString) {
   // Check if this date exists in the data
   const hasData = dateString in monthData;
   
-  // Check if this date has available slots
-  const hasSlots = hasData && monthData[dateString] && monthData[dateString].length > 0;
-  
-  // Debug the availability status for this date
-  debugLog(`Checking availability for ${dateString}: hasData=${hasData}, hasSlots=${hasSlots}`);
-  
-  // If we have data for this date, return whether it has slots
-  if (hasData) {
-    return hasSlots;
+  if (!hasData) {
+    // If we don't have data for this date (edge of period), check if it's a weekday
+    const date = new Date(dateString);
+    const dayOfWeek = date.getDay();
+    const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+    debugLog(`No data for ${dateString}, treating as ${isWeekday ? 'available (weekday)' : 'unavailable (weekend)'}`);
+    return isWeekday;
   }
   
-  // If we don't have data for this date (which might happen for dates at edges of the period),
-  // default to showing as available for weekdays
-  const date = new Date(dateString);
-  const dayOfWeek = date.getDay();
-  return dayOfWeek >= 1 && dayOfWeek <= 5;
+  // Get the actual slots for this date
+  const slots = monthData[dateString] || [];
+  
+  // Ensure we use the correct date format when checking availability
+  if (slots.length === 0) {
+    debugLog(`Date ${dateString} is fully booked - no available slots`);
+    return false;
+  }
+  
+  // For debugging, count the available slots
+  debugLog(`Date ${dateString} has ${slots.length} available slots: ${slots.join(', ')}`);
+  return true;
 }
 
 /**
@@ -1968,7 +1973,14 @@ function processCalendarData(response, startDate, endDate, resolve) {
     // Track availability statistics
     if (availableSlots.length > 0) {
       availableDaysCount++;
-      debugLog(`Date ${dayKey} has ${availableSlots.length} available slots out of ${allSlots.length} total`);
+      const slotsRemoved = allSlots.length - availableSlots.length;
+      debugLog(`Date ${dayKey} has ${availableSlots.length} available slots, ${slotsRemoved} removed due to conflicts`);
+      if (slotsRemoved > 0) {
+        const busyList = busyPeriods[dayKey].map(p => 
+          `${p.summary} (${p.start.getHours()}:${String(p.start.getMinutes()).padStart(2, '0')} - ${p.end.getHours()}:${String(p.end.getMinutes()).padStart(2, '0')})`
+        ).join(', ');
+        debugLog(`  Busy periods that affected slots: ${busyList}`);
+      }
     } else {
       fullyBookedDaysCount++;
       // For days marked as fully booked, double-check if they actually have busy periods
@@ -2070,77 +2082,68 @@ function filterAvailableSlots(allSlots, date, busyPeriods) {
   
   const busySlots = [];
   
-  // Check each slot against busy periods
+  // Process each slot and determine if it's busy
   allSlots.forEach(slot => {
-    const [hours, minutes] = slot.split(':').map(Number);
-    const slotStart = new Date(date);
-    slotStart.setHours(hours, minutes, 0, 0);
+    const [hoursStr, minutesStr] = slot.split(':');
+    const slotHour = parseInt(hoursStr, 10);
+    const slotMinute = parseInt(minutesStr, 10);
     
-    const slotEnd = new Date(slotStart);
-    slotEnd.setMinutes(slotEnd.getMinutes() + SERVICE_DURATION[window.selectedService]);
+    // Calculate slot end time (adding service duration)
+    const slotDuration = SERVICE_DURATION[window.selectedService];
+    const slotEndHour = slotHour + Math.floor((slotMinute + slotDuration) / 60);
+    const slotEndMinute = (slotMinute + slotDuration) % 60;
     
-    // Debug the slot we're checking
-    debugLog(`  Checking slot: ${slot} (${slotStart.getHours()}:${slotStart.getMinutes()} - ${slotEnd.getHours()}:${slotEnd.getMinutes()})`);
+    debugLog(`  Checking slot: ${slot} (${slotHour}:${slotMinute} - ${slotEndHour}:${slotEndMinute})`);
     
-    // Check if this slot overlaps with any busy period
-    let isSlotBusy = false;
+    // Check against each busy period
     for (const period of busyPeriods) {
-      // Ensure period times are Date objects
+      // Get period times as explicit hours/minutes
       const periodStart = period.start instanceof Date ? period.start : new Date(period.start);
       const periodEnd = period.end instanceof Date ? period.end : new Date(period.end);
       
-      // Handle case where start and end dates are on different days
+      const periodStartHour = periodStart.getHours();
+      const periodStartMinute = periodStart.getMinutes();
+      const periodEndHour = periodEnd.getHours();
+      const periodEndMinute = periodEnd.getMinutes();
+      
+      // Skip if the period is on a different day
       if (periodStart.toISOString().split('T')[0] !== dateStr && 
           periodEnd.toISOString().split('T')[0] !== dateStr) {
-        // Event doesn't touch this day at all
         continue;
       }
       
-      // Fix for events spanning multiple days - only consider the portion on this day
-      let effectiveStart = periodStart;
-      let effectiveEnd = periodEnd;
+      // Compare time directly using numeric values for reliable comparison
+      // Convert hours and minutes to minutes-since-midnight for easier comparison
+      const slotStartMinutes = slotHour * 60 + slotMinute;
+      const slotEndMinutes = slotEndHour * 60 + slotEndMinute;
+      const periodStartMinutes = periodStartHour * 60 + periodStartMinute;
+      const periodEndMinutes = periodEndHour * 60 + periodEndMinute;
       
-      // If event starts before this day, set start to beginning of this day
-      if (periodStart.toISOString().split('T')[0] !== dateStr) {
-        effectiveStart = new Date(date);
-        effectiveStart.setHours(0, 0, 0, 0);
-      }
-      
-      // If event ends after this day, set end to end of this day
-      if (periodEnd.toISOString().split('T')[0] !== dateStr) {
-        effectiveEnd = new Date(date);
-        effectiveEnd.setHours(23, 59, 59, 999);
-      }
-      
-      // Simplified and fixed overlap logic
-      // A slot is busy if:
-      // 1. The slot starts before the event ends AND
-      // 2. The slot ends after the event starts
-      const isOverlap = slotStart < effectiveEnd && slotEnd > effectiveStart;
+      // Check for overlap - basic interval overlap check
+      const isOverlap = (
+        // Either the slot starts during the busy period
+        (slotStartMinutes >= periodStartMinutes && slotStartMinutes < periodEndMinutes) ||
+        // Or the slot ends during the busy period
+        (slotEndMinutes > periodStartMinutes && slotEndMinutes <= periodEndMinutes) ||
+        // Or the slot completely covers the busy period
+        (slotStartMinutes <= periodStartMinutes && slotEndMinutes >= periodEndMinutes)
+      );
       
       if (isOverlap) {
-        debugLog(`  Slot ${slot} conflicts with event: ${period.summary}`);
-        isSlotBusy = true;
-        break;
+        debugLog(`  Slot ${slot} conflicts with event: ${period.summary} (${periodStartHour}:${periodStartMinute}-${periodEndHour}:${periodEndMinute})`);
+        busySlots.push(slot);
+        break;  // No need to check other periods once we know it's busy
       }
-    }
-    
-    if (isSlotBusy) {
-      busySlots.push(slot);
     }
   });
   
   // Filter out busy slots to get available slots
   const availableSlots = allSlots.filter(slot => !busySlots.includes(slot));
   
-  // Log detailed information about available slots
+  // Log detailed information about available and busy slots
   debugLog(`Date ${dateStr} has ${availableSlots.length} available slots out of ${allSlots.length} total`);
-  if (availableSlots.length > 0) {
-    debugLog(`  Available slots: ${availableSlots.join(', ')}`);
-  }
-  if (busySlots.length > 0) {
-    debugLog(`  Busy slots: ${busySlots.join(', ')}`);
-  }
+  debugLog(`  Available slots: ${availableSlots.length > 0 ? availableSlots.join(', ') : 'none'}`);
+  debugLog(`  Busy slots: ${busySlots.length > 0 ? busySlots.join(', ') : 'none'}`);
   
   return availableSlots;
 }
