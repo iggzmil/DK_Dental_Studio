@@ -466,12 +466,14 @@ function renderCalendar(service) {
       <p><strong>Calendar loaded successfully.</strong> Please select a date to see available appointment times.</p>
       <p class="mb-0 small">Green dates have available slots. Click on a date to view available time slots.</p>
     `;
+    debugLog('Calendar showing in connected mode with real availability data');
   } else {
     notice.className = 'alert alert-warning mb-4';
     notice.innerHTML = `
       <p><strong>Note:</strong> The calendar is showing all possible appointment times. Your booking will be confirmed by our staff after submission.</p>
       <p class="mb-0 small">All weekdays show available slots in this mode. Select any date to view available times.</p>
     `;
+    debugLog('Calendar showing in basic mode - all weekdays available');
   }
   
   if (calendarContainer.firstChild) {
@@ -512,6 +514,25 @@ function markAvailableDates() {
         availabilityDiv.textContent = 'Available';
       }
     } else {
+      // In basic mode, all weekdays should be available
+      if (!availabilityLoaded) {
+        const date = new Date(dateString);
+        const dayOfWeek = date.getDay();
+        
+        // For weekdays in basic mode, always mark as available
+        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+          dayElement.classList.add('available');
+          
+          // Add availability indicator
+          const availabilityDiv = dayElement.querySelector('.availability');
+          if (availabilityDiv) {
+            availabilityDiv.textContent = 'Available';
+          }
+          return;
+        }
+      }
+      
+      // Only mark as fully booked in connected mode
       dayElement.classList.add('fully-booked');
       
       // Update availability indicator
@@ -522,6 +543,13 @@ function markAvailableDates() {
       }
     }
   });
+  
+  // Log overall availability for debugging
+  if (availabilityLoaded) {
+    const availableDays = document.querySelectorAll('.calendar-day.available').length;
+    const bookedDays = document.querySelectorAll('.calendar-day.fully-booked').length;
+    debugLog(`Calendar showing ${availableDays} available days and ${bookedDays} fully booked days`);
+  }
 }
 
 /**
@@ -690,8 +718,17 @@ function setupCalendarInteraction() {
       </div>
     `;
 
+    // Log the mode and date for debugging
+    debugLog(`Loading time slots for ${dateString} in ${availabilityLoaded ? 'connected' : 'basic'} mode`);
+    
     // Get time slots from pre-loaded data
     const timeSlots = getTimeSlotsFromCache(dateString);
+    
+    // Additional logging to diagnose issues
+    if (availabilityLoaded && (!timeSlots || timeSlots.length === 0)) {
+      const dateData = availabilityData.currentMonth[dateString] || availabilityData.nextMonth[dateString];
+      debugLog(`No slots found in cache for ${dateString}. Raw data:`, JSON.stringify(dateData));
+    }
     
     // Show the time slots
     timeSlotsContainer.innerHTML = createTimeSlotsHTML(dateString, timeSlots);
@@ -716,20 +753,19 @@ function getTimeSlotsFromCache(dateString) {
     return getFallbackTimeSlots(dateString);
   }
   
-  // Determine which month data to use
-  const date = new Date(dateString);
-  const today = new Date();
-  
-  const isCurrentMonth = 
-    date.getMonth() === today.getMonth() && 
-    date.getFullYear() === today.getFullYear();
-  
-  const monthData = isCurrentMonth ? 
-    availabilityData.currentMonth : 
-    availabilityData.nextMonth;
+  // Use combined data from both months to ensure we don't miss any data
+  const combinedData = {
+    ...availabilityData.currentMonth,
+    ...availabilityData.nextMonth
+  };
   
   // Return the cached slots or empty array if none
-  return monthData[dateString] || [];
+  // Make sure we're actually using the filtered slots from the API response
+  const availableSlots = combinedData[dateString] || [];
+  
+  debugLog(`Retrieved ${availableSlots.length} slots for ${dateString} from cache`);
+  
+  return availableSlots;
 }
 
 /**
@@ -767,8 +803,18 @@ function createTimeSlotsHTML(dateString, timeSlots) {
   // Show available slots
   let html = `
     <h4 class="text-center mb-4">Available Times for ${dayOfWeek}, ${formattedDate}</h4>
-    <div class="time-slots-grid">
   `;
+  
+  // Add a notice if in basic mode
+  if (!availabilityLoaded) {
+    html += `
+      <div class="alert alert-warning mb-3">
+        <p class="mb-0"><small>Note: Calendar is in basic mode. These times need to be confirmed by our staff.</small></p>
+      </div>
+    `;
+  }
+  
+  html += `<div class="time-slots-grid">`;
   
   timeSlots.forEach(slot => {
     html += `
@@ -779,6 +825,10 @@ function createTimeSlotsHTML(dateString, timeSlots) {
   });
   
   html += `</div>`;
+  
+  // Log for debugging
+  debugLog(`Displaying ${timeSlots.length} time slots for ${dateString}`);
+  
   return html;
 }
 
@@ -821,7 +871,7 @@ function showBasicCalendar() {
 function createFallbackAvailabilityData() {
   debugLog('Creating fallback availability data');
   
-  // Get dates for the next 3 months (not just 3 weeks)
+  // Get dates for the next 3 months
   const today = new Date();
   const threeMonthsLater = new Date();
   threeMonthsLater.setMonth(today.getMonth() + 3);
@@ -833,12 +883,16 @@ function createFallbackAvailabilityData() {
   availabilityData.currentMonth = fallbackData;
   availabilityData.nextMonth = fallbackData;
   
-  // Mark as loaded with fallback data
-  availabilityLoaded = false; // This triggers fallback mode behavior
+  // Mark as loaded but in fallback mode
+  availabilityLoaded = false;
   
-  // Log the state
-  debugLog('Using fallback availability data in basic mode');
-  console.warn('Calendar is in basic mode. All weekday times are shown as available.');
+  // Log detailed information about the fallback data
+  const dateCount = Object.keys(fallbackData).length;
+  const exampleDate = Object.keys(fallbackData)[0];
+  const exampleSlots = exampleDate ? fallbackData[exampleDate].length : 0;
+  
+  debugLog(`Created fallback data with ${dateCount} dates, each with approx. ${exampleSlots} slots`);
+  debugLog('Calendar is in basic mode - all weekdays will show as available');
 }
 
 /**
@@ -1822,6 +1876,8 @@ function processCalendarData(response, startDate, endDate, resolve) {
   
   // Now generate all available slots for each weekday in the period
   const periodData = {};
+  let availableDaysCount = 0;
+  let fullyBookedDaysCount = 0;
   
   // Get the range of days to process
   const start = new Date(startDate);
@@ -1848,7 +1904,16 @@ function processCalendarData(response, startDate, endDate, resolve) {
     
     // Store the available slots for this day
     periodData[dayKey] = availableSlots;
+    
+    // Track availability statistics
+    if (availableSlots.length > 0) {
+      availableDaysCount++;
+    } else {
+      fullyBookedDaysCount++;
+    }
   }
+  
+  debugLog(`Processed calendar data: ${availableDaysCount} days with availability, ${fullyBookedDaysCount} fully booked days`);
   
   resolve(periodData);
 }
@@ -1924,6 +1989,8 @@ function filterAvailableSlots(allSlots, date, busyPeriods) {
     return allSlots; // No busy periods, all slots available
   }
   
+  debugLog(`Filtering slots for ${date.toISOString().split('T')[0]}, found ${busyPeriods.length} busy periods`);
+  
   const busySlots = [];
   
   // Check each slot against busy periods
@@ -1937,21 +2004,29 @@ function filterAvailableSlots(allSlots, date, busyPeriods) {
     
     // Check if this slot overlaps with any busy period
     for (const period of busyPeriods) {
+      // Ensure period times are Date objects
+      const periodStart = period.start instanceof Date ? period.start : new Date(period.start);
+      const periodEnd = period.end instanceof Date ? period.end : new Date(period.end);
+      
       const isOverlap = (
-        (slotStart >= period.start && slotStart < period.end) || 
-        (slotEnd > period.start && slotEnd <= period.end) || 
-        (slotStart <= period.start && slotEnd >= period.end)
+        (slotStart >= periodStart && slotStart < periodEnd) || 
+        (slotEnd > periodStart && slotEnd <= periodEnd) || 
+        (slotStart <= periodStart && slotEnd >= periodEnd)
       );
       
       if (isOverlap) {
         busySlots.push(slot);
+        debugLog(`Slot ${slot} conflicts with event: ${period.summary}`);
         break;
       }
     }
   });
   
   // Filter out busy slots to get available slots
-  return allSlots.filter(slot => !busySlots.includes(slot));
+  const availableSlots = allSlots.filter(slot => !busySlots.includes(slot));
+  debugLog(`Date ${date.toISOString().split('T')[0]} has ${availableSlots.length} available slots out of ${allSlots.length} total`);
+  
+  return availableSlots;
 }
 
 /**
