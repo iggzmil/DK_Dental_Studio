@@ -155,15 +155,16 @@ function formatDate(dateString) {
 function formatTime(timeString) {
   const [hours, minutes] = timeString.split(':');
   const hour = parseInt(hours, 10);
+  const paddedMinutes = minutes.padStart(2, '0');
   
   if (hour === 0) {
-    return `12:${minutes}am`;
+    return `12:${paddedMinutes}am`;
   } else if (hour < 12) {
-    return `${hour}:${minutes}am`;
+    return `${hour}:${paddedMinutes}am`;
   } else if (hour === 12) {
-    return `12:${minutes}pm`;
+    return `12:${paddedMinutes}pm`;
   } else {
-    return `${hour - 12}:${minutes}pm`;
+    return `${hour - 12}:${paddedMinutes}pm`;
   }
 }
 
@@ -760,9 +761,18 @@ function setupCalendarInteraction() {
     const timeSlots = getTimeSlotsFromCache(dateString);
     
     // Additional logging to diagnose issues
-    if (availabilityLoaded && (!timeSlots || timeSlots.length === 0)) {
-      const dateData = availabilityData.currentMonth[dateString] || availabilityData.nextMonth[dateString];
-      debugLog(`No slots found in cache for ${dateString}. Raw data:`, JSON.stringify(dateData));
+    if (availabilityLoaded) {
+      const combinedData = {
+        ...availabilityData.currentMonth,
+        ...availabilityData.nextMonth
+      };
+      const dateData = combinedData[dateString];
+      
+      if (!dateData || dateData.length === 0) {
+        debugLog(`No slots found in cache for ${dateString}. Raw data:`, JSON.stringify(dateData));
+      } else {
+        debugLog(`Found ${dateData.length} slots in cache for ${dateString}: ${dateData.join(', ')}`);
+      }
     }
     
     // Show the time slots
@@ -835,6 +845,13 @@ function createTimeSlotsHTML(dateString, timeSlots) {
     `;
   }
   
+  // Sort time slots chronologically
+  const sortedSlots = [...timeSlots].sort((a, b) => {
+    const [aHours, aMinutes] = a.split(':').map(Number);
+    const [bHours, bMinutes] = b.split(':').map(Number);
+    return (aHours - bHours) || (aMinutes - bMinutes);
+  });
+  
   // Show available slots
   let html = `
     <h4 class="text-center mb-4">Available Times for ${dayOfWeek}, ${formattedDate}</h4>
@@ -851,7 +868,7 @@ function createTimeSlotsHTML(dateString, timeSlots) {
   
   html += `<div class="time-slots-grid">`;
   
-  timeSlots.forEach(slot => {
+  sortedSlots.forEach(slot => {
     html += `
       <div class="time-slot" onclick="selectTimeSlot(this, '${dateString}', '${slot}')">
         ${formatTime(slot)}
@@ -862,7 +879,7 @@ function createTimeSlotsHTML(dateString, timeSlots) {
   html += `</div>`;
   
   // Log for debugging
-  debugLog(`Displaying ${timeSlots.length} time slots for ${dateString}`);
+  debugLog(`Displaying ${sortedSlots.length} time slots for ${dateString}: ${sortedSlots.join(', ')}`);
   
   return html;
 }
@@ -1896,6 +1913,10 @@ function processCalendarData(response, startDate, endDate, resolve) {
         // Get the day key (YYYY-MM-DD)
         const dayKey = startDate.toISOString().split('T')[0];
         
+        // Convert to user-friendly time format for logging
+        const startTimeStr = `${startDate.getHours()}:${String(startDate.getMinutes()).padStart(2, '0')}`;
+        const endTimeStr = `${endDate.getHours()}:${String(endDate.getMinutes()).padStart(2, '0')}`;
+        
         // Initialize the busy periods array for this day if needed
         if (!busyPeriods[dayKey]) {
           busyPeriods[dayKey] = [];
@@ -1908,7 +1929,7 @@ function processCalendarData(response, startDate, endDate, resolve) {
           end: endDate
         });
         
-        debugLog('Added busy period for', dayKey, ':', event.summary);
+        debugLog(`Added busy period for ${dayKey}: ${event.summary} (${startTimeStr} to ${endTimeStr})`);
       }
     });
   }
@@ -1958,6 +1979,8 @@ function processCalendarData(response, startDate, endDate, resolve) {
         // Correct the counts
         availableDaysCount++;
         fullyBookedDaysCount--;
+      } else {
+        debugLog(`Date ${dayKey} is fully booked with ${busyPeriods[dayKey].length} busy periods`);
       }
     }
   }
@@ -2002,30 +2025,25 @@ function createFallbackPeriodData(startDate, endDate) {
 function getAllPossibleTimeSlots(date) {
   const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
   
-  // Define business hours based on service and day of week
-  let startHour, endHour;
-  
   // Check for weekends first
   if (dayOfWeek === 0 || dayOfWeek === 6) {
     // No appointments on weekends
     return [];
   }
   
-  // Standard business hours - consistent for all services and days
-  // This simplification ensures more consistent behavior
-  startHour = 10; // 10 AM
-  endHour = 16;   // 4 PM
+  // Business hours - consistent for all weekdays
+  const startHour = 10; // 10 AM
+  const endHour = 16;   // 4 PM
   
-  // Generate all possible slots every hour (60 minutes)
+  // Generate time slots every 60 minutes - business requirement
   const allSlots = [];
   for (let hour = startHour; hour < endHour; hour++) {
+    // Add hour slots (e.g. 10:00, 11:00)
     allSlots.push(`${String(hour).padStart(2, '0')}:00`);
   }
   
-  // Debug generated slots
-  if (allSlots.length === 0) {
-    debugLog(`WARNING: Generated 0 slots for ${date.toISOString().split('T')[0]}, day of week: ${dayOfWeek}`);
-  }
+  // Debug the slots
+  debugLog(`Generated ${allSlots.length} potential time slots for ${date.toISOString().split('T')[0]}: ${allSlots.join(', ')}`);
   
   return allSlots;
 }
@@ -2041,6 +2059,15 @@ function filterAvailableSlots(allSlots, date, busyPeriods) {
   const dateStr = date.toISOString().split('T')[0];
   debugLog(`Filtering slots for ${dateStr}, found ${busyPeriods.length} busy periods`);
   
+  // Debug the busy periods to better understand what we're working with
+  busyPeriods.forEach((period, index) => {
+    const startTime = period.start instanceof Date ? period.start : new Date(period.start);
+    const endTime = period.end instanceof Date ? period.end : new Date(period.end);
+    debugLog(`  Busy period ${index + 1}: ${period.summary}, ` +
+             `${startTime.getHours()}:${startTime.getMinutes()} to ` +
+             `${endTime.getHours()}:${endTime.getMinutes()}`);
+  });
+  
   const busySlots = [];
   
   // Check each slot against busy periods
@@ -2051,6 +2078,9 @@ function filterAvailableSlots(allSlots, date, busyPeriods) {
     
     const slotEnd = new Date(slotStart);
     slotEnd.setMinutes(slotEnd.getMinutes() + SERVICE_DURATION[window.selectedService]);
+    
+    // Debug the slot we're checking
+    debugLog(`  Checking slot: ${slot} (${slotStart.getHours()}:${slotStart.getMinutes()} - ${slotEnd.getHours()}:${slotEnd.getMinutes()})`);
     
     // Check if this slot overlaps with any busy period
     let isSlotBusy = false;
@@ -2082,15 +2112,23 @@ function filterAvailableSlots(allSlots, date, busyPeriods) {
         effectiveEnd.setHours(23, 59, 59, 999);
       }
       
+      // More accurate overlap detection that properly handles time boundaries
+      // An event overlaps with a slot if:
+      // 1. The event starts during the slot
+      // 2. The event ends during the slot
+      // 3. The event contains the entire slot
       const isOverlap = (
-        (slotStart >= effectiveStart && slotStart < effectiveEnd) || 
-        (slotEnd > effectiveStart && slotEnd <= effectiveEnd) || 
-        (slotStart <= effectiveStart && slotEnd >= effectiveEnd)
+        // Event starts during slot
+        (effectiveStart >= slotStart && effectiveStart < slotEnd) || 
+        // Event ends during slot
+        (effectiveEnd > slotStart && effectiveEnd <= slotEnd) || 
+        // Event contains slot entirely
+        (effectiveStart <= slotStart && effectiveEnd >= slotEnd)
       );
       
       if (isOverlap) {
         isSlotBusy = true;
-        debugLog(`Slot ${slot} conflicts with event: ${period.summary}`);
+        debugLog(`  Slot ${slot} conflicts with event: ${period.summary}`);
         break;
       }
     }
@@ -2102,7 +2140,12 @@ function filterAvailableSlots(allSlots, date, busyPeriods) {
   
   // Filter out busy slots to get available slots
   const availableSlots = allSlots.filter(slot => !busySlots.includes(slot));
+  
+  // Log detailed information about available slots
   debugLog(`Date ${dateStr} has ${availableSlots.length} available slots out of ${allSlots.length} total`);
+  if (availableSlots.length > 0) {
+    debugLog(`  Available slots: ${availableSlots.join(', ')}`);
+  }
   
   return availableSlots;
 }
