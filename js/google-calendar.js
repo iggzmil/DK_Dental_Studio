@@ -2112,23 +2112,15 @@ function filterAvailableSlots(allSlots, date, busyPeriods) {
         effectiveEnd.setHours(23, 59, 59, 999);
       }
       
-      // More accurate overlap detection that properly handles time boundaries
-      // An event overlaps with a slot if:
-      // 1. The event starts during the slot
-      // 2. The event ends during the slot
-      // 3. The event contains the entire slot
-      const isOverlap = (
-        // Event starts during slot
-        (effectiveStart >= slotStart && effectiveStart < slotEnd) || 
-        // Event ends during slot
-        (effectiveEnd > slotStart && effectiveEnd <= slotEnd) || 
-        // Event contains slot entirely
-        (effectiveStart <= slotStart && effectiveEnd >= slotEnd)
-      );
+      // Simplified and fixed overlap logic
+      // A slot is busy if:
+      // 1. The slot starts before the event ends AND
+      // 2. The slot ends after the event starts
+      const isOverlap = slotStart < effectiveEnd && slotEnd > effectiveStart;
       
       if (isOverlap) {
-        isSlotBusy = true;
         debugLog(`  Slot ${slot} conflicts with event: ${period.summary}`);
+        isSlotBusy = true;
         break;
       }
     }
@@ -2145,6 +2137,9 @@ function filterAvailableSlots(allSlots, date, busyPeriods) {
   debugLog(`Date ${dateStr} has ${availableSlots.length} available slots out of ${allSlots.length} total`);
   if (availableSlots.length > 0) {
     debugLog(`  Available slots: ${availableSlots.join(', ')}`);
+  }
+  if (busySlots.length > 0) {
+    debugLog(`  Busy slots: ${busySlots.join(', ')}`);
   }
   
   return availableSlots;
