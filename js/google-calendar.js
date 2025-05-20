@@ -523,8 +523,26 @@ function markAvailableDates() {
       return;
     }
     
-    // Check if this date has available slots
-    const hasAvailableSlots = hasAvailableSlotsForDate(dateString);
+    // For weekdays, either use explicit availability data or generate slots
+    const combinedData = {
+      ...availabilityData.currentMonth,
+      ...availabilityData.nextMonth
+    };
+    
+    let hasAvailableSlots = false;
+    
+    if (dateString in combinedData) {
+      // We have explicit data for this date
+      hasAvailableSlots = combinedData[dateString] && combinedData[dateString].length > 0;
+      debugLog(`Checking explicit availability for ${dateString}: ${hasAvailableSlots ? 'available' : 'fully booked'}`);
+    } else if (availabilityLoaded) {
+      // No explicit data, but we should generate slots for weekdays
+      debugLog(`No explicit data for ${dateString}, treating weekday as available`);
+      hasAvailableSlots = true;
+    } else {
+      // In basic mode, all weekdays are available
+      hasAvailableSlots = true;
+    }
     
     // Mark as available or fully booked
     if (hasAvailableSlots) {
@@ -536,21 +554,6 @@ function markAvailableDates() {
         availabilityDiv.textContent = 'Available';
       }
     } else {
-      // In basic mode, all weekdays should be available
-      if (!availabilityLoaded) {
-        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-          dayElement.classList.add('available');
-          
-          // Add availability indicator
-          const availabilityDiv = dayElement.querySelector('.availability');
-          if (availabilityDiv) {
-            availabilityDiv.textContent = 'Available';
-          }
-          return;
-        }
-      }
-      
-      // Only mark as fully booked in connected mode
       dayElement.classList.add('fully-booked');
       
       // Update availability indicator
@@ -573,6 +576,7 @@ function markAvailableDates() {
 
 /**
  * Check if a date has available slots
+ * Note: This function is now used as a utility rather than the primary availability check.
  */
 function hasAvailableSlotsForDate(dateString) {
   // In fallback/basic mode, all weekdays should show as available
@@ -591,29 +595,16 @@ function hasAvailableSlotsForDate(dateString) {
   };
   
   // Check if this date exists in the data
-  const hasData = dateString in monthData;
-  
-  if (!hasData) {
-    // If we don't have data for this date (edge of period), check if it's a weekday
+  if (dateString in monthData) {
+    // Get the actual slots for this date
+    const slots = monthData[dateString] || [];
+    return slots.length > 0;
+  } else {
+    // If we don't have data for this date, but it's a weekday, treat it as available
     const date = new Date(dateString);
     const dayOfWeek = date.getDay();
-    const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
-    debugLog(`No data for ${dateString}, treating as ${isWeekday ? 'available (weekday)' : 'unavailable (weekend)'}`);
-    return isWeekday;
+    return dayOfWeek >= 1 && dayOfWeek <= 5;
   }
-  
-  // Get the actual slots for this date
-  const slots = monthData[dateString] || [];
-  
-  // Ensure we use the correct date format when checking availability
-  if (slots.length === 0) {
-    debugLog(`Date ${dateString} is fully booked - no available slots`);
-    return false;
-  }
-  
-  // For debugging, count the available slots
-  debugLog(`Date ${dateString} has ${slots.length} available slots: ${slots.join(', ')}`);
-  return true;
 }
 
 /**
@@ -809,13 +800,51 @@ function getTimeSlotsFromCache(dateString) {
     ...availabilityData.nextMonth
   };
   
-  // Return the cached slots or empty array if none
-  // Make sure we're actually using the filtered slots from the API response
-  const availableSlots = combinedData[dateString] || [];
-  
-  debugLog(`Retrieved ${availableSlots.length} slots for ${dateString} from cache`);
-  
-  return availableSlots;
+  // Check if we have data for this date
+  if (dateString in combinedData) {
+    const availableSlots = combinedData[dateString] || [];
+    debugLog(`Retrieved ${availableSlots.length} slots for ${dateString} from cache`);
+    
+    if (availableSlots.length > 0) {
+      debugLog(`Found ${availableSlots.length} slots in cache for ${dateString}: ${availableSlots.join(', ')}`);
+    } else {
+      debugLog(`No slots available for ${dateString} in cache`);
+    }
+    
+    return availableSlots;
+  } else {
+    // No data for this date, check if it's a weekday and generate default slots
+    const date = new Date(dateString);
+    const dayOfWeek = date.getDay();
+    
+    // Only generate slots for weekdays
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      debugLog(`No data found for ${dateString}, generating default slots for weekday`);
+      
+      // Get all potential slots
+      const allSlots = getAllPossibleTimeSlots(date);
+      
+      // Check for standard busy periods like lunch
+      const standardBusyPeriods = [];
+      
+      // Add standard lunch period (common across most days)
+      standardBusyPeriods.push({
+        summary: 'Default Lunch Break',
+        start: new Date(`${dateString}T12:00:00`),
+        end: new Date(`${dateString}T13:00:00`)
+      });
+      
+      // Filter slots based on standard busy periods
+      const availableSlots = filterAvailableSlots(allSlots, date, standardBusyPeriods);
+      
+      debugLog(`Generated ${availableSlots.length} default slots for ${dateString}: ${availableSlots.join(', ')}`);
+      return availableSlots;
+    } else {
+      // Weekend
+      debugLog(`No slots generated for ${dateString} (weekend or invalid date)`);
+      return [];
+    }
+  }
 }
 
 /**
