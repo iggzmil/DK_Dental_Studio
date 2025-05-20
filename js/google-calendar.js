@@ -1665,7 +1665,7 @@ function showBookingError() {
 }
 
 /**
- * Load all availability data for the next 3 months
+ * Load all availability data for the next 6 weeks
  */
 function loadAllAvailabilityData() {
   debugLog('Loading all availability data');
@@ -1685,12 +1685,12 @@ function loadAllAvailabilityData() {
   
   // Create the promise
   availabilityLoadingPromise = new Promise((resolve, reject) => {
-    // Get dates for the next 3 months
+    // Get dates for the next 6 weeks
     const today = new Date();
-    const threeMonthsLater = new Date();
-    threeMonthsLater.setMonth(today.getMonth() + 3);
+    const sixWeeksLater = new Date();
+    sixWeeksLater.setDate(today.getDate() + 42); // 6 weeks = 42 days
     
-    debugLog('Loading availability from', today.toISOString(), 'to', threeMonthsLater.toISOString());
+    debugLog('Loading availability from', today.toISOString(), 'to', sixWeeksLater.toISOString());
     
     // Set a longer timeout for the loading process (30 seconds)
     const timeoutId = setTimeout(() => {
@@ -1708,8 +1708,8 @@ function loadAllAvailabilityData() {
       resolve(availabilityData);
     }, 30000);
     
-    // Load availability data for the next 3 months
-    loadAvailabilityPeriod(today, threeMonthsLater)
+    // Load availability data for the next 6 weeks
+    loadAvailabilityPeriod(today, sixWeeksLater)
       .then((data) => {
         // Clear the timeout
         clearTimeout(timeoutId);

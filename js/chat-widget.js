@@ -443,51 +443,21 @@ class DKDChatWidget {
         this.sessionId = this.getSessionId();
       }
 
-      // Check if this is the first message in the session
-      if (this.isFirstMessage && action === 'sendMessage') {
-        console.log('First message in session - sending SESSION_START signal');
-
-        // Send the SESSION_START message first
-        try {
-          const sessionStartPayload = {
-            sessionId: this.sessionId,
-            chatInput: "SESSION_START",
-            isNewSession: true,
-            clearMemory: true
-          };
-
-          // Send the SESSION_START message
-          await fetch(this.options.webhookUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(sessionStartPayload)
-          });
-
-          console.log('SESSION_START signal sent successfully');
-
-          // Small delay to ensure the SESSION_START is processed before the actual message
-          await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (sessionStartError) {
-          console.error('Error sending SESSION_START signal:', sessionStartError);
-          // Continue with the user message even if SESSION_START fails
-        }
-
-        // Set the flag to false after sending the first message
-        this.isFirstMessage = false;
-      }
-
       // Format payload exactly as N8N Chat Trigger expects - with conversation history
       const payload = {
         sessionId: this.sessionId,
         chatInput: message,
-        isNewSession: false, // Changed to false since we're handling session start separately
-        clearMemory: false   // Changed to false since we're handling memory clearing with SESSION_START
+        isNewSession: this.isFirstMessage // Set to true for the first message in a session
       };
 
       // Log the payload for debugging
       console.log('Sending payload to N8N:', payload);
+
+      // After sending, mark this as no longer the first message
+      if (this.isFirstMessage) {
+        console.log('First message in session - isNewSession=true');
+        this.isFirstMessage = false;
+      }
 
       // Try to use the actual webhook
       let response;
