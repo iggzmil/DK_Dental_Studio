@@ -3,7 +3,7 @@
  * Gmail API Email Sender for DK Dental Studio
  *
  * This file provides functionality to send emails using the authenticated Gmail account
- * via Google's Gmail API. Requires OAuth2 authentication.
+ * via Google's Gmail API. Uses real API calls, not simulations.
  */
 
 // Always use the minimal autoloader to avoid dependency issues
@@ -29,57 +29,40 @@ function sendGmailEmail($to, $subject, $message, $fromName = 'DK Dental Studio',
     ];
 
     try {
-        // Use Gmail API for sending emails
-        $useGmailApi = true;
+        // Client credentials (same as in OAuth flow)
+        $clientId = '593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com';
+        $clientSecret = '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';
 
-        if ($useGmailApi) {
-            // Client credentials (same as in OAuth flow)
-            $clientId = '593699947617-hulnksmaqujj6o0j1sob13klorehtspt.apps.googleusercontent.com';
-            $clientSecret = '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';
+        // Path to token file
+        $tokenFile = __DIR__ . '/../../vendor/google/oauth/secure/google_refresh_token.json';
 
-            // Path to token file
-            $tokenFile = __DIR__ . '/../../vendor/google/oauth/secure/google_refresh_token.json';
+        // Initialize token manager
+        $tokenManager = new EnhancedGoogleTokenManager($clientId, $clientSecret, $tokenFile);
 
-            // Initialize token manager
-            $tokenManager = new EnhancedGoogleTokenManager($clientId, $clientSecret, $tokenFile);
-
-            // Get authenticated client
-            $client = $tokenManager->getAuthorizedClient();
-        } else {
-            $client = null;
-        }
-
+        // Get authenticated client
+        $client = $tokenManager->getAuthorizedClient();
+        
         if (!$client) {
-            // If we can't get an authorized client, use a fallback method
-            // This will allow the contact form to work even if the OAuth token is not valid
-            $result['success'] = true;
-            $result['message'] = 'Email would be sent (fallback mode)';
-            $result['id'] = 'fallback_' . time();
+            // If we can't get an authorized client, attempt to use PHP mail() as fallback
+            $result['message'] = 'Failed to get authorized Gmail API client. Attempting fallback...';
+            
+            // Send the email using PHP mail() function
+            $headers = "From: DK Dental Studio <noreply@dkdental.au>\r\n";
+            $headers .= "Reply-To: noreply@dkdental.au\r\n";
+            $headers .= "MIME-Version: 1.0\r\n";
+            $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+            $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
 
-            // Log the email details for debugging
-            error_log('FALLBACK EMAIL: To: ' . $to . ', Subject: ' . $subject);
+            $mailResult = mail($to, $subject, $message, $headers);
 
-            // Send the email using PHP mail() function if possible
-            if (function_exists('mail')) {
-                $headers = "From: DK Dental Studio <noreply@dkdental.au>\r\n";
-                $headers .= "Reply-To: noreply@dkdental.au\r\n";
-                $headers .= "MIME-Version: 1.0\r\n";
-                $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-                $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
-
-                $mailResult = mail($to, $subject, $message, $headers);
-
-                if ($mailResult) {
-                    $result['message'] = 'Email sent successfully using PHP mail() function';
-                } else {
-                    $result['message'] = 'Email would be sent (fallback mode), but PHP mail() function failed';
-                    // Still return success so the form submission works
-                    $result['success'] = true;
-                }
+            if ($mailResult) {
+                $result['success'] = true;
+                $result['message'] = 'Email sent successfully using PHP mail() fallback';
+                $result['id'] = 'fallback_' . time();
             } else {
-                $result['message'] = 'Email would be sent (fallback mode), but PHP mail() function is not available';
+                $result['message'] = 'Failed to send email: Gmail API unavailable and PHP mail() failed';
             }
-
+            
             return $result;
         }
 
@@ -102,13 +85,13 @@ function sendGmailEmail($to, $subject, $message, $fromName = 'DK Dental Studio',
 
         if ($sent) {
             $result['success'] = true;
-            $result['message'] = 'Email sent successfully';
+            $result['message'] = 'Email sent successfully via Gmail API';
             $result['id'] = $sent->getId();
         } else {
-            $result['message'] = 'Failed to send email: Unknown error';
+            $result['message'] = 'Failed to send email via Gmail API: Unknown error';
         }
     } catch (Exception $e) {
-        $result['message'] = 'Failed to send email: ' . $e->getMessage();
+        $result['message'] = 'Failed to send email via Gmail API: ' . $e->getMessage();
         error_log('Gmail API error: ' . $e->getMessage());
     }
 

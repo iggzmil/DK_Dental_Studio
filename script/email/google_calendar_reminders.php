@@ -413,15 +413,15 @@ function sendReminderEmail($to, $subject, $message) {
         return true;
     }
     
-    // Check if Gmail API is available (reusing existing email integration)
-    $gmailApiPath = __DIR__ . '/../calendar/gmail-sender.php';
-    $useGmailApi = file_exists($gmailApiPath);
+    // In LIVE mode, actually send the email using Gmail API
     
-    $success = false;
-    
-    if ($useGmailApi) {
-        // Use Gmail API to send emails (if available from booking system)
+    // Check if Gmail API integration is available
+    $gmailApiPath = __DIR__ . '/gmail-sender.php';
+    if (file_exists($gmailApiPath)) {
+        // Use Gmail API to send emails
         require_once $gmailApiPath;
+        
+        logMessage("Sending actual email to $to via Gmail API");
         
         $emailResult = sendGmailEmail(
             $to,
@@ -432,18 +432,25 @@ function sendReminderEmail($to, $subject, $message) {
         
         $success = $emailResult['success'];
         
-        if (!$success) {
+        if ($success) {
+            logMessage("Email successfully sent via Gmail API: " . $emailResult['message']);
+        } else {
             logMessage("Gmail API email error: " . $emailResult['message']);
         }
     } else {
         // Fall back to PHP mail() function
+        logMessage("Gmail API not available, falling back to PHP mail()");
+        
         $headers = "MIME-Version: 1.0\r\n";
         $headers .= "Content-type: text/html; charset=UTF-8\r\n";
         $headers .= "From: DK Dental Studio <info@dkdental.au>\r\n";
+        $headers .= "Reply-To: info@dkdental.au\r\n";
         
         $success = mail($to, $subject, $message, $headers);
         
-        if (!$success) {
+        if ($success) {
+            logMessage("Email sent successfully using PHP mail() function");
+        } else {
             logMessage("PHP mail() function failed");
         }
     }
