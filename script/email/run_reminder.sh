@@ -1,5 +1,14 @@
 #!/bin/bash
 #
+# DEPRECATED - THIS SCRIPT IS NO LONGER USED
+# 
+# The appointment reminder system now uses Google Calendar directly
+# instead of this database-based implementation.
+# 
+# This file is kept for reference only and can be safely removed.
+
+# Original script commented out below:
+: '
 # Appointment Reminder Email Sender Script
 # Run this script from a cron job to send reminder emails
 
@@ -23,4 +32,8 @@ if [ $? -eq 0 ]; then
 else
     echo "$(date): Error processing reminder emails" >> "$LOG_FILE"
     exit 1
-fi 
+fi
+'
+
+echo "DEPRECATED: This reminder system has been replaced with Google Calendar-based reminders" >> "$SCRIPT_DIR/cron_execution.log"
+exit 0 

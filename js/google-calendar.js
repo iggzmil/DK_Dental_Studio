@@ -1582,45 +1582,7 @@ function showBookingSuccess(firstName, lastName, email) {
   }, 3000);
 }
 
-/**
- * Store appointment for reminder email
- */
-function storeAppointmentForReminder(firstName, lastName, email, date, time, service) {
-  // Format the date and time for the API
-  const appointmentDateTime = new Date(`${date}T${time}`);
-  const isoDateTime = appointmentDateTime.toISOString();
-  
-  // Get the service name
-  const serviceName = getServiceName(service);
-  
-  // Create the data to send
-  const reminderData = {
-    datetime: isoDateTime,
-    email: email,
-    firstName: firstName,
-    service: serviceName
-  };
-  
-  // Send the data to the server
-  fetch('/script/email/save_reminder.php', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(reminderData)
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      debugLog('Reminder scheduled successfully');
-    } else {
-      debugLog('Failed to schedule reminder:', data.error);
-    }
-  })
-  .catch(error => {
-    debugLog('Error scheduling reminder:', error);
-  });
-}
+/** * Store appointment for reminder email *  * NOTE: This function has been disabled as we now use Google Calendar directly * for appointment reminders instead of the database-based system. */function storeAppointmentForReminder(firstName, lastName, email, date, time, service) {  // This function is now disabled since we're using Google Calendar directly  debugLog('Database reminder system disabled - using Google Calendar directly');  return;}
 
 /**
  * Reload the calendar after booking

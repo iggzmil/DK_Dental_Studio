@@ -1,10 +1,20 @@
 <?php
 /**
- * Save Appointment Reminder API
+ * DEPRECATED - THIS FILE IS NO LONGER USED
  * 
- * This script receives appointment data from the front-end 
- * and stores it in the database for reminder emails.
+ * The appointment reminder system now uses Google Calendar directly
+ * instead of this database-based implementation.
+ * 
+ * This file is being kept for reference only and can be safely removed.
  */
+
+// Original code below - no longer functional as the database has been removed
+
+/*
+// Save Appointment Reminder API
+// 
+// This script receives appointment data from the front-end 
+// and stores it in the database for reminder emails.
 
 // Enable error reporting for debugging
 error_reporting(E_ALL);
@@ -73,4 +83,12 @@ if (storeAppointmentForReminder($datetime, $email, $firstName, $service)) {
         'success' => false,
         'error' => 'Failed to schedule reminder'
     ]);
-} 
+}
+*/
+
+// Return a message indicating this service is deprecated
+header('Content-Type: application/json');
+echo json_encode([
+    'success' => false,
+    'error' => 'This reminder API is deprecated. Reminders are now handled through Google Calendar directly.'
+]); 
