@@ -496,6 +496,27 @@ function markAvailableDates() {
     const dateString = dayElement.getAttribute('data-date');
     if (!dateString) return;
     
+    // Check if this is a weekend
+    const date = new Date(dateString);
+    const dayOfWeek = date.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    
+    // Check if this is a past date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isPast = date < today;
+    
+    // Skip past dates and weekends
+    if (isPast) {
+      dayElement.classList.add('past');
+      return;
+    }
+    
+    if (isWeekend) {
+      dayElement.classList.add('weekend');
+      return;
+    }
+    
     // Skip if already marked
     if (dayElement.classList.contains('past') || dayElement.classList.contains('weekend')) {
       return;
@@ -516,10 +537,6 @@ function markAvailableDates() {
     } else {
       // In basic mode, all weekdays should be available
       if (!availabilityLoaded) {
-        const date = new Date(dateString);
-        const dayOfWeek = date.getDay();
-        
-        // For weekdays in basic mode, always mark as available
         if (dayOfWeek >= 1 && dayOfWeek <= 5) {
           dayElement.classList.add('available');
           
@@ -548,7 +565,8 @@ function markAvailableDates() {
   if (availabilityLoaded) {
     const availableDays = document.querySelectorAll('.calendar-day.available').length;
     const bookedDays = document.querySelectorAll('.calendar-day.fully-booked').length;
-    debugLog(`Calendar showing ${availableDays} available days and ${bookedDays} fully booked days`);
+    const weekendDays = document.querySelectorAll('.calendar-day.weekend').length;
+    debugLog(`Calendar showing ${availableDays} available days and ${bookedDays} fully booked days (${weekendDays} weekend days)`);
   }
 }
 
@@ -571,8 +589,25 @@ function hasAvailableSlotsForDate(dateString) {
     ...availabilityData.nextMonth
   };
   
+  // Check if this date exists in the data
+  const hasData = dateString in monthData;
+  
   // Check if this date has available slots
-  return monthData[dateString] && monthData[dateString].length > 0;
+  const hasSlots = hasData && monthData[dateString] && monthData[dateString].length > 0;
+  
+  // Debug the availability status for this date
+  debugLog(`Checking availability for ${dateString}: hasData=${hasData}, hasSlots=${hasSlots}`);
+  
+  // If we have data for this date, return whether it has slots
+  if (hasData) {
+    return hasSlots;
+  }
+  
+  // If we don't have data for this date (which might happen for dates at edges of the period),
+  // default to showing as available for weekdays
+  const date = new Date(dateString);
+  const dayOfWeek = date.getDay();
+  return dayOfWeek >= 1 && dayOfWeek <= 5;
 }
 
 /**
@@ -1721,6 +1756,10 @@ function loadAllAvailabilityData() {
         isLoadingAvailability = false;
         availabilityLoadingPromise = null;
         debugLog('All availability data loaded successfully');
+        
+        // Debug the loaded data
+        debugAvailabilityData();
+        
         resolve(data);
       })
       .catch(err => {
@@ -1908,8 +1947,18 @@ function processCalendarData(response, startDate, endDate, resolve) {
     // Track availability statistics
     if (availableSlots.length > 0) {
       availableDaysCount++;
+      debugLog(`Date ${dayKey} has ${availableSlots.length} available slots out of ${allSlots.length} total`);
     } else {
       fullyBookedDaysCount++;
+      // For days marked as fully booked, double-check if they actually have busy periods
+      if (!busyPeriods[dayKey] || busyPeriods[dayKey].length === 0) {
+        debugLog(`WARNING: Date ${dayKey} has no busy periods but is marked as fully booked`);
+        // This is a safety measure - provide default slots if incorrectly marked as booked
+        periodData[dayKey] = allSlots;
+        // Correct the counts
+        availableDaysCount++;
+        fullyBookedDaysCount--;
+      }
     }
   }
   
@@ -1962,20 +2011,20 @@ function getAllPossibleTimeSlots(date) {
     return [];
   }
   
-  if (window.selectedService === 'mouthguards' && (dayOfWeek >= 1 && dayOfWeek <= 3)) {
-    // Mon-Wed for mouthguards: 10am-6pm
-    startHour = 10;
-    endHour = 18;
-  } else {
-    // Other days or services: 10am-4pm
-    startHour = 10;
-    endHour = 16;
-  }
+  // Standard business hours - consistent for all services and days
+  // This simplification ensures more consistent behavior
+  startHour = 10; // 10 AM
+  endHour = 16;   // 4 PM
   
   // Generate all possible slots every hour (60 minutes)
   const allSlots = [];
   for (let hour = startHour; hour < endHour; hour++) {
     allSlots.push(`${String(hour).padStart(2, '0')}:00`);
+  }
+  
+  // Debug generated slots
+  if (allSlots.length === 0) {
+    debugLog(`WARNING: Generated 0 slots for ${date.toISOString().split('T')[0]}, day of week: ${dayOfWeek}`);
   }
   
   return allSlots;
@@ -1989,7 +2038,8 @@ function filterAvailableSlots(allSlots, date, busyPeriods) {
     return allSlots; // No busy periods, all slots available
   }
   
-  debugLog(`Filtering slots for ${date.toISOString().split('T')[0]}, found ${busyPeriods.length} busy periods`);
+  const dateStr = date.toISOString().split('T')[0];
+  debugLog(`Filtering slots for ${dateStr}, found ${busyPeriods.length} busy periods`);
   
   const busySlots = [];
   
@@ -2003,28 +2053,56 @@ function filterAvailableSlots(allSlots, date, busyPeriods) {
     slotEnd.setMinutes(slotEnd.getMinutes() + SERVICE_DURATION[window.selectedService]);
     
     // Check if this slot overlaps with any busy period
+    let isSlotBusy = false;
     for (const period of busyPeriods) {
       // Ensure period times are Date objects
       const periodStart = period.start instanceof Date ? period.start : new Date(period.start);
       const periodEnd = period.end instanceof Date ? period.end : new Date(period.end);
       
+      // Handle case where start and end dates are on different days
+      if (periodStart.toISOString().split('T')[0] !== dateStr && 
+          periodEnd.toISOString().split('T')[0] !== dateStr) {
+        // Event doesn't touch this day at all
+        continue;
+      }
+      
+      // Fix for events spanning multiple days - only consider the portion on this day
+      let effectiveStart = periodStart;
+      let effectiveEnd = periodEnd;
+      
+      // If event starts before this day, set start to beginning of this day
+      if (periodStart.toISOString().split('T')[0] !== dateStr) {
+        effectiveStart = new Date(date);
+        effectiveStart.setHours(0, 0, 0, 0);
+      }
+      
+      // If event ends after this day, set end to end of this day
+      if (periodEnd.toISOString().split('T')[0] !== dateStr) {
+        effectiveEnd = new Date(date);
+        effectiveEnd.setHours(23, 59, 59, 999);
+      }
+      
       const isOverlap = (
-        (slotStart >= periodStart && slotStart < periodEnd) || 
-        (slotEnd > periodStart && slotEnd <= periodEnd) || 
-        (slotStart <= periodStart && slotEnd >= periodEnd)
+        (slotStart >= effectiveStart && slotStart < effectiveEnd) || 
+        (slotEnd > effectiveStart && slotEnd <= effectiveEnd) || 
+        (slotStart <= effectiveStart && slotEnd >= effectiveEnd)
       );
       
       if (isOverlap) {
-        busySlots.push(slot);
+        isSlotBusy = true;
         debugLog(`Slot ${slot} conflicts with event: ${period.summary}`);
         break;
       }
+    }
+    
+    if (isSlotBusy) {
+      busySlots.push(slot);
     }
   });
   
   // Filter out busy slots to get available slots
   const availableSlots = allSlots.filter(slot => !busySlots.includes(slot));
-  debugLog(`Date ${date.toISOString().split('T')[0]} has ${availableSlots.length} available slots out of ${allSlots.length} total`);
+  debugLog(`Date ${dateStr} has ${availableSlots.length} available slots out of ${allSlots.length} total`);
   
   return availableSlots;
 }
@@ -2044,4 +2122,37 @@ function createDefaultBusyPeriodsForDay(allSlots, dayOfWeek) {
 function Hour(hours, minutes) {
   this.hours = hours;
   this.minutes = minutes || 0;
+}
+
+// Add a new helper function to debug availability data after loading
+function debugAvailabilityData() {
+  if (!availabilityLoaded) {
+    debugLog('Cannot debug availability data - not loaded yet');
+    return;
+  }
+  
+  // Count days with data
+  const combinedData = {
+    ...availabilityData.currentMonth,
+    ...availabilityData.nextMonth
+  };
+  
+  const daysWithData = Object.keys(combinedData).length;
+  const daysWithNoSlots = Object.keys(combinedData).filter(key => 
+    !combinedData[key] || combinedData[key].length === 0
+  ).length;
+  
+  debugLog(`Availability overview: ${daysWithData} days loaded, ${daysWithNoSlots} fully booked days`);
+  
+  // List any days with zero slots
+  if (daysWithNoSlots > 0) {
+    debugLog('Days with zero slots:');
+    Object.keys(combinedData).forEach(date => {
+      if (!combinedData[date] || combinedData[date].length === 0) {
+        const dateObj = new Date(date);
+        const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+        debugLog(`- ${date} (${dayOfWeek}) has 0 available slots`);
+      }
+    });
+  }
 } 
