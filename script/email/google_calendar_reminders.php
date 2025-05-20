@@ -112,9 +112,7 @@ if (!$accessToken) {
 
 // Calendar IDs 
 $calendarIds = [
-    'dentures' => 'info@dkdental.au',
-    'repairs' => 'info@dkdental.au',
-    'mouthguards' => 'info@dkdental.au'
+    'primary' => 'info@dkdental.au' // Just use one calendar to avoid duplicates
 ];
 
 // Get tomorrow's date range (or use test date if specified)
@@ -133,10 +131,12 @@ logMessage("Checking for appointments on " . $tomorrow->format('l, j F Y'));
 // Counter for tracking processed appointments
 $appointmentCount = 0;
 $remindersSent = 0;
+$businessEventCount = 0; // Count for business-related events like Office, Lunch, etc.
+$clientAppointmentCount = 0; // Count for actual client appointments
 
 // Process each calendar (service type)
 foreach ($calendarIds as $service => $calendarId) {
-    logMessage("Checking calendar for service: $service");
+    logMessage("Checking calendar: $calendarId");
     
     // Get events from Google Calendar for tomorrow
     $apiUrl = "https://www.googleapis.com/calendar/v3/calendars/" . urlencode($calendarId) . "/events";
@@ -166,7 +166,7 @@ foreach ($calendarIds as $service => $calendarId) {
         
         if (isset($data['items']) && is_array($data['items'])) {
             $events = $data['items'];
-            logMessage("Found " . count($events) . " event(s) for $service");
+            logMessage("Found " . count($events) . " total calendar items for date");
             
             foreach ($events as $event) {
                 $appointmentCount++;
@@ -178,8 +178,29 @@ foreach ($calendarIds as $service => $calendarId) {
                 if (!isset($event['start']['dateTime'])) {
                     // This is likely a business hours marker or closure - not an actual appointment
                     logMessage("Skipping business hours event: $eventSummary - Not a client appointment");
+                    $businessEventCount++;
                     continue;
                 }
+                
+                // Check if this is a business-related event
+                $businessEventKeywords = ['lunch', 'office', 'open', 'close', 'meeting', 'break', 'away'];
+                $isBusinessEvent = false;
+                
+                foreach ($businessEventKeywords as $keyword) {
+                    if (stripos($eventSummary, $keyword) !== false) {
+                        $isBusinessEvent = true;
+                        break;
+                    }
+                }
+                
+                if ($isBusinessEvent) {
+                    logMessage("Skipping internal business event: $eventSummary");
+                    $businessEventCount++;
+                    continue;
+                }
+                
+                // Increment client appointment counter for actual appointments
+                $clientAppointmentCount++;
                 
                 // Safe to process the dateTime now
                 $eventStart = new DateTime($event['start']['dateTime']);
@@ -187,11 +208,15 @@ foreach ($calendarIds as $service => $calendarId) {
                 
                 // Get attendee information
                 $attendees = $event['attendees'] ?? [];
+                $clientName = null;
                 $clientEmail = null;
-                $clientName = 'Customer';
                 
                 // Skip events without attendees
                 if (empty($attendees)) {
+                    // Look for client info in event title/description
+                    $clientName = null;
+                    $clientEmail = null;
+                    
                     // Extract name from event summary as fallback
                     // Assuming format like "Service - FirstName LastName"
                     if (strpos($eventSummary, ' - ') !== false) {
@@ -199,29 +224,63 @@ foreach ($calendarIds as $service => $calendarId) {
                         $clientName = trim($namePart);
                     }
                     
-                    // Log and move to next event if no email address
-                    logMessage("No attendees found for event: $eventSummary at $eventTime - Cannot send reminder");
-                    continue;
-                }
-                
-                // Find the client attendee (not the organizer)
-                foreach ($attendees as $attendee) {
-                    // Skip the organizer (usually the dental office email)
-                    if (isset($attendee['organizer']) && $attendee['organizer']) {
-                        continue;
+                    // Try to extract email from description if available
+                    if (isset($event['description'])) {
+                        $description = $event['description'];
+                        
+                        // Look for email pattern in description
+                        if (preg_match('/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/', $description, $matches)) {
+                            $clientEmail = $matches[0];
+                            logMessage("Found client email in description: $clientEmail");
+                        }
+                        
+                        // Look for "Email:" field in description
+                        if (preg_match('/Email:\s*([^\s,;<>]+@[^\s,;<>]+)/', $description, $matches)) {
+                            $clientEmail = $matches[1];
+                            logMessage("Found client email in Email field: $clientEmail");
+                        }
                     }
                     
-                    if (isset($attendee['email'])) {
-                        $clientEmail = $attendee['email'];
-                        // Use name from attendee data if available
-                        if (isset($attendee['displayName']) && !empty($attendee['displayName'])) {
-                            $clientName = $attendee['displayName'];
-                        } else {
-                            // Extract first name from email as fallback
-                            $nameParts = explode('@', $clientEmail);
-                            $clientName = ucfirst($nameParts[0]);
+                    // If we found a name but no email, see if there are any common naming patterns we can use
+                    if ($clientName && !$clientEmail && $eventSummary !== 'Lunch' && 
+                        strpos($eventSummary, 'Open') === false && 
+                        strpos($eventSummary, 'Close') === false) {
+                        
+                        logMessage("Found client name ($clientName) but no email. Checking well-known clients.");
+                        
+                        // Check for specific known clients - add more as needed
+                        if (stripos($clientName, 'Igor Milgrom') !== false) {
+                            $clientEmail = 'iggzmil@gmail.com';
+                            logMessage("Matched known client: Igor Milgrom -> $clientEmail");
                         }
-                        break;
+                        // Add more known clients here
+                    }
+                    
+                    // Still no client email found
+                    if (!$clientEmail) {
+                        logMessage("No attendees found for event: $eventSummary at $eventTime - Cannot send reminder");
+                        continue;
+                    }
+                } else {
+                    // Find the client attendee (not the organizer)
+                    foreach ($attendees as $attendee) {
+                        // Skip the organizer (usually the dental office email)
+                        if (isset($attendee['organizer']) && $attendee['organizer']) {
+                            continue;
+                        }
+                        
+                        if (isset($attendee['email'])) {
+                            $clientEmail = $attendee['email'];
+                            // Use name from attendee data if available
+                            if (isset($attendee['displayName']) && !empty($attendee['displayName'])) {
+                                $clientName = $attendee['displayName'];
+                            } else {
+                                // Extract first name from email as fallback
+                                $nameParts = explode('@', $clientEmail);
+                                $clientName = ucfirst($nameParts[0]);
+                            }
+                            break;
+                        }
                     }
                 }
                 
@@ -238,12 +297,6 @@ foreach ($calendarIds as $service => $calendarId) {
                 // Format date and time for the email
                 $formattedDate = $eventStart->format('l, j F Y');
                 $formattedTime = $eventStart->format('g:ia');
-                
-                // Skip if no client email found
-                if (!$clientEmail) {
-                    logMessage("No client email found for: $eventSummary at $eventTime - Cannot send reminder");
-                    continue;
-                }
                 
                 // Generate email subject and body
                 $subject = "Appointment Reminder - DK Dental Studio";
@@ -267,7 +320,11 @@ foreach ($calendarIds as $service => $calendarId) {
 }
 
 // Log summary
-logMessage("Reminder processing completed. Found $appointmentCount appointments, sent $remindersSent reminders.");
+logMessage("Reminder processing completed:");
+logMessage("- Total calendar items found: $appointmentCount");
+logMessage("- Business/non-client events: $businessEventCount");
+logMessage("- Actual client appointments: $clientAppointmentCount");
+logMessage("- Reminder emails that would be sent: $remindersSent");
 
 /**
  * Generate reminder email body
