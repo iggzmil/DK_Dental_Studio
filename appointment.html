@@ -386,7 +386,8 @@
         // Show admin info for development environment
         // In production, this should be removed or properly secured
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('dev')) {
-          document.getElementById('admin-info').style.display = 'block';
+          // Keep admin-info hidden
+          // document.getElementById('admin-info').style.display = 'block';
         }
 
         // Immediately select the dentures service and load the calendar

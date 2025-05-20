@@ -97,7 +97,7 @@ function addDebugDisplay() {
     debugDiv.style.overflowY = 'auto';
     debugDiv.style.fontSize = '12px';
     debugDiv.style.fontFamily = 'monospace';
-    debugDiv.style.display = 'block';
+    debugDiv.style.display = 'none';
     
     const header = document.createElement('div');
     header.innerHTML = '<h6 style="margin: 0 0 5px 0;"><i class="fas fa-bug"></i> Calendar Debug</h6>';
@@ -109,7 +109,7 @@ function addDebugDisplay() {
     
     const content = document.createElement('div');
     content.id = 'calendar-debug-content';
-    content.style.display = 'block'; // Show debug content by default
+    content.style.display = 'none'; // Hide debug content by default
     
     const log = document.createElement('div');
     log.id = 'calendar-debug-log';
