@@ -379,7 +379,6 @@
         // Immediately select the dentures service and load the calendar
         // This ensures the calendar loads properly on page load
         setTimeout(function() {
-          console.log('Auto-selecting dentures service and loading calendar...');
           const denturesCard = document.querySelector('.service-card[data-service="dentures"]');
           if (denturesCard) {
             // Set selected service (important for Google Calendar API)
@@ -495,11 +494,7 @@
     
     <!-- Direct calendar initialization script -->
     <script>
-      // This script forcefully initializes the calendar without waiting for user interaction
       document.addEventListener('DOMContentLoaded', function() {
-        // Force direct loading of the calendar - this bypasses the normal initialization
-        console.log('Force initializing calendar directly');
-        
         // Set the global selectedService
         window.selectedService = 'dentures';
         
@@ -507,11 +502,8 @@
         setTimeout(function() {
           // First try the normal method
           if (typeof window.loadCalendarForService === 'function') {
-            console.log('Directly calling loadCalendarForService');
             window.loadCalendarForService('dentures');
           } else {
-            console.log('Normal method not available, trying direct approach');
-            
             // Direct approach to create the calendar
             const calendarContainer = document.getElementById('appointment-calendar');
             if (calendarContainer) {
@@ -519,8 +511,6 @@
               const today = new Date();
               const month = today.getMonth();
               const year = today.getFullYear();
-              
-              console.log('Directly creating calendar with service: dentures');
               
               // Update UI
               document.querySelectorAll('.service-card').forEach(card => {
@@ -540,7 +530,6 @@
               // Force the calendar to load by simulating a click on the dentures card
               const denturesCard = document.querySelector('.service-card[data-service="dentures"]');
               if (denturesCard) {
-                console.log('Simulating click on dentures card');
                 denturesCard.click();
               }
             }
