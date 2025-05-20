@@ -919,12 +919,67 @@ function updateServiceSelectionUI(service) {
  * Expose the loadCalendarForService function globally
  */
 window.loadCalendarForService = function(service) {
-  if (!service) {
-    service = 'dentures';
-  }
+  debugLog('loadCalendarForService called for', service);
+  
+  // Only reload data if service changed
+  const serviceChanged = window.selectedService !== service;
+  
+  // Update the global selected service
   window.selectedService = service;
-  debugLog(`Loading calendar for service: ${service}`);
-  loadCalendar(service);
+  
+  // Update UI
+  updateServiceSelectionUI(service);
+  
+  // Show loading state
+  const calendarContainer = document.getElementById('appointment-calendar');
+  if (!calendarContainer) {
+    debugLog('ERROR: Calendar container not found!');
+    return;
+  }
+  
+  calendarContainer.innerHTML = `
+    <div class="calendar-loading">
+      <div class="spinner"></div>
+      <p>Loading appointment calendar for ${getServiceName(service)}...</p>
+    </div>
+  `;
+  
+  // If initialization is not complete, we need to wait
+  if (!isInitialized) {
+    if (!isInitializing) {
+      // Start initialization if not already in progress
+      initializeCalendar();
+    } else {
+      debugLog('Initialization already in progress, waiting before loading service');
+    }
+    return;
+  }
+  
+  // If service changed, we need to reload availability data
+  if (serviceChanged && calendarInitialized) {
+    debugLog('Service changed, reloading availability data');
+    
+    // Reset availability data
+    availabilityData = {
+      currentMonth: {},
+      nextMonth: {}
+    };
+    availabilityLoaded = false;
+    
+    // Reload availability data
+    loadAllAvailabilityData()
+      .then(() => {
+        debugLog('Availability data reloaded for new service');
+        renderCalendar(service);
+      })
+      .catch(err => {
+        debugLog('Failed to reload availability data for new service:', err);
+        renderCalendar(service); // Render with fallback data
+      });
+  } else if (calendarInitialized) {
+    // Just re-render with existing data
+    renderCalendar(service);
+  }
 };
 
 /**
@@ -1527,7 +1582,45 @@ function showBookingSuccess(firstName, lastName, email) {
   }, 3000);
 }
 
-/** * Store appointment for reminder email *  * NOTE: This function has been disabled as we now use Google Calendar directly * for appointment reminders instead of the database-based system. */function storeAppointmentForReminder(firstName, lastName, email, date, time, service) {  // This function is now disabled since we're using Google Calendar directly  debugLog('Database reminder system disabled - using Google Calendar directly');  return;}
+/**
+ * Store appointment for reminder email
+ */
+function storeAppointmentForReminder(firstName, lastName, email, date, time, service) {
+  // Format the date and time for the API
+  const appointmentDateTime = new Date(`${date}T${time}`);
+  const isoDateTime = appointmentDateTime.toISOString();
+  
+  // Get the service name
+  const serviceName = getServiceName(service);
+  
+  // Create the data to send
+  const reminderData = {
+    datetime: isoDateTime,
+    email: email,
+    firstName: firstName,
+    service: serviceName
+  };
+  
+  // Send the data to the server
+  fetch('/script/email/save_reminder.php', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(reminderData)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      debugLog('Reminder scheduled successfully');
+    } else {
+      debugLog('Failed to schedule reminder:', data.error);
+    }
+  })
+  .catch(error => {
+    debugLog('Error scheduling reminder:', error);
+  });
+}
 
 /**
  * Reload the calendar after booking
@@ -1951,22 +2044,4 @@ function createDefaultBusyPeriodsForDay(allSlots, dayOfWeek) {
 function Hour(hours, minutes) {
   this.hours = hours;
   this.minutes = minutes || 0;
-  
-  // Add toString method to format the hour
-  this.toString = function() {
-    return `${String(this.hours).padStart(2, '0')}:${String(this.minutes).padStart(2, '0')}`;
-  };
-  
-  // Add valueOf method for comparisons
-  this.valueOf = function() {
-    return this.hours * 60 + this.minutes;
-  };
-}
-
-// Initialize on page load if not already initialized
-if (document.readyState === 'complete') {
-  if (!isInitialized && !isInitializing) {
-    debugLog('Document already loaded, initializing calendar');
-    initializeCalendar();
-  }
-}
+} 
