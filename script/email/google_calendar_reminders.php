@@ -173,6 +173,15 @@ foreach ($calendarIds as $service => $calendarId) {
                 
                 // Extract event details
                 $eventSummary = $event['summary'] ?? 'Unnamed Appointment';
+                
+                // Check if this is a timed event or a business hours/closure event
+                if (!isset($event['start']['dateTime'])) {
+                    // This is likely a business hours marker or closure - not an actual appointment
+                    logMessage("Skipping business hours event: $eventSummary - Not a client appointment");
+                    continue;
+                }
+                
+                // Safe to process the dateTime now
                 $eventStart = new DateTime($event['start']['dateTime']);
                 $eventTime = $eventStart->format('g:ia');
                 
