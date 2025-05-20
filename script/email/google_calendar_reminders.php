@@ -270,8 +270,12 @@ foreach ($calendarIds as $service => $calendarId) {
                 // Format date for display
                 $formattedDate = date('l, j F Y', strtotime($event['start']['dateTime']));
                 
-                // Format time for display
-                $formattedTime = date('g:ia', strtotime($event['start']['dateTime']));
+                // Format time for display - use DateTime object to handle timezone correctly
+                $dateTimeObj = new DateTime($event['start']['dateTime']);
+                $formattedTime = $dateTimeObj->format('g:ia'); // e.g., "3:00pm"
+                
+                // Log for debugging
+                logMessage("Event time: " . $event['start']['dateTime'] . " formatted as: " . $formattedTime);
                 
                 // If we don't have an email, we can't send a reminder
                 if (!$clientEmail) {
