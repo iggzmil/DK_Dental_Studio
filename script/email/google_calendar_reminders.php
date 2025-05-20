@@ -324,7 +324,7 @@ logMessage("Reminder processing completed:");
 logMessage("- Total calendar items found: $appointmentCount");
 logMessage("- Business/non-client events: $businessEventCount");
 logMessage("- Actual client appointments: $clientAppointmentCount");
-logMessage("- Reminder emails that would be sent: $remindersSent");
+logMessage("- Reminder emails " . (LOG_ONLY_MODE ? "that would be sent" : "sent (simulated)") . ": $remindersSent");
 
 /**
  * Generate reminder email body
