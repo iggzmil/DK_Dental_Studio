@@ -1524,6 +1524,28 @@ window.submitBookingForm = function() {
     </div>
   `;
   
+  // Immediately update local availability data to mark this slot as unavailable
+  // This ensures the time slot appears booked even before server confirmation
+  if (selectedDateTime && selectedDateTime.date && selectedDateTime.time) {
+    const dateKey = selectedDateTime.date;
+    const timeSlot = selectedDateTime.time;
+    
+    // Update availability data in memory to remove this time slot
+    if (availabilityData.currentMonth && availabilityData.currentMonth[dateKey]) {
+      availabilityData.currentMonth[dateKey] = availabilityData.currentMonth[dateKey].filter(
+        slot => slot !== timeSlot
+      );
+      debugLog(`Immediately marked ${timeSlot} as booked on ${dateKey} (current month)`);
+    }
+    
+    if (availabilityData.nextMonth && availabilityData.nextMonth[dateKey]) {
+      availabilityData.nextMonth[dateKey] = availabilityData.nextMonth[dateKey].filter(
+        slot => slot !== timeSlot
+      );
+      debugLog(`Immediately marked ${timeSlot} as booked on ${dateKey} (next month)`);
+    }
+  }
+  
   // Create booking data
   const bookingData = {
     firstName: firstName,
@@ -1646,6 +1668,28 @@ function showBookingSuccess(firstName, lastName, email) {
   
   // Set the flag to prevent automatic reloads
   bookingConfirmationDisplayed = true;
+  
+  // Update availability data to mark the booked slot as unavailable
+  if (selectedDateTime && selectedDateTime.date && selectedDateTime.time) {
+    // Get the date from the selected booking
+    const dateKey = selectedDateTime.date;
+    const timeSlot = selectedDateTime.time;
+    
+    // Update both current and next month data to ensure it's properly marked as booked
+    if (availabilityData.currentMonth && availabilityData.currentMonth[dateKey]) {
+      availabilityData.currentMonth[dateKey] = availabilityData.currentMonth[dateKey].filter(
+        slot => slot !== timeSlot
+      );
+      debugLog(`Updated availability data: Removed ${timeSlot} from ${dateKey} (current month)`);
+    }
+    
+    if (availabilityData.nextMonth && availabilityData.nextMonth[dateKey]) {
+      availabilityData.nextMonth[dateKey] = availabilityData.nextMonth[dateKey].filter(
+        slot => slot !== timeSlot
+      );
+      debugLog(`Updated availability data: Removed ${timeSlot} from ${dateKey} (next month)`);
+    }
+  }
   
   // Remove store appointment for reminder email functionality
   
