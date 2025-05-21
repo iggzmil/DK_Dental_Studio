@@ -262,12 +262,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Create email content
     $emailHtml = createEmailHtml($sanitizedData);
 
-    // Set recipient emails
+    // Set recipient email
     $primaryEmail = 'info@dkdental.au';
-    $secondaryEmail = 'iggzmil@gmail.com';
-
-    // Use both emails or just the secondary one for testing
-    $toEmail = $primaryEmail . ',' . $secondaryEmail;
+    
+    // Use only the primary email address
+    $toEmail = $primaryEmail;
 
     // Set email subject
     $emailSubject = 'DK Dental Studio Website Contact Form: ' . $sanitizedData['subject'];
