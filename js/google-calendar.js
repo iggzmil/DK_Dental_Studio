@@ -1472,6 +1472,11 @@ window.resetBookingForm = function() {
     bookingFormContainer.style.display = 'none';
   }
   
+  // Explicitly reload the calendar for the current service
+  if (window.selectedService) {
+    loadCalendarForService(window.selectedService);
+  }
+  
   // Scroll back to the calendar
   const calendarContainer = document.getElementById('appointment-calendar');
   if (calendarContainer) {
@@ -1652,10 +1657,8 @@ function showBookingSuccess(firstName, lastName, email) {
     </div>
   `;
   
-  // Refresh the calendar after booking
-  setTimeout(() => {
-    reloadCalendarAfterBooking();
-  }, 3000);
+  // No longer auto-refresh the calendar after booking
+  // The user must click the "Book Another Appointment" button to reset the form
 }
 
 /**
