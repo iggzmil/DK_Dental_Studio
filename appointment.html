@@ -519,6 +519,12 @@
         
         // Give enough time for all scripts to load
         setTimeout(function() {
+          // Check if booking confirmation is displayed - if so, don't load calendar
+          if (window.bookingConfirmationDisplayed) {
+            console.log('Skipping initial calendar load because booking confirmation is displayed');
+            return;
+          }
+          
           // First try the normal method
           if (typeof window.loadCalendarForService === 'function') {
             console.log('Directly calling loadCalendarForService');

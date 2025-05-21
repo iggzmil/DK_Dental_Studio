@@ -53,6 +53,9 @@ let tokenFetchPromise = null;
 // Keep track of the availability loading promise
 let availabilityLoadingPromise = null;
 
+// Global flag to prevent automatic calendar reloading after booking confirmation
+let bookingConfirmationDisplayed = false;
+
 /**
  * Debug logging function - only logs when DEBUG_MODE is true
  */
@@ -1005,6 +1008,12 @@ function updateServiceSelectionUI(service) {
  * Expose the loadCalendarForService function globally
  */
 window.loadCalendarForService = function(service) {
+  // Skip if we're displaying a booking confirmation
+  if (bookingConfirmationDisplayed) {
+    debugLog('Skipping calendar reload because booking confirmation is displayed');
+    return;
+  }
+  
   debugLog('loadCalendarForService called for', service);
   
   // Only reload data if service changed
@@ -1456,6 +1465,9 @@ window.resetBookingForm = function() {
   // Reset the booking process
   selectedDateTime = null;
   
+  // Reset the booking confirmation flag
+  bookingConfirmationDisplayed = false;
+  
   // Clear selected day and time slot
   document.querySelectorAll('.calendar-day.selected, .time-slot.selected').forEach(el => {
     el.classList.remove('selected');
@@ -1632,6 +1644,9 @@ function showBookingSuccess(firstName, lastName, email) {
   const bookingFormContainer = document.getElementById('booking-form-container');
   if (!bookingFormContainer) return;
   
+  // Set the flag to prevent automatic reloads
+  bookingConfirmationDisplayed = true;
+  
   // Remove store appointment for reminder email functionality
   
   bookingFormContainer.innerHTML = `
@@ -1665,6 +1680,12 @@ function showBookingSuccess(firstName, lastName, email) {
  * Reload the calendar after booking
  */
 function reloadCalendarAfterBooking() {
+  // Skip if we're displaying a booking confirmation
+  if (bookingConfirmationDisplayed) {
+    debugLog('Skipping automatic calendar reload because booking confirmation is displayed');
+    return;
+  }
+  
   if (window.selectedService) {
     // Clear any selected day
     document.querySelectorAll('.calendar-day.selected').forEach(el => {
