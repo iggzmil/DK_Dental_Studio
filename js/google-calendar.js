@@ -694,7 +694,7 @@ function setupCalendarInteraction() {
     
     if (newYear > maxDate.getFullYear() || 
         (newYear === maxDate.getFullYear() && month > maxDate.getMonth())) {
-      alert('Cannot book appointments more than 3 months in advance');
+      alert('Cannot book appointments more than 3 months in advance.\n\nIf you need to schedule an appointment beyond this timeframe, please contact our team directly at (02) 9398 7578.');
       return;
     }
     
