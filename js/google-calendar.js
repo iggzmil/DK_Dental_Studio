@@ -824,24 +824,9 @@ function getTimeSlotsFromCache(dateString) {
     const cachedSlots = combinedData[dateString] || [];
     debugLog(`Retrieved ${cachedSlots.length} slots for ${dateString} from cache`);
 
-    // Filter the cached data based on current service's business hours
-    const date = new Date(dateString);
-    const allPossibleSlots = getAllPossibleTimeSlots(date);
+    debugLog(`Found ${cachedSlots.length} slots in cache for ${dateString}: ${cachedSlots.join(', ')}`);
 
-    // Only return slots that are within the current service's business hours
-    const filteredSlots = cachedSlots.filter(slot => allPossibleSlots.includes(slot));
-
-    debugLog(`Original cached slots: ${cachedSlots.join(', ')}`);
-    debugLog(`Possible slots for service ${window.selectedService}: ${allPossibleSlots.join(', ')}`);
-    debugLog(`Filtered slots: ${filteredSlots.join(', ')}`);
-
-    if (filteredSlots.length > 0) {
-      debugLog(`Found ${filteredSlots.length} slots in cache for ${dateString}: ${filteredSlots.join(', ')}`);
-    } else {
-      debugLog(`No slots available for ${dateString} after filtering for service ${window.selectedService}`);
-    }
-
-    return filteredSlots;
+    return cachedSlots;
   } else {
     // No data for this date, check if it's a weekday and generate default slots
     const date = new Date(dateString);
@@ -1061,15 +1046,15 @@ function updateServiceSelectionUI(service) {
       bookingFormContainer.style.display = 'none';
     }
 
-    // FORCE reload of availability data for the new service
-    debugLog('Forcing reload of availability data for service change');
+    // Reload API data with new service business hours
+    debugLog('Reloading API data with new service business hours (staying in API mode)');
 
-    // Reset availability data
+    // Reset availability data but keep availabilityLoaded flag
+    const wasLoaded = availabilityLoaded;
     availabilityData = {
       currentMonth: {},
       nextMonth: {}
     };
-    availabilityLoaded = false;
 
     // Get current month and year from the calendar header
     const headerElement = document.querySelector('.calendar-header h3');
@@ -1083,18 +1068,24 @@ function updateServiceSelectionUI(service) {
       const month = monthNames.indexOf(monthName);
       const numericYear = parseInt(year, 10);
 
-      // Force reload availability data for the new service
-      loadAllAvailabilityData()
-        .then(() => {
-          debugLog('Availability data reloaded for service change');
-          renderCalendar(service);
-        })
-        .catch(err => {
-          debugLog('Failed to reload availability data for service change:', err);
-          // Regenerate fallback data for the new service
-          createFallbackAvailabilityData();
-          renderCalendar(service);
-        });
+      // Reload availability data with new service business hours
+      if (wasLoaded) {
+        loadAllAvailabilityData()
+          .then(() => {
+            debugLog('API data reloaded for new service business hours');
+            renderCalendar(service);
+          })
+          .catch(err => {
+            debugLog('Failed to reload API data for new service:', err);
+            // Fall back to basic mode only if API fails
+            createFallbackAvailabilityData();
+            renderCalendar(service);
+          });
+      } else {
+        // Was in fallback mode, regenerate fallback data
+        createFallbackAvailabilityData();
+        renderCalendar(service);
+      }
     }
   }
 }
@@ -1145,16 +1136,9 @@ window.loadCalendarForService = function(service) {
     return;
   }
 
-  // If service changed, we need to reload availability data
+  // If service changed, reload API data with new business hours
   if (serviceChanged && calendarInitialized) {
-    debugLog('Service changed, reloading availability data');
-
-    // Reset availability data
-    availabilityData = {
-      currentMonth: {},
-      nextMonth: {}
-    };
-    availabilityLoaded = false;
+    debugLog('Service changed, reloading API data with new service business hours');
 
     // Clear any selected time slots
     const timeSlotsContainer = document.getElementById('time-slots-container');
@@ -1168,18 +1152,31 @@ window.loadCalendarForService = function(service) {
       bookingFormContainer.style.display = 'none';
     }
 
-    // Reload availability data
-    loadAllAvailabilityData()
-      .then(() => {
-        debugLog('Availability data reloaded for new service');
-        renderCalendar(service);
-      })
-      .catch(err => {
-        debugLog('Failed to reload availability data for new service:', err);
-        // Regenerate fallback data for the new service
-        createFallbackAvailabilityData();
-        renderCalendar(service); // Render with fallback data
-      });
+    // Reset availability data but remember if we were in API mode
+    const wasLoaded = availabilityLoaded;
+    availabilityData = {
+      currentMonth: {},
+      nextMonth: {}
+    };
+
+    // Reload availability data with new service business hours
+    if (wasLoaded) {
+      loadAllAvailabilityData()
+        .then(() => {
+          debugLog('API data reloaded for new service business hours');
+          renderCalendar(service);
+        })
+        .catch(err => {
+          debugLog('Failed to reload API data for new service:', err);
+          // Fall back to basic mode only if API fails
+          createFallbackAvailabilityData();
+          renderCalendar(service);
+        });
+    } else {
+      // Was in fallback mode, regenerate fallback data
+      createFallbackAvailabilityData();
+      renderCalendar(service);
+    }
   } else if (calendarInitialized) {
     // Just re-render with existing data
     renderCalendar(service);
