@@ -1018,6 +1018,23 @@ function updateServiceSelectionUI(service) {
   if (window.currentCalendarService && window.currentCalendarService !== service) {
     debugLog(`Service changed from ${window.currentCalendarService} to ${service}, re-rendering calendar`);
 
+    // Clear any selected days
+    document.querySelectorAll('.calendar-day.selected').forEach(el => {
+      el.classList.remove('selected');
+    });
+
+    // Clear any selected time slots
+    const timeSlotsContainer = document.getElementById('time-slots-container');
+    if (timeSlotsContainer) {
+      timeSlotsContainer.innerHTML = '';
+    }
+
+    // Clear any booking form
+    const bookingFormContainer = document.getElementById('booking-form-container');
+    if (bookingFormContainer) {
+      bookingFormContainer.style.display = 'none';
+    }
+
     // Get current month and year from the calendar header
     const headerElement = document.querySelector('.calendar-header h3');
     if (headerElement) {
@@ -1093,6 +1110,18 @@ window.loadCalendarForService = function(service) {
     };
     availabilityLoaded = false;
 
+    // Clear any selected time slots
+    const timeSlotsContainer = document.getElementById('time-slots-container');
+    if (timeSlotsContainer) {
+      timeSlotsContainer.innerHTML = '';
+    }
+
+    // Clear any booking form
+    const bookingFormContainer = document.getElementById('booking-form-container');
+    if (bookingFormContainer) {
+      bookingFormContainer.style.display = 'none';
+    }
+
     // Reload availability data
     loadAllAvailabilityData()
       .then(() => {
@@ -1144,19 +1173,21 @@ function createCalendarHTML(month, year, service) {
     </div>
     <div class="calendar-grid">
       <div class="calendar-days-header">
-        <div>Sun</div>
         <div>Mon</div>
         <div>Tue</div>
         <div>Wed</div>
         <div>Thu</div>
         <div>Fri</div>
         <div>Sat</div>
+        <div>Sun</div>
       </div>
       <div class="calendar-days">
   `;
 
   // Add empty cells for days before the first of the month
-  for (let i = 0; i < startingDay; i++) {
+  // Adjust for Monday start (0=Sunday, 1=Monday, etc.)
+  const adjustedStartingDay = startingDay === 0 ? 6 : startingDay - 1;
+  for (let i = 0; i < adjustedStartingDay; i++) {
     html += '<div class="calendar-day empty"></div>';
   }
 
@@ -1174,12 +1205,13 @@ function createCalendarHTML(month, year, service) {
     const isAvailable = !isPast && !isWeekend && !isTodayUnavailable;
 
     html += `
-      <div class="calendar-day ${isToday ? 'today' : ''} ${isPast ? 'past' : ''} ${isTodayUnavailable ? 'business-closed' : ''} ${isAvailable ? 'available' : ''}"
+      <div class="calendar-day ${isToday ? 'today' : ''} ${isPast ? 'past' : ''} ${isWeekend ? 'weekend' : ''} ${isTodayUnavailable ? 'business-closed' : ''} ${isAvailable ? 'available' : ''}"
            data-date="${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}"
            ${isAvailable ? `onclick="showTimeSlots(this)"` : ''}>
         <div class="day-number">${day}</div>
         ${isAvailable ? '<div class="availability">Available</div>' : ''}
         ${isTodayUnavailable ? '<div class="availability">Closed</div>' : ''}
+        ${isWeekend ? '<div class="availability">Closed</div>' : ''}
       </div>
     `;
   }
@@ -1278,6 +1310,17 @@ function getCalendarStyles() {
         background-color: #f8f9fa;
         color: #aaa;
         cursor: not-allowed;
+      }
+
+      .calendar-day.weekend {
+        background-color: #f8d7da;
+        color: #721c24;
+        cursor: not-allowed;
+        border-color: #f5c6cb;
+      }
+
+      .calendar-day.weekend .availability {
+        color: #721c24;
       }
 
       .calendar-day.business-closed {
@@ -2147,13 +2190,13 @@ function getAllPossibleTimeSlots(date) {
   if (selectedService === 'mouthguards') {
     // Mouthguards: Mon-Thu 10AM-5PM, Fri 10AM-3PM
     if (dayOfWeek >= 1 && dayOfWeek <= 4) { // Monday to Thursday
-      endHour = 17; // 5 PM (last slot 5PM for 5-6PM booking)
+      endHour = 18; // 6 PM (last slot 5PM for 5-6PM booking)
     } else if (dayOfWeek === 5) { // Friday
-      endHour = 15; // 3 PM (last slot 3PM for 3-4PM booking)
+      endHour = 16; // 4 PM (last slot 3PM for 3-4PM booking)
     }
   } else {
     // Dentures and Repairs: Mon-Fri 10AM-3PM
-    endHour = 15; // 3 PM (last slot 3PM for 3-4PM booking)
+    endHour = 16; // 4 PM (last slot 3PM for 3-4PM booking)
   }
 
   // Generate time slots every 60 minutes - business requirement
