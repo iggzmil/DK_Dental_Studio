@@ -980,13 +980,13 @@ function showBasicCalendar() {
 function createFallbackAvailabilityData() {
   debugLog('Creating fallback availability data');
 
-  // Get dates for the next 2 weeks
+  // Get dates for the next 1 week
   const today = new Date();
-  const twoWeeksLater = new Date();
-  twoWeeksLater.setDate(today.getDate() + 14);
+  const oneWeekLater = new Date();
+  oneWeekLater.setDate(today.getDate() + 7);
 
   // Create fallback data
-  const fallbackData = createFallbackPeriodData(today, twoWeeksLater);
+  const fallbackData = createFallbackPeriodData(today, oneWeekLater);
 
   // Store in both current and next month objects for compatibility
   availabilityData.currentMonth = fallbackData;
@@ -1073,7 +1073,11 @@ function updateServiceSelectionUI(service) {
       if (wasLoaded) {
         debugLog('Attempting to reload API data for new service...');
         debugLog('About to call loadAllAvailabilityData()');
-        loadAllAvailabilityData()
+
+        const reloadPromise = loadAllAvailabilityData();
+        debugLog('loadAllAvailabilityData() called, promise created');
+
+        reloadPromise
           .then(() => {
             debugLog('API data reloaded successfully for new service business hours');
             debugLog(`Availability data now contains ${Object.keys(availabilityData.currentMonth).length} current month entries`);
@@ -1167,9 +1171,15 @@ window.loadCalendarForService = function(service) {
     };
 
     // Reload availability data with new service business hours
+    debugLog(`wasLoaded check: ${wasLoaded}, availabilityLoaded was: ${availabilityLoaded}`);
     if (wasLoaded) {
       debugLog('Attempting to reload API data for new service...');
-      loadAllAvailabilityData()
+      debugLog('About to call loadAllAvailabilityData()');
+
+      const reloadPromise = loadAllAvailabilityData();
+      debugLog('loadAllAvailabilityData() called, promise created');
+
+      reloadPromise
         .then(() => {
           debugLog('API data reloaded successfully for new service business hours');
           debugLog(`Availability data now contains ${Object.keys(availabilityData.currentMonth).length} current month entries`);
@@ -1944,12 +1954,12 @@ function loadAllAvailabilityData() {
 
   // Create the promise
   availabilityLoadingPromise = new Promise((resolve, reject) => {
-    // Get dates for the next 2 weeks
+    // Get dates for the next 1 week
     const today = new Date();
-    const twoWeeksLater = new Date();
-    twoWeeksLater.setDate(today.getDate() + 14); // 2 weeks = 14 days
+    const oneWeekLater = new Date();
+    oneWeekLater.setDate(today.getDate() + 7); // 1 week = 7 days
 
-    debugLog('Loading availability from', today.toISOString(), 'to', twoWeeksLater.toISOString());
+    debugLog('Loading availability from', today.toISOString(), 'to', oneWeekLater.toISOString());
 
     // Set a longer timeout for the loading process (30 seconds)
     const timeoutId = setTimeout(() => {
@@ -1967,8 +1977,8 @@ function loadAllAvailabilityData() {
       resolve(availabilityData);
     }, 30000);
 
-    // Load availability data for the next 2 weeks
-    loadAvailabilityPeriod(today, twoWeeksLater)
+    // Load availability data for the next 1 week
+    loadAvailabilityPeriod(today, oneWeekLater)
       .then((data) => {
         // Clear the timeout
         clearTimeout(timeoutId);
