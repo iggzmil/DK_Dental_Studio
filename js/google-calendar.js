@@ -1048,6 +1048,7 @@ function updateServiceSelectionUI(service) {
 
     // Reload API data with new service business hours
     debugLog('Reloading API data with new service business hours (staying in API mode)');
+    debugLog(`BEFORE RESET: availabilityLoaded = ${availabilityLoaded}`);
 
     // Reset availability data but keep availabilityLoaded flag
     const wasLoaded = availabilityLoaded;
@@ -1055,6 +1056,8 @@ function updateServiceSelectionUI(service) {
       currentMonth: {},
       nextMonth: {}
     };
+
+    debugLog(`AFTER RESET: wasLoaded = ${wasLoaded}, availabilityLoaded = ${availabilityLoaded}`);
 
     // Get current month and year from the calendar header
     const headerElement = document.querySelector('.calendar-header h3');
@@ -1164,11 +1167,13 @@ window.loadCalendarForService = function(service) {
     }
 
     // Reset availability data but remember if we were in API mode
+    debugLog(`BEFORE RESET: availabilityLoaded = ${availabilityLoaded}`);
     const wasLoaded = availabilityLoaded;
     availabilityData = {
       currentMonth: {},
       nextMonth: {}
     };
+    debugLog(`AFTER RESET: wasLoaded = ${wasLoaded}, availabilityLoaded = ${availabilityLoaded}`);
 
     // Reload availability data with new service business hours
     debugLog(`wasLoaded check: ${wasLoaded}, availabilityLoaded was: ${availabilityLoaded}`);
