@@ -1070,19 +1070,24 @@ function updateServiceSelectionUI(service) {
 
       // Reload availability data with new service business hours
       if (wasLoaded) {
+        debugLog('Attempting to reload API data for new service...');
         loadAllAvailabilityData()
           .then(() => {
-            debugLog('API data reloaded for new service business hours');
+            debugLog('API data reloaded successfully for new service business hours');
+            debugLog(`Availability data now contains ${Object.keys(availabilityData.currentMonth).length} current month entries`);
+            debugLog(`Availability data now contains ${Object.keys(availabilityData.nextMonth).length} next month entries`);
             renderCalendar(service);
           })
           .catch(err => {
             debugLog('Failed to reload API data for new service:', err);
+            debugLog('Error details:', err.message || err);
             // Fall back to basic mode only if API fails
             createFallbackAvailabilityData();
             renderCalendar(service);
           });
       } else {
         // Was in fallback mode, regenerate fallback data
+        debugLog('Was in fallback mode, regenerating fallback data for new service');
         createFallbackAvailabilityData();
         renderCalendar(service);
       }
@@ -1161,19 +1166,24 @@ window.loadCalendarForService = function(service) {
 
     // Reload availability data with new service business hours
     if (wasLoaded) {
+      debugLog('Attempting to reload API data for new service...');
       loadAllAvailabilityData()
         .then(() => {
-          debugLog('API data reloaded for new service business hours');
+          debugLog('API data reloaded successfully for new service business hours');
+          debugLog(`Availability data now contains ${Object.keys(availabilityData.currentMonth).length} current month entries`);
+          debugLog(`Availability data now contains ${Object.keys(availabilityData.nextMonth).length} next month entries`);
           renderCalendar(service);
         })
         .catch(err => {
           debugLog('Failed to reload API data for new service:', err);
+          debugLog('Error details:', err.message || err);
           // Fall back to basic mode only if API fails
           createFallbackAvailabilityData();
           renderCalendar(service);
         });
     } else {
       // Was in fallback mode, regenerate fallback data
+      debugLog('Was in fallback mode, regenerating fallback data for new service');
       createFallbackAvailabilityData();
       renderCalendar(service);
     }
@@ -1968,6 +1978,17 @@ function loadAllAvailabilityData() {
         isLoadingAvailability = false;
         availabilityLoadingPromise = null;
         debugLog('All availability data loaded successfully');
+
+        // Debug the loaded data with more detail
+        const dataKeys = Object.keys(data);
+        debugLog(`Loaded ${dataKeys.length} dates with availability data`);
+        if (dataKeys.length > 0) {
+          debugLog(`Sample dates: ${dataKeys.slice(0, 5).join(', ')}`);
+          const sampleDate = dataKeys[0];
+          debugLog(`Sample data for ${sampleDate}: ${data[sampleDate] ? data[sampleDate].join(', ') : 'no slots'}`);
+        } else {
+          debugLog('WARNING: No availability data was loaded from API!');
+        }
 
         // Debug the loaded data
         debugAvailabilityData();
