@@ -1060,47 +1060,34 @@ function updateServiceSelectionUI(service) {
 
     debugLog(`AFTER RESET: wasLoaded = ${wasLoaded}, availabilityLoaded = ${availabilityLoaded}`);
 
-    // Get current month and year from the calendar header
-    const headerElement = document.querySelector('.calendar-header h3');
-    if (headerElement) {
-      const headerText = headerElement.textContent;
-      const [monthName, year] = headerText.split(' ');
+    // Reload availability data with new service business hours
+    debugLog(`wasLoaded check: ${wasLoaded}, availabilityLoaded was: ${availabilityLoaded}`);
+    if (wasLoaded) {
+      debugLog('Attempting to reload API data for new service...');
+      debugLog('About to call loadAllAvailabilityData()');
 
-      const monthNames = ["January", "February", "March", "April", "May", "June",
-                          "July", "August", "September", "October", "November", "December"];
+      const reloadPromise = loadAllAvailabilityData();
+      debugLog('loadAllAvailabilityData() called, promise created');
 
-      const month = monthNames.indexOf(monthName);
-      const numericYear = parseInt(year, 10);
-
-      // Reload availability data with new service business hours
-      debugLog(`wasLoaded check: ${wasLoaded}, availabilityLoaded was: ${availabilityLoaded}`);
-      if (wasLoaded) {
-        debugLog('Attempting to reload API data for new service...');
-        debugLog('About to call loadAllAvailabilityData()');
-
-        const reloadPromise = loadAllAvailabilityData();
-        debugLog('loadAllAvailabilityData() called, promise created');
-
-        reloadPromise
-          .then(() => {
-            debugLog('API data reloaded successfully for new service business hours');
-            debugLog(`Availability data now contains ${Object.keys(availabilityData.currentMonth).length} current month entries`);
-            debugLog(`Availability data now contains ${Object.keys(availabilityData.nextMonth).length} next month entries`);
-            renderCalendar(service);
-          })
-          .catch(err => {
-            debugLog('Failed to reload API data for new service:', err);
-            debugLog('Error details:', err.message || err);
-            // Fall back to basic mode only if API fails
-            createFallbackAvailabilityData();
-            renderCalendar(service);
-          });
-      } else {
-        // Was in fallback mode, regenerate fallback data
-        debugLog('Was in fallback mode, regenerating fallback data for new service');
-        createFallbackAvailabilityData();
-        renderCalendar(service);
-      }
+      reloadPromise
+        .then(() => {
+          debugLog('API data reloaded successfully for new service business hours');
+          debugLog(`Availability data now contains ${Object.keys(availabilityData.currentMonth).length} current month entries`);
+          debugLog(`Availability data now contains ${Object.keys(availabilityData.nextMonth).length} next month entries`);
+          renderCalendar(service);
+        })
+        .catch(err => {
+          debugLog('Failed to reload API data for new service:', err);
+          debugLog('Error details:', err.message || err);
+          // Fall back to basic mode only if API fails
+          createFallbackAvailabilityData();
+          renderCalendar(service);
+        });
+    } else {
+      // Was in fallback mode, regenerate fallback data
+      debugLog('Was in fallback mode, regenerating fallback data for new service');
+      createFallbackAvailabilityData();
+      renderCalendar(service);
     }
   }
 }
