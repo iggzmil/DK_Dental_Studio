@@ -980,13 +980,13 @@ function showBasicCalendar() {
 function createFallbackAvailabilityData() {
   debugLog('Creating fallback availability data');
 
-  // Get dates for the next 3 months
+  // Get dates for the next 2 weeks
   const today = new Date();
-  const threeMonthsLater = new Date();
-  threeMonthsLater.setMonth(today.getMonth() + 3);
+  const twoWeeksLater = new Date();
+  twoWeeksLater.setDate(today.getDate() + 14);
 
   // Create fallback data
-  const fallbackData = createFallbackPeriodData(today, threeMonthsLater);
+  const fallbackData = createFallbackPeriodData(today, twoWeeksLater);
 
   // Store in both current and next month objects for compatibility
   availabilityData.currentMonth = fallbackData;
@@ -1069,8 +1069,10 @@ function updateServiceSelectionUI(service) {
       const numericYear = parseInt(year, 10);
 
       // Reload availability data with new service business hours
+      debugLog(`wasLoaded check: ${wasLoaded}, availabilityLoaded was: ${availabilityLoaded}`);
       if (wasLoaded) {
         debugLog('Attempting to reload API data for new service...');
+        debugLog('About to call loadAllAvailabilityData()');
         loadAllAvailabilityData()
           .then(() => {
             debugLog('API data reloaded successfully for new service business hours');
@@ -1942,12 +1944,12 @@ function loadAllAvailabilityData() {
 
   // Create the promise
   availabilityLoadingPromise = new Promise((resolve, reject) => {
-    // Get dates for the next 6 weeks
+    // Get dates for the next 2 weeks
     const today = new Date();
-    const sixWeeksLater = new Date();
-    sixWeeksLater.setDate(today.getDate() + 42); // 6 weeks = 42 days
+    const twoWeeksLater = new Date();
+    twoWeeksLater.setDate(today.getDate() + 14); // 2 weeks = 14 days
 
-    debugLog('Loading availability from', today.toISOString(), 'to', sixWeeksLater.toISOString());
+    debugLog('Loading availability from', today.toISOString(), 'to', twoWeeksLater.toISOString());
 
     // Set a longer timeout for the loading process (30 seconds)
     const timeoutId = setTimeout(() => {
@@ -1965,8 +1967,8 @@ function loadAllAvailabilityData() {
       resolve(availabilityData);
     }, 30000);
 
-    // Load availability data for the next 6 weeks
-    loadAvailabilityPeriod(today, sixWeeksLater)
+    // Load availability data for the next 2 weeks
+    loadAvailabilityPeriod(today, twoWeeksLater)
       .then((data) => {
         // Clear the timeout
         clearTimeout(timeoutId);
