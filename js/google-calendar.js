@@ -100,7 +100,7 @@ function addDebugDisplay() {
     debugDiv.style.overflowY = 'auto';
     debugDiv.style.fontSize = '12px';
     debugDiv.style.fontFamily = 'monospace';
-    debugDiv.style.display = 'block';
+    debugDiv.style.display = 'none'; // Hide the debug window
 
     const header = document.createElement('div');
     header.innerHTML = '<h6 style="margin: 0 0 5px 0;"><i class="fas fa-bug"></i> Calendar Debug</h6>';
@@ -980,13 +980,13 @@ function showBasicCalendar() {
 function createFallbackAvailabilityData() {
   debugLog('Creating fallback availability data');
 
-  // Get dates for the next 1 week
+  // Get dates for the next 3 months
   const today = new Date();
-  const oneWeekLater = new Date();
-  oneWeekLater.setDate(today.getDate() + 7);
+  const threeMonthsLater = new Date();
+  threeMonthsLater.setMonth(today.getMonth() + 3);
 
   // Create fallback data
-  const fallbackData = createFallbackPeriodData(today, oneWeekLater);
+  const fallbackData = createFallbackPeriodData(today, threeMonthsLater);
 
   // Store in both current and next month objects for compatibility
   availabilityData.currentMonth = fallbackData;
@@ -1956,12 +1956,12 @@ function loadAllAvailabilityData() {
 
   // Create the promise
   availabilityLoadingPromise = new Promise((resolve, reject) => {
-    // Get dates for the next 1 week
+    // Get dates for the next 3 months
     const today = new Date();
-    const oneWeekLater = new Date();
-    oneWeekLater.setDate(today.getDate() + 7); // 1 week = 7 days
+    const threeMonthsLater = new Date();
+    threeMonthsLater.setMonth(today.getMonth() + 3); // 3 months
 
-    debugLog('Loading availability from', today.toISOString(), 'to', oneWeekLater.toISOString());
+    debugLog('Loading availability from', today.toISOString(), 'to', threeMonthsLater.toISOString());
 
     // Set a longer timeout for the loading process (30 seconds)
     const timeoutId = setTimeout(() => {
@@ -1979,8 +1979,8 @@ function loadAllAvailabilityData() {
       resolve(availabilityData);
     }, 30000);
 
-    // Load availability data for the next 1 week
-    loadAvailabilityPeriod(today, oneWeekLater)
+    // Load availability data for the next 3 months
+    loadAvailabilityPeriod(today, threeMonthsLater)
       .then((data) => {
         // Clear the timeout
         clearTimeout(timeoutId);
