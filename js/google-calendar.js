@@ -821,16 +821,27 @@ function getTimeSlotsFromCache(dateString) {
 
   // Check if we have data for this date
   if (dateString in combinedData) {
-    const availableSlots = combinedData[dateString] || [];
-    debugLog(`Retrieved ${availableSlots.length} slots for ${dateString} from cache`);
+    const cachedSlots = combinedData[dateString] || [];
+    debugLog(`Retrieved ${cachedSlots.length} slots for ${dateString} from cache`);
 
-    if (availableSlots.length > 0) {
-      debugLog(`Found ${availableSlots.length} slots in cache for ${dateString}: ${availableSlots.join(', ')}`);
+    // Filter the cached data based on current service's business hours
+    const date = new Date(dateString);
+    const allPossibleSlots = getAllPossibleTimeSlots(date);
+
+    // Only return slots that are within the current service's business hours
+    const filteredSlots = cachedSlots.filter(slot => allPossibleSlots.includes(slot));
+
+    debugLog(`Original cached slots: ${cachedSlots.join(', ')}`);
+    debugLog(`Possible slots for service ${window.selectedService}: ${allPossibleSlots.join(', ')}`);
+    debugLog(`Filtered slots: ${filteredSlots.join(', ')}`);
+
+    if (filteredSlots.length > 0) {
+      debugLog(`Found ${filteredSlots.length} slots in cache for ${dateString}: ${filteredSlots.join(', ')}`);
     } else {
-      debugLog(`No slots available for ${dateString} in cache`);
+      debugLog(`No slots available for ${dateString} after filtering for service ${window.selectedService}`);
     }
 
-    return availableSlots;
+    return filteredSlots;
   } else {
     // No data for this date, check if it's a weekday and generate default slots
     const date = new Date(dateString);
@@ -1050,6 +1061,16 @@ function updateServiceSelectionUI(service) {
       bookingFormContainer.style.display = 'none';
     }
 
+    // FORCE reload of availability data for the new service
+    debugLog('Forcing reload of availability data for service change');
+
+    // Reset availability data
+    availabilityData = {
+      currentMonth: {},
+      nextMonth: {}
+    };
+    availabilityLoaded = false;
+
     // Get current month and year from the calendar header
     const headerElement = document.querySelector('.calendar-header h3');
     if (headerElement) {
@@ -1062,14 +1083,18 @@ function updateServiceSelectionUI(service) {
       const month = monthNames.indexOf(monthName);
       const numericYear = parseInt(year, 10);
 
-      // If we're in fallback mode, regenerate the fallback data for the new service
-      if (!availabilityLoaded) {
-        debugLog('Regenerating fallback data for new service');
-        createFallbackAvailabilityData();
-      }
-
-      // Re-render the calendar with the new service
-      renderCalendar(service);
+      // Force reload availability data for the new service
+      loadAllAvailabilityData()
+        .then(() => {
+          debugLog('Availability data reloaded for service change');
+          renderCalendar(service);
+        })
+        .catch(err => {
+          debugLog('Failed to reload availability data for service change:', err);
+          // Regenerate fallback data for the new service
+          createFallbackAvailabilityData();
+          renderCalendar(service);
+        });
     }
   }
 }
