@@ -1066,6 +1066,9 @@ function updateServiceSelectionUI(service) {
       debugLog('Attempting to reload API data for new service...');
       debugLog('About to call loadAllAvailabilityData()');
 
+      // Temporarily restore the flag to prevent flickering to "basic mode"
+      availabilityLoaded = true;
+
       const reloadPromise = loadAllAvailabilityData();
       debugLog('loadAllAvailabilityData() called, promise created');
 
@@ -1080,6 +1083,7 @@ function updateServiceSelectionUI(service) {
           debugLog('Failed to reload API data for new service:', err);
           debugLog('Error details:', err.message || err);
           // Fall back to basic mode only if API fails
+          availabilityLoaded = false;
           createFallbackAvailabilityData();
           renderCalendar(service);
         });
@@ -1170,6 +1174,9 @@ window.loadCalendarForService = function(service) {
       debugLog('Attempting to reload API data for new service...');
       debugLog('About to call loadAllAvailabilityData()');
 
+      // Temporarily restore the flag to prevent flickering to "basic mode"
+      availabilityLoaded = true;
+
       const reloadPromise = loadAllAvailabilityData();
       debugLog('loadAllAvailabilityData() called, promise created');
 
@@ -1184,6 +1191,7 @@ window.loadCalendarForService = function(service) {
           debugLog('Failed to reload API data for new service:', err);
           debugLog('Error details:', err.message || err);
           // Fall back to basic mode only if API fails
+          availabilityLoaded = false;
           createFallbackAvailabilityData();
           renderCalendar(service);
         });
