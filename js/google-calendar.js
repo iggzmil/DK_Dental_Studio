@@ -100,7 +100,7 @@ function addDebugDisplay() {
     debugDiv.style.overflowY = 'auto';
     debugDiv.style.fontSize = '12px';
     debugDiv.style.fontFamily = 'monospace';
-    debugDiv.style.display = 'none';
+    debugDiv.style.display = 'block';
 
     const header = document.createElement('div');
     header.innerHTML = '<h6 style="margin: 0 0 5px 0;"><i class="fas fa-bug"></i> Calendar Debug</h6>';
@@ -112,7 +112,7 @@ function addDebugDisplay() {
 
     const content = document.createElement('div');
     content.id = 'calendar-debug-content';
-    content.style.display = 'none'; // Hide debug content by default
+    content.style.display = 'block'; // Show debug content by default
 
     const log = document.createElement('div');
     log.id = 'calendar-debug-log';
@@ -750,6 +750,8 @@ function setupCalendarInteraction() {
     // Get the date from the day element
     const dateString = dayElement.getAttribute('data-date');
 
+    debugLog(`showTimeSlots called for date: ${dateString}, current service: ${window.selectedService}`);
+
     // Show loading state
     const timeSlotsContainer = document.getElementById('time-slots-container');
     if (!timeSlotsContainer) {
@@ -803,8 +805,11 @@ function setupCalendarInteraction() {
  * Get time slots from the pre-loaded cache
  */
 function getTimeSlotsFromCache(dateString) {
+  debugLog(`getTimeSlotsFromCache called for ${dateString}, availabilityLoaded: ${availabilityLoaded}, service: ${window.selectedService}`);
+
   // If data isn't loaded yet, use fallback
   if (!availabilityLoaded) {
+    debugLog(`Using fallback time slots for ${dateString}`);
     return getFallbackTimeSlots(dateString);
   }
 
@@ -865,14 +870,22 @@ function getTimeSlotsFromCache(dateString) {
  * Get fallback time slots for a date
  */
 function getFallbackTimeSlots(dateString) {
+  debugLog(`getFallbackTimeSlots called for ${dateString}, service: ${window.selectedService}`);
+
   const date = new Date(dateString);
   const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
 
   // Business hours
   let allSlots = getAllPossibleTimeSlots(date);
 
+  debugLog(`getFallbackTimeSlots generated ${allSlots.length} slots: ${allSlots.join(', ')}`);
+
   // Apply default busy periods
-  return createDefaultBusyPeriodsForDay(allSlots, dayOfWeek);
+  const finalSlots = createDefaultBusyPeriodsForDay(allSlots, dayOfWeek);
+
+  debugLog(`getFallbackTimeSlots returning ${finalSlots.length} final slots: ${finalSlots.join(', ')}`);
+
+  return finalSlots;
 }
 
 /**
@@ -999,6 +1012,8 @@ function createFallbackAvailabilityData() {
  * Update UI to match selected service
  */
 function updateServiceSelectionUI(service) {
+  debugLog(`updateServiceSelectionUI called with service: ${service}`);
+
   // Update service cards UI
   document.querySelectorAll('.service-card').forEach(card => {
     if (card.dataset.service === service) {
@@ -1341,14 +1356,13 @@ function getCalendarStyles() {
       }
 
       .calendar-day.closed {
-        background-color: #f8d7da;
-        color: #721c24;
+        background-color: #f8f9fa;
+        color: #aaa;
         cursor: not-allowed;
-        border-color: #f5c6cb;
       }
 
       .calendar-day.closed .availability {
-        color: #721c24;
+        color: #aaa;
       }
 
       .calendar-day.available {
@@ -2231,6 +2245,7 @@ function getAllPossibleTimeSlots(date) {
 
   // Debug the slots
   debugLog(`Generated ${allSlots.length} potential time slots for ${selectedService} on ${date.toISOString().split('T')[0]} (day ${dayOfWeek}): ${allSlots.join(', ')}`);
+  debugLog(`Service: ${selectedService}, Day: ${dayOfWeek}, StartHour: ${startHour}, EndHour: ${endHour}`);
 
   return allSlots;
 }
