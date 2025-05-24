@@ -523,17 +523,17 @@ function markAvailableDates() {
     }
 
     if (isWeekend) {
-      dayElement.classList.add('weekend');
+      dayElement.classList.add('closed');
       return;
     }
 
     if (isTodayUnavailable) {
-      dayElement.classList.add('business-closed');
+      dayElement.classList.add('closed');
       return;
     }
 
     // Skip if already marked
-    if (dayElement.classList.contains('past') || dayElement.classList.contains('weekend')) {
+    if (dayElement.classList.contains('past') || dayElement.classList.contains('closed')) {
       return;
     }
 
@@ -1047,6 +1047,12 @@ function updateServiceSelectionUI(service) {
       const month = monthNames.indexOf(monthName);
       const numericYear = parseInt(year, 10);
 
+      // If we're in fallback mode, regenerate the fallback data for the new service
+      if (!availabilityLoaded) {
+        debugLog('Regenerating fallback data for new service');
+        createFallbackAvailabilityData();
+      }
+
       // Re-render the calendar with the new service
       renderCalendar(service);
     }
@@ -1130,6 +1136,8 @@ window.loadCalendarForService = function(service) {
       })
       .catch(err => {
         debugLog('Failed to reload availability data for new service:', err);
+        // Regenerate fallback data for the new service
+        createFallbackAvailabilityData();
         renderCalendar(service); // Render with fallback data
       });
   } else if (calendarInitialized) {
@@ -1204,14 +1212,34 @@ function createCalendarHTML(month, year, service) {
     // Determine if this day should be available
     const isAvailable = !isPast && !isWeekend && !isTodayUnavailable;
 
+    // Determine the status text and classes
+    let statusText = '';
+    let dayClasses = '';
+
+    if (isPast) {
+      dayClasses = 'past';
+    } else if (isWeekend) {
+      dayClasses = 'closed';
+      statusText = 'Closed';
+    } else if (isTodayUnavailable) {
+      dayClasses = 'closed';
+      statusText = 'Closed';
+    } else if (isAvailable) {
+      dayClasses = 'available';
+      statusText = 'Available';
+    }
+
+    // Add today class if it's today (but don't override closed styling)
+    if (isToday && !isWeekend && !isTodayUnavailable && !isPast) {
+      dayClasses += ' today';
+    }
+
     html += `
-      <div class="calendar-day ${isToday ? 'today' : ''} ${isPast ? 'past' : ''} ${isWeekend ? 'weekend' : ''} ${isTodayUnavailable ? 'business-closed' : ''} ${isAvailable ? 'available' : ''}"
+      <div class="calendar-day ${dayClasses}"
            data-date="${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}"
            ${isAvailable ? `onclick="showTimeSlots(this)"` : ''}>
         <div class="day-number">${day}</div>
-        ${isAvailable ? '<div class="availability">Available</div>' : ''}
-        ${isTodayUnavailable ? '<div class="availability">Closed</div>' : ''}
-        ${isWeekend ? '<div class="availability">Closed</div>' : ''}
+        ${statusText ? `<div class="availability">${statusText}</div>` : ''}
       </div>
     `;
   }
@@ -1312,26 +1340,15 @@ function getCalendarStyles() {
         cursor: not-allowed;
       }
 
-      .calendar-day.weekend {
+      .calendar-day.closed {
         background-color: #f8d7da;
         color: #721c24;
         cursor: not-allowed;
         border-color: #f5c6cb;
       }
 
-      .calendar-day.weekend .availability {
+      .calendar-day.closed .availability {
         color: #721c24;
-      }
-
-      .calendar-day.business-closed {
-        background-color: #fff3cd;
-        color: #856404;
-        cursor: not-allowed;
-        border-color: #ffeaa7;
-      }
-
-      .calendar-day.business-closed .availability {
-        color: #856404;
       }
 
       .calendar-day.available {
@@ -2183,6 +2200,9 @@ function getAllPossibleTimeSlots(date) {
   // Get the selected service
   const selectedService = window.selectedService || 'dentures';
 
+  // Debug logging
+  debugLog(`getAllPossibleTimeSlots called for service: ${selectedService}, day: ${dayOfWeek} (${date.toISOString().split('T')[0]})`);
+
   // Business hours based on service and day
   const startHour = 10; // 10 AM for all services
   let endHour;
@@ -2191,12 +2211,15 @@ function getAllPossibleTimeSlots(date) {
     // Mouthguards: Mon-Thu 10AM-5PM, Fri 10AM-3PM
     if (dayOfWeek >= 1 && dayOfWeek <= 4) { // Monday to Thursday
       endHour = 18; // 6 PM (last slot 5PM for 5-6PM booking)
+      debugLog(`Mouthguards Mon-Thu: endHour set to ${endHour}`);
     } else if (dayOfWeek === 5) { // Friday
       endHour = 16; // 4 PM (last slot 3PM for 3-4PM booking)
+      debugLog(`Mouthguards Friday: endHour set to ${endHour}`);
     }
   } else {
     // Dentures and Repairs: Mon-Fri 10AM-3PM
     endHour = 16; // 4 PM (last slot 3PM for 3-4PM booking)
+    debugLog(`Dentures/Repairs: endHour set to ${endHour}`);
   }
 
   // Generate time slots every 60 minutes - business requirement
