@@ -1050,12 +1050,13 @@ function updateServiceSelectionUI(service) {
     debugLog('Reloading API data with new service business hours (staying in API mode)');
     debugLog(`BEFORE RESET: availabilityLoaded = ${availabilityLoaded}`);
 
-    // Reset availability data but keep availabilityLoaded flag
+    // Reset availability data and flag, but remember the previous state
     const wasLoaded = availabilityLoaded;
     availabilityData = {
       currentMonth: {},
       nextMonth: {}
     };
+    availabilityLoaded = false; // Reset the flag so reload will work properly
 
     debugLog(`AFTER RESET: wasLoaded = ${wasLoaded}, availabilityLoaded = ${availabilityLoaded}`);
 
@@ -1166,13 +1167,14 @@ window.loadCalendarForService = function(service) {
       bookingFormContainer.style.display = 'none';
     }
 
-    // Reset availability data but remember if we were in API mode
+    // Reset availability data and flag, but remember the previous state
     debugLog(`BEFORE RESET: availabilityLoaded = ${availabilityLoaded}`);
     const wasLoaded = availabilityLoaded;
     availabilityData = {
       currentMonth: {},
       nextMonth: {}
     };
+    availabilityLoaded = false; // Reset the flag so reload will work properly
     debugLog(`AFTER RESET: wasLoaded = ${wasLoaded}, availabilityLoaded = ${availabilityLoaded}`);
 
     // Reload availability data with new service business hours
