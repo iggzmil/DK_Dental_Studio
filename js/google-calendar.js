@@ -1234,7 +1234,7 @@ function createCalendarHTML(month, year, service) {
 
   let html = `
     <div class="calendar-header">
-      <h3 class="text-center w-100">${monthNames[month]} ${year}</h3>
+      <h3 class="calendar-month-title">${monthNames[month]} ${year}</h3>
       <div class="calendar-navigation">
         <button class="btn btn-sm btn-outline-primary" onclick="prevMonth()"><i class="fas fa-chevron-left"></i></button>
         <button class="btn btn-sm btn-outline-primary" onclick="nextMonth()"><i class="fas fa-chevron-right"></i></button>
@@ -1335,7 +1335,7 @@ function getCalendarStyles() {
         position: relative;
       }
 
-      .calendar-header h3 {
+      .calendar-header .calendar-month-title {
         margin: 0;
         text-align: center;
         width: 100%;
@@ -1500,6 +1500,32 @@ function getCalendarStyles() {
 
         .day-number {
           font-size: 14px;
+        }
+
+        /* Fix calendar header layout on mobile */
+        .calendar-header {
+          flex-direction: column !important;
+          gap: 15px !important;
+          padding: 15px 10px !important;
+        }
+
+        .calendar-header .calendar-month-title {
+          position: static !important;
+          text-align: left !important;
+          width: auto !important;
+          margin: 0 !important;
+          font-size: 1.3rem !important;
+        }
+
+        .calendar-navigation {
+          margin-left: 0 !important;
+          justify-content: center !important;
+          width: 100% !important;
+        }
+
+        .calendar-navigation button {
+          padding: 8px 12px !important;
+          font-size: 0.9rem !important;
         }
       }
     </style>
