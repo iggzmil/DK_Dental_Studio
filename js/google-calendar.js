@@ -1489,7 +1489,7 @@ function getCalendarStyles() {
         gap: 15px;
       }
 
-      @media (max-width: 768px) {
+      @media (max-width: 991px) {
         .booking-form {
           grid-template-columns: 1fr;
         }
@@ -1526,6 +1526,75 @@ function getCalendarStyles() {
         .calendar-navigation button {
           padding: 8px 12px !important;
           font-size: 0.9rem !important;
+        }
+      }
+
+      /* Additional iPhone-specific fixes */
+      @media screen and (max-width: 480px) {
+        .calendar-header {
+          flex-direction: column !important;
+          gap: 15px !important;
+          padding: 15px 10px !important;
+          align-items: flex-start !important;
+        }
+
+        .calendar-header .calendar-month-title {
+          position: static !important;
+          text-align: left !important;
+          width: auto !important;
+          margin: 0 !important;
+          font-size: 1.2rem !important;
+          order: 1 !important;
+        }
+
+        .calendar-navigation {
+          margin-left: 0 !important;
+          justify-content: center !important;
+          width: 100% !important;
+          order: 2 !important;
+        }
+      }
+
+      /* Force override for very small screens */
+      @media screen and (max-width: 414px) {
+        div.calendar-header h3.calendar-month-title {
+          position: static !important;
+          text-align: left !important;
+          width: auto !important;
+          margin: 0 !important;
+          font-size: 1.1rem !important;
+        }
+
+        div.calendar-header {
+          flex-direction: column !important;
+          gap: 12px !important;
+          padding: 12px 8px !important;
+        }
+      }
+
+      /* iPhone specific targeting */
+      @media only screen and (max-device-width: 812px) and (-webkit-min-device-pixel-ratio: 2) {
+        .calendar-header {
+          flex-direction: column !important;
+          gap: 15px !important;
+          padding: 15px 10px !important;
+          align-items: flex-start !important;
+        }
+
+        .calendar-header .calendar-month-title {
+          position: static !important;
+          text-align: left !important;
+          width: auto !important;
+          margin: 0 !important;
+          font-size: 1.2rem !important;
+          order: 1 !important;
+        }
+
+        .calendar-navigation {
+          margin-left: 0 !important;
+          justify-content: center !important;
+          width: 100% !important;
+          order: 2 !important;
         }
       }
     </style>
