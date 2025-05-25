@@ -956,22 +956,7 @@ function showBasicCalendar() {
   // Render the calendar
   renderCalendar(service);
 
-  // Show a network connectivity notice
-  const calendarContainer = document.getElementById('appointment-calendar');
-  if (calendarContainer) {
-    const notice = document.createElement('div');
-    notice.className = 'alert alert-warning mb-4';
-    notice.innerHTML = `
-      <p><strong>Note:</strong> The calendar is in basic mode. All weekday time slots are shown as available.
-      Your booking will need to be confirmed by our staff before it is finalized.</p>
-    `;
-
-    if (calendarContainer.firstChild) {
-      calendarContainer.insertBefore(notice, calendarContainer.firstChild);
-    } else {
-      calendarContainer.appendChild(notice);
-    }
-  }
+  // Don't show additional notice - the renderCalendar function already handles the status message
 }
 
 /**
@@ -1496,6 +1481,22 @@ function getCalendarStyles() {
 
         .calendar-days-header {
           font-size: 12px;
+          grid-template-columns: repeat(5, 1fr) !important;
+        }
+
+        .calendar-days {
+          grid-template-columns: repeat(5, 1fr) !important;
+        }
+
+        /* Hide weekend headers in mobile */
+        .calendar-days-header div:nth-child(6),
+        .calendar-days-header div:nth-child(7) {
+          display: none !important;
+        }
+
+        /* Hide weekend days in mobile */
+        .calendar-day.closed {
+          display: none !important;
         }
 
         .day-number {
@@ -1511,8 +1512,8 @@ function getCalendarStyles() {
 
         .calendar-header .calendar-month-title {
           position: static !important;
-          text-align: left !important;
-          width: auto !important;
+          text-align: center !important;
+          width: 100% !important;
           margin: 0 !important;
           font-size: 1.3rem !important;
         }
@@ -1531,6 +1532,25 @@ function getCalendarStyles() {
 
       /* Additional iPhone-specific fixes */
       @media screen and (max-width: 480px) {
+        .calendar-days-header {
+          grid-template-columns: repeat(5, 1fr) !important;
+        }
+
+        .calendar-days {
+          grid-template-columns: repeat(5, 1fr) !important;
+        }
+
+        /* Hide weekend headers in mobile */
+        .calendar-days-header div:nth-child(6),
+        .calendar-days-header div:nth-child(7) {
+          display: none !important;
+        }
+
+        /* Hide weekend days in mobile */
+        .calendar-day.closed {
+          display: none !important;
+        }
+
         .calendar-header {
           flex-direction: column !important;
           gap: 15px !important;
@@ -1540,8 +1560,8 @@ function getCalendarStyles() {
 
         .calendar-header .calendar-month-title {
           position: static !important;
-          text-align: left !important;
-          width: auto !important;
+          text-align: center !important;
+          width: 100% !important;
           margin: 0 !important;
           font-size: 1.2rem !important;
           order: 1 !important;
@@ -1557,10 +1577,29 @@ function getCalendarStyles() {
 
       /* Force override for very small screens */
       @media screen and (max-width: 414px) {
+        .calendar-days-header {
+          grid-template-columns: repeat(5, 1fr) !important;
+        }
+
+        .calendar-days {
+          grid-template-columns: repeat(5, 1fr) !important;
+        }
+
+        /* Hide weekend headers in mobile */
+        .calendar-days-header div:nth-child(6),
+        .calendar-days-header div:nth-child(7) {
+          display: none !important;
+        }
+
+        /* Hide weekend days in mobile */
+        .calendar-day.closed {
+          display: none !important;
+        }
+
         div.calendar-header h3.calendar-month-title {
           position: static !important;
-          text-align: left !important;
-          width: auto !important;
+          text-align: center !important;
+          width: 100% !important;
           margin: 0 !important;
           font-size: 1.1rem !important;
         }
@@ -1574,6 +1613,25 @@ function getCalendarStyles() {
 
       /* iPhone specific targeting */
       @media only screen and (max-device-width: 812px) and (-webkit-min-device-pixel-ratio: 2) {
+        .calendar-days-header {
+          grid-template-columns: repeat(5, 1fr) !important;
+        }
+
+        .calendar-days {
+          grid-template-columns: repeat(5, 1fr) !important;
+        }
+
+        /* Hide weekend headers in mobile */
+        .calendar-days-header div:nth-child(6),
+        .calendar-days-header div:nth-child(7) {
+          display: none !important;
+        }
+
+        /* Hide weekend days in mobile */
+        .calendar-day.closed {
+          display: none !important;
+        }
+
         .calendar-header {
           flex-direction: column !important;
           gap: 15px !important;
@@ -1583,8 +1641,8 @@ function getCalendarStyles() {
 
         .calendar-header .calendar-month-title {
           position: static !important;
-          text-align: left !important;
-          width: auto !important;
+          text-align: center !important;
+          width: 100% !important;
           margin: 0 !important;
           font-size: 1.2rem !important;
           order: 1 !important;

@@ -83,7 +83,7 @@ function initChatIcon() {
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
             font-weight: 500;
         }
-        
+
         /* Chat bubble tail */
         #chatIconLabel:after {
             content: '';
@@ -130,17 +130,21 @@ function initChatIcon() {
             line-height: 40px !important;
         }
 
+        /* Hide chat bubble on tablets and mobile */
+        @media (max-width: 991px) {
+            #chatIconLabel {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+            }
+            #chatIconBtn {
+                margin-top: 0; /* Remove margin since bubble is hidden */
+            }
+        }
+
         @media (max-width: 768px) {
             #chatIconContainer {
                 align-items: flex-end;
-            }
-            #chatIconLabel {
-                font-size: 12px;
-                padding: 6px 12px;
-                margin-bottom: 8px;
-            }
-            #chatIconLabel:after {
-                right: 10px;
             }
             #chatIconBtn {
                 width: 40px;
