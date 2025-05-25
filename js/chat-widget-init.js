@@ -22,8 +22,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // Check if we're on mobile
   const isMobile = window.innerWidth <= 768;
 
-  // On mobile, always auto-expand if coming from chat icon or if already on contact page
-  const shouldAutoExpand = shouldOpenChat || isMobile;
+  // Only auto-expand if coming from chat icon, not just because it's mobile
+  const shouldAutoExpand = shouldOpenChat;
 
   // Create chat container if it doesn't exist
   let chatContainer = document.getElementById('chat-container');
@@ -61,14 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Handle window resize for mobile detection
-  window.addEventListener('resize', function() {
-    const newIsMobile = window.innerWidth <= 768;
-    if (newIsMobile && chatWidget.container.classList.contains('minimized')) {
-      // If we're now on mobile and chat is minimized, auto-expand it
-      chatWidget.container.classList.remove('minimized');
-    }
-  });
+
 
   // Create chat icon if it doesn't exist
   if (!document.querySelector('link[href*="chat-icon.svg"]')) {

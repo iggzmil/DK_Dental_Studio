@@ -277,11 +277,30 @@
     margin: 0 auto !important;
   }
 
-  /* Hide the minimized button (chat bubble) on mobile */
+  /* Show a simple chat button on mobile instead of the bubble */
   .tde-chat-container.minimized .tde-chat-minimized {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    /* Simplify for mobile - just show "Chat" button */
+    padding: 12px 20px !important;
+    border-radius: 25px !important;
+    background: #0d6efd !important;
+    color: white !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  /* Hide the bubble text, keep only icon or simple text */
+  .tde-chat-container.minimized .tde-chat-minimized span {
     display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
+  }
+
+  /* Show only the icon or add simple "Chat" text */
+  .tde-chat-container.minimized .tde-chat-minimized::after {
+    content: "Chat" !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
   }
 
   /* Adjust header for mobile */
