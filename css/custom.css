@@ -557,3 +557,32 @@
     padding: 0.4rem 0.6rem !important;
   }
 }
+
+/* Calendar Mobile Fixes */
+@media (max-width: 768px) {
+  /* Fix calendar header layout on mobile */
+  .calendar-header {
+    flex-direction: column !important;
+    gap: 15px !important;
+    padding: 15px 10px !important;
+  }
+
+  .calendar-header h3 {
+    position: static !important;
+    text-align: left !important;
+    width: auto !important;
+    margin: 0 !important;
+    font-size: 1.3rem !important;
+  }
+
+  .calendar-navigation {
+    margin-left: 0 !important;
+    justify-content: center !important;
+    width: 100% !important;
+  }
+
+  .calendar-navigation button {
+    padding: 8px 12px !important;
+    font-size: 0.9rem !important;
+  }
+}
