@@ -332,7 +332,7 @@ var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
 
           // Add styles
           const style = document.createElement('style');
-          style.textContent = \`
+          style.textContent = `
           /* Chat Icon Container */
           #chatIconContainer {
               position: fixed;
@@ -458,7 +458,7 @@ var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
                   font-size: 16px !important;
               }
           }
-          \`;
+          `;
 
           document.head.appendChild(style);
 
