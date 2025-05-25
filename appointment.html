@@ -15,13 +15,11 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;display=swap">
 
     <!-- CSS Global Compulsory (Do not remove)-->
-    <link rel="stylesheet" href="css/font-awesome/all.min.css" />
-    <link rel="stylesheet" href="css/flaticon/flaticon.css" />
+    <link rel="stylesheet" href="css/font-awesome-optimized.css" />
+    <link rel="stylesheet" href="css/flaticon.css" />
 
-    <!-- Page CSS Implementing Plugins (Remove the plugin CSS here if site does not use that feature)-->
-    <link rel="stylesheet" href="css/select2/select2.css" />
-    <link rel="stylesheet" href="css/datetimepicker/datetimepicker.min.css" />
-    <link rel="stylesheet" href="css/owl-carousel/owl.carousel.min.css" />
+    <!-- Page CSS Implementing Plugins (Only load what's actually used)-->
+    <!-- Unused plugin CSS removed for optimization -->
 
     <!-- Template Style -->
     <link rel="stylesheet" href="css/style.css" />
@@ -454,7 +452,7 @@
       <div class="container">
         <div class="row align-items-center">
           <div class="col-md-4 text-center copyright text-md-left mb-3 mb-md-0">
-            <p class="mb-0 text-white"> &copy; Copyright <span id="copyright"> <script>document.getElementById('copyright').appendChild(document.createTextNode(new Date().getFullYear()))</script></span> <a href="index.html"> DK Dental Studio </a> All Rights Reserved</p>
+            <p class="mb-0 text-white"> &copy; Copyright <span id="copyright"></span> <a href="index.html"> DK Dental Studio </a> All Rights Reserved</p>
             <p class="mb-0 text-white mt-2">Web Development and AI Automation by <a href="https://www.aaa-city.com" target="_blank">AAA.City</a></p>
           </div>
           <div class="col-md-4 text-center mb-3 mb-md-0">
@@ -484,230 +482,18 @@
 
     <!-- JS Global Compulsory (Do not remove)-->
     <script src="js/jquery-3.7.1.min.js"></script>
-    <script src="js/popper/popper.min.js"></script>
-    <script src="js/bootstrap/bootstrap.min.js"></script>
+    <script src="js/popper.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
 
-    <!-- Page JS Implementing Plugins (Remove the plugin script here if site does not use that feature)-->
-    <script src="js/jquery.appear.js"></script>
-    <script src="js/counter/jquery.countTo.js"></script>
-    <script src="js/owl-carousel/owl.carousel.min.js"></script>
-    <script src="js/jarallax/jarallax.min.js"></script>
-    <script src="js/jarallax/jarallax-video.min.js"></script>
-    <script src="js/select2/select2.full.js"></script>
-    <script src="js/datetimepicker/moment.min.js"></script>
-    <script src="js/datetimepicker/datetimepicker.min.js"></script>
+    <!-- Universal JavaScript Bundle - Contains ALL functionality -->
+    <script src="js/common-init.js"></script>
 
-    <!-- Template Scripts (Do not remove)-->
-    <script src="js/custom.js"></script>
-
-    <!-- Chat Icon Script -->
-    <script src="js/function.js"></script>
-
-    <!-- Google Calendar Integration -->
+    <!-- Appointment Page Specific: Google Calendar Integration -->
     <script src="https://apis.google.com/js/api.js"></script>
     <script src="js/google-calendar.js"></script>
+    <script src="js/appointment-init.js"></script>
 
-    <!-- Admin Information (only visible in edit mode) -->
-    <div id="admin-info" style="display: none; position: fixed; bottom: 20px; right: 20px; background: #f8f9fa; border: 1px solid #ddd; padding: 15px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 9999;">
-      <h6><i class="fas fa-info-circle"></i> Admin Info</h6>
-      <p class="mb-2"><small>Google Calendar integration is active.</small></p>
-      <p class="mb-0"><small><a href="GOOGLE_CALENDAR_SETUP.md" target="_blank">View Setup Guide</a></small></p>
-    </div>
-
-    <!-- Initialize Bootstrap 5 components -->
-    <script>
-      $(document).ready(function() {
-        // Initialize Bootstrap 5 navbar toggler
-        $('.navbar-toggler').on('click', function() {
-          var target = $(this).data('bs-target');
-          $(target).toggleClass('show');
-        });
-
-        // Show admin info for development environment
-        // In production, this should be removed or properly secured
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('dev')) {
-          // Keep admin-info hidden
-          // document.getElementById('admin-info').style.display = 'block';
-        }
-
-        // Immediately select the dentures service and load the calendar
-        // This ensures the calendar loads properly on page load
-        setTimeout(function() {
-          console.log('Auto-selecting dentures service and loading calendar...');
-          const denturesCard = document.querySelector('.service-card[data-service="dentures"]');
-          if (denturesCard) {
-            // Set selected service (important for Google Calendar API)
-            window.selectedService = 'dentures';
-
-            // Update UI
-            document.querySelectorAll('.service-card').forEach(card => {
-              card.classList.remove('selected');
-            });
-            denturesCard.classList.add('selected');
-
-            // Update appointment type text
-            updateAppointmentTypeText('dentures');
-
-            // Load the calendar directly (bypassing any basic mode)
-            if (typeof window.loadCalendarForService === 'function') {
-              window.loadCalendarForService('dentures');
-            } else {
-              // If the function isn't available yet, wait for it
-              const checkInterval = setInterval(function() {
-                if (typeof window.loadCalendarForService === 'function') {
-                  window.loadCalendarForService('dentures');
-                  clearInterval(checkInterval);
-                }
-              }, 500);
-            }
-          }
-        }, 500); // Give a small delay to ensure scripts are loaded
-      });
-
-      // Service selection function
-      function selectService(element, service) {
-        // Remove selected class from all service cards
-        document.querySelectorAll('.service-card').forEach(card => {
-          card.classList.remove('selected');
-        });
-
-        // Add selected class to clicked card
-        element.classList.add('selected');
-
-        // Update appointment type text
-        updateAppointmentTypeText(service);
-
-        // Set the selected service in the window object for Google Calendar
-        window.selectedService = service;
-
-        // Show loading state first
-        const calendarContainer = document.getElementById('appointment-calendar');
-        if (calendarContainer) {
-          calendarContainer.innerHTML = `
-            <div class="calendar-loading">
-              <div class="spinner"></div>
-              <p>Loading appointment calendar for ${getServiceName(service)}...</p>
-            </div>
-          `;
-        }
-
-        // Ensure we're using the token that was already fetched on page load
-        if (typeof window.serverAccessToken !== 'undefined' && window.serverAccessToken) {
-          console.log('Using existing token for service change');
-
-          // If we already have a token, apply it before loading the calendar
-          if (window.gapi && window.gapi.client) {
-            window.gapi.client.setToken({ access_token: window.serverAccessToken });
-          }
-        }
-
-        // Update calendar with selected service - make sure we're using the already authorized API
-        if (typeof loadCalendarForService === 'function') {
-          console.log('Loading calendar for service:', service);
-          loadCalendarForService(service);
-        } else {
-          // Fallback if loadCalendarForService is not available
-          calendarContainer.innerHTML = `
-            <div class="alert alert-warning">
-              <p>The calendar module is not loaded properly. Please try refreshing the page.</p>
-            </div>
-            <div class="text-center">
-              <button class="btn btn-primary" onclick="window.location.reload()">Refresh Page</button>
-            </div>
-          `;
-        }
-      }
-
-      // Helper function to get service name
-      function getServiceName(service) {
-        switch (service) {
-          case 'dentures':
-            return 'Dentures Consultation';
-          case 'repairs':
-            return 'Repairs & Maintenance';
-          case 'mouthguards':
-            return 'Mouthguards Consultation';
-          default:
-            return 'Appointment';
-        }
-      }
-
-      // Function to update the appointment type text
-      function updateAppointmentTypeText(service) {
-        const appointmentTypeText = document.getElementById('appointment-type-text');
-        if (appointmentTypeText) {
-          let serviceName = 'Dentures Consultation';
-          if (service === 'repairs') {
-            serviceName = 'Repairs & Maintenance';
-          } else if (service === 'mouthguards') {
-            serviceName = 'Mouthguards';
-          }
-          appointmentTypeText.textContent = 'Booking: ' + serviceName;
-        }
-      }
-    </script>
-
-    <!-- Direct calendar initialization script -->
-    <script>
-      // This script forcefully initializes the calendar without waiting for user interaction
-      document.addEventListener('DOMContentLoaded', function() {
-        // Force direct loading of the calendar - this bypasses the normal initialization
-        console.log('Force initializing calendar directly');
-
-        // Set the global selectedService
-        window.selectedService = 'dentures';
-
-        // Give enough time for all scripts to load
-        setTimeout(function() {
-          // Check if booking confirmation is displayed - if so, don't load calendar
-          if (window.bookingConfirmationDisplayed) {
-            console.log('Skipping initial calendar load because booking confirmation is displayed');
-            return;
-          }
-
-          // First try the normal method
-          if (typeof window.loadCalendarForService === 'function') {
-            console.log('Directly calling loadCalendarForService');
-            window.loadCalendarForService('dentures');
-          } else {
-            console.log('Normal method not available, trying direct approach');
-
-            // Direct approach to create the calendar
-            const calendarContainer = document.getElementById('appointment-calendar');
-            if (calendarContainer) {
-              // Get today's date
-              const today = new Date();
-              const month = today.getMonth();
-              const year = today.getFullYear();
-
-              console.log('Directly creating calendar with service: dentures');
-
-              // Update UI
-              document.querySelectorAll('.service-card').forEach(card => {
-                if (card.dataset.service === 'dentures') {
-                  card.classList.add('selected');
-                } else {
-                  card.classList.remove('selected');
-                }
-              });
-
-              // Update heading
-              const appointmentTypeText = document.getElementById('appointment-type-text');
-              if (appointmentTypeText) {
-                appointmentTypeText.textContent = 'Booking: Dentures Consultation';
-              }
-
-              // Force the calendar to load by simulating a click on the dentures card
-              const denturesCard = document.querySelector('.service-card[data-service="dentures"]');
-              if (denturesCard) {
-                console.log('Simulating click on dentures card');
-                denturesCard.click();
-              }
-            }
-          }
-        }, 1000);
-      });
-    </script>
+    
   </body>
 
 
