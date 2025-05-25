@@ -146,7 +146,7 @@ class DKDChatWidget {
       this.minimizedView.innerHTML = this.options.minimizedContent;
     } else {
       this.minimizedView.innerHTML = `
-        <img src="images/chat-icon.svg" alt="Chat Icon">
+        <i class="fas fa-comment" alt="Chat Icon"></i>
         <span>Hey 👋 Need help? Let's chat!</span>
       `;
     }
@@ -609,7 +609,7 @@ document.addEventListener('DOMContentLoaded', function() {
     webhookUrl: 'https://n8n.aaa-city.com/webhook/ab6aa64d-a2e5-40d4-9abb-4c8500a19d49/chat',
     minimized: !shouldAutoExpand, // Auto-expand if openChat=true or on mobile
     minimizedContent: `
-      <img src="images/chat-icon.svg" alt="Chat Icon" style="width: 20px; height: 20px;">
+      <i class="fas fa-comment" alt="Chat Icon" style="font-size: 20px;"></i>
       <span>Chat with DK Dental</span>
     `,
     initialMessages: [
@@ -631,39 +631,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Create chat icon if it doesn't exist
-  if (!document.querySelector('link[href*="chat-icon.svg"]')) {
-    const chatIconLink = document.createElement('link');
-    chatIconLink.rel = 'preload';
-    chatIconLink.as = 'image';
-    chatIconLink.href = 'images/chat-icon.svg';
-    document.head.appendChild(chatIconLink);
-  }
-
-  // Create the chat icon SVG if it doesn't exist
-  fetch('images/chat-icon.svg')
-    .then(response => {
-      if (response.status === 404) {
-        // Create the chat icon SVG file if it doesn't exist
-        const chatIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-        </svg>`;
-
-        // Create a Blob from the SVG string
-        const blob = new Blob([chatIconSvg], { type: 'image/svg+xml' });
-
-        // Create a URL for the Blob
-        const url = URL.createObjectURL(blob);
-
-        // Create an image element to download the SVG
-        const img = new Image();
-        img.src = url;
-
-        // Log that we're creating the chat icon
-        console.log('Creating chat icon SVG');
-      }
-    })
-    .catch(error => {
-      console.error('Error checking for chat icon:', error);
-    });
+  // Chat widget initialized with FontAwesome icons
 });

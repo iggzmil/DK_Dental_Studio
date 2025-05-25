@@ -1,0 +1,487 @@
+/* Custom styles for contact-us.html page */
+
+/* Responsive styling for contact couple image */
+@media (max-width: 991px) {
+  .contact-couple-img {
+    max-width: 50% !important;
+    margin: 0 auto !important;
+  }
+  .contact-image-container {
+    margin-top: 20px;
+    text-align: center;
+  }
+}
+@media (max-width: 767px) {
+  .contact-couple-img {
+    max-width: 70% !important;
+  }
+}
+@media (max-width: 575px) {
+  .contact-couple-img {
+    max-width: 80% !important;
+  }
+}
+
+/* Ensure proper image scaling */
+.contact-couple-img {
+  object-fit: contain;
+  transition: all 0.3s ease;
+}
+
+/* Responsive padding for contact form section */
+@media (max-width: 767px) {
+  .contact-form-section {
+    padding-top: 40px !important;
+    padding-bottom: 40px !important;
+  }
+}
+
+@media (max-width: 575px) {
+  .contact-form-section {
+    padding-top: 30px !important;
+    padding-bottom: 30px !important;
+  }
+}
+
+/* Back to Top Button - Override default styling */
+#back-to-top, .back-to-top {
+  position: fixed !important;
+  bottom: 20px !important;
+  left: 20px !important; /* Position to the left edge of screen */
+  right: auto !important;
+  width: 40px !important;
+  height: 40px !important;
+  background-color: #0576ee !important;
+  color: white !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  z-index: 9997 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  transition: all 0.3s ease !important;
+  text-decoration: none !important;
+}
+#back-to-top:hover, .back-to-top:hover {
+  background-color: #0461c7 !important;
+  transform: translateY(-2px) !important;
+}
+#back-to-top i, .back-to-top i {
+  font-size: 18px !important;
+  line-height: 40px !important;
+}
+
+/* Button styling - additional contact page specific */
+.btn-outline-primary i {
+  color: white !important;
+}
+
+/* Contact form button styling */
+.contact-form-section .btn-outline-primary {
+  color: white !important;
+  border-color: white;
+  background-color: transparent;
+}
+
+.contact-form-section .btn-outline-primary:hover,
+.contact-form-section .btn-outline-primary:focus,
+.contact-form-section .btn-outline-primary:active {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: white;
+  color: white !important;
+}
+
+/* Form validation styling */
+.form-control.is-invalid {
+  border-color: #dc3545;
+  padding-right: calc(1.5em + 0.75rem);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23dc3545' viewBox='0 0 12 12'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right calc(0.375em + 0.1875rem) center;
+  background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.form-control.is-valid {
+  border-color: #28a745;
+  padding-right: calc(1.5em + 0.75rem);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right calc(0.375em + 0.1875rem) center;
+  background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.invalid-feedback {
+  display: none;
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: 80%;
+  color: #dc3545;
+}
+
+.is-invalid ~ .invalid-feedback {
+  display: block;
+}
+
+#form-message {
+  margin-bottom: 1rem;
+}
+
+/* Autofill styling - just make sure text is visible */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
+  -webkit-text-fill-color: #000 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Firefox autofill */
+input:autofill {
+  background-color: white !important;
+  color: #000 !important;
+}
+
+/* Mobile enhancements for contact page */
+@media (max-width: 768px) {
+  .contact-info .feature-item {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+
+  .contact-info .feature-item-icon {
+    margin-bottom: 1rem;
+    font-size: 2.5rem;
+  }
+
+  .contact-info .feature-item-title {
+    font-size: 1.3rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .contact-form-section {
+    padding: 2rem 0 !important;
+  }
+
+  .contact-form .section-title h3 {
+    font-size: 1.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .contact-form .section-title p {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+  }
+
+  .contact-form .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .contact-form .form-control {
+    padding: 12px 15px;
+    font-size: 1rem;
+    min-height: 48px;
+  }
+
+  .contact-form textarea.form-control {
+    min-height: 120px;
+  }
+
+  .contact-form .btn {
+    padding: 12px 20px;
+    font-size: 1rem;
+    min-height: 48px;
+    width: 100%;
+  }
+
+  .contact-image-container {
+    text-align: center;
+    margin-top: 2rem;
+  }
+
+  .contact-couple-img {
+    max-width: 60% !important;
+    margin: 0 auto !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .contact-info .feature-item {
+    padding: 1rem;
+  }
+
+  .contact-info .feature-item-title {
+    font-size: 1.2rem;
+  }
+
+  .contact-form .section-title h3 {
+    font-size: 1.4rem;
+  }
+
+  .contact-couple-img {
+    max-width: 80% !important;
+  }
+}
+
+/* reCAPTCHA Styling */
+.g-recaptcha {
+  transform: scale(0.9);
+  transform-origin: 0 0;
+}
+
+@media (max-width: 768px) {
+  .g-recaptcha {
+    transform: scale(0.8);
+    transform-origin: 0 0;
+    margin-top: 10px;
+  }
+
+  .d-flex.flex-column.flex-md-row {
+    align-items: center !important;
+    text-align: center;
+  }
+
+  .btn.btn-outline-primary {
+    width: 100%;
+    max-width: 200px;
+    margin-bottom: 15px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .g-recaptcha {
+    transform: scale(0.75);
+    transform-origin: center 0;
+  }
+}
+
+/* Chatbot styling override to match other pages exactly */
+.tde-chat-container {
+  /* Override the container to match standard layout */
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  z-index: 9998 !important;
+  font-family: 'Fira Sans', sans-serif !important;
+}
+
+/* Force circular button on all screen sizes - highest specificity */
+.tde-chat-container.minimized .tde-chat-minimized,
+.tde-chat-container.minimized .tde-chat-minimized:hover,
+.tde-chat-container.minimized .tde-chat-minimized:focus,
+.tde-chat-container.minimized .tde-chat-minimized:active {
+  width: 40px !important;
+  height: 40px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  gap: 0 !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+}
+
+/* Add the chat bubble above the button */
+.tde-chat-container.minimized::before {
+  content: "Need help? Let's chat!" !important;
+  position: relative !important;
+  background-color: #0d6efd !important;
+  color: white !important;
+  padding: 8px 16px !important;
+  border-radius: 16px !important;
+  font-size: 14px !important;
+  white-space: nowrap !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  font-weight: 500 !important;
+  margin-bottom: 8px !important;
+  display: block !important;
+}
+
+/* Add the chat bubble tail */
+.tde-chat-container.minimized::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: 32px !important;
+  right: 10px !important;
+  width: 0 !important;
+  height: 0 !important;
+  border-left: 8px solid transparent !important;
+  border-right: 8px solid transparent !important;
+  border-top: 8px solid #0d6efd !important;
+  z-index: 9999 !important;
+}
+
+.tde-chat-container.minimized .tde-chat-minimized {
+  /* Make the button circular and match other pages */
+  width: 40px !important;
+  height: 40px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  background-color: #0d6efd !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  transition: all 0.3s ease !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 0 !important;
+  font-size: 18px !important;
+  text-decoration: none !important;
+  margin-top: 0 !important;
+}
+
+.tde-chat-container.minimized .tde-chat-minimized:hover {
+  background-color: #0b5ed7 !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Hide the original text and image, replace with FontAwesome icon */
+.tde-chat-container.minimized .tde-chat-minimized span {
+  display: none !important;
+}
+
+.tde-chat-container.minimized .tde-chat-minimized img {
+  display: none !important;
+}
+
+.tde-chat-container.minimized .tde-chat-minimized i {
+  display: none !important;
+}
+
+/* Add FontAwesome comment icon to match other pages */
+.tde-chat-container.minimized .tde-chat-minimized::before {
+  content: '\f075' !important; /* FontAwesome comment icon */
+  font-family: "Font Awesome 6 Free" !important;
+  font-weight: 900 !important;
+  font-size: 18px !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  -webkit-font-smoothing: antialiased !important;
+  display: inline-block !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  line-height: 1 !important;
+  text-rendering: auto !important;
+}
+
+/* Hide chat bubble on tablets and mobile to match other pages */
+@media (max-width: 991px) {
+  .tde-chat-container.minimized::before {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+
+  .tde-chat-container.minimized::after {
+    display: none !important;
+  }
+
+  /* Force circular button on mobile with maximum specificity */
+  .tde-chat-container.minimized .tde-chat-minimized,
+  .tde-chat-container.minimized .tde-chat-minimized:hover,
+  .tde-chat-container.minimized .tde-chat-minimized:focus,
+  .tde-chat-container.minimized .tde-chat-minimized:active {
+    margin-top: 0 !important;
+    /* Ensure mobile button has same styling as desktop */
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    background-color: #0d6efd !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+    transition: all 0.3s ease !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 0 !important;
+    font-size: 18px !important;
+    text-decoration: none !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+  }
+
+  .tde-chat-container.minimized .tde-chat-minimized:hover {
+    background-color: #0b5ed7 !important;
+    transform: translateY(-2px) !important;
+  }
+
+  /* Ensure mobile icon uses FontAwesome */
+  .tde-chat-container.minimized .tde-chat-minimized span {
+    display: none !important;
+  }
+
+  .tde-chat-container.minimized .tde-chat-minimized img {
+    display: none !important;
+  }
+
+  .tde-chat-container.minimized .tde-chat-minimized i {
+    display: none !important;
+  }
+
+  .tde-chat-container.minimized .tde-chat-minimized::before {
+    content: '\f075' !important; /* FontAwesome comment icon */
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+    font-size: 18px !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    -webkit-font-smoothing: antialiased !important;
+    display: inline-block !important;
+    font-style: normal !important;
+    font-variant: normal !important;
+    line-height: 1 !important;
+    text-rendering: auto !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .tde-chat-container {
+    align-items: flex-end !important;
+  }
+
+  /* Maximum specificity for small mobile devices */
+  .tde-chat-container.minimized .tde-chat-minimized,
+  .tde-chat-container.minimized .tde-chat-minimized:hover,
+  .tde-chat-container.minimized .tde-chat-minimized:focus,
+  .tde-chat-container.minimized .tde-chat-minimized:active {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 16px !important;
+    /* Force circular shape on mobile - override chat-widget.css */
+    padding: 0 !important;
+    border-radius: 50% !important;
+    gap: 0 !important;
+    background-color: #0d6efd !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+    transition: all 0.3s ease !important;
+    justify-content: center !important;
+    align-items: center !important;
+    text-decoration: none !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+  }
+
+  .tde-chat-container.minimized .tde-chat-minimized::before {
+    font-size: 16px !important;
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    -webkit-font-smoothing: antialiased !important;
+    display: inline-block !important;
+    font-style: normal !important;
+    font-variant: normal !important;
+    line-height: 1 !important;
+    text-rendering: auto !important;
+  }
+
+  /* Ensure hover effect works on mobile */
+  .tde-chat-container.minimized .tde-chat-minimized:hover {
+    background-color: #0b5ed7 !important;
+    transform: translateY(-2px) !important;
+  }
+}

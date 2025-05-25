@@ -56,7 +56,7 @@
   padding: 10px 16px;
   background: #0d6efd; /* Primary blue color */
   color: white;
-  border-radius: 8px;
+  border-radius: 25px; /* Make it more rounded/pill-shaped */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: transform 0.2s ease;
 }
@@ -288,7 +288,7 @@
     padding: 10px 16px !important;
     background: #0d6efd !important;
     color: white !important;
-    border-radius: 8px !important;
+    border-radius: 25px !important; /* Ensure rounded shape on mobile */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
     transition: transform 0.2s ease !important;
   }

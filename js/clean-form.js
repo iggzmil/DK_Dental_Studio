@@ -10,20 +10,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const submitButton = form.querySelector('button[type="submit"]');
 
-    // Get CSRF token
-    fetch('/script/email/session-handler.php')
-        .then(response => response.json())
-        .then(data => {
-            // Add hidden CSRF token field to form
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'csrf_token';
-            csrfInput.value = data.csrf_token;
-            form.appendChild(csrfInput);
-        })
-        .catch(error => {
-            console.error('Failed to get CSRF token:', error);
-        });
+    // Function to get CSRF token when needed
+    async function getCsrfToken() {
+        try {
+            const response = await fetch('/script/email/session-handler.php');
+
+            // Check if response is ok and content-type is JSON
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server did not return JSON response');
+            }
+
+            const data = await response.json();
+            return data.csrf_token;
+        } catch (error) {
+            console.warn('Failed to get CSRF token:', error.message);
+            // Return null if CSRF token fetch fails
+            return null;
+        }
+    }
 
     // Real-time validation on input fields
     const inputs = form.querySelectorAll('input, textarea');
@@ -48,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Form submission handler
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', async function(e) {
         e.preventDefault();
 
         // Basic validation
@@ -90,8 +99,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalButtonText = submitButton.innerHTML;
         submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
+        // Get CSRF token just before submission
+        const csrfToken = await getCsrfToken();
+
         // Get form data
         const formData = new FormData(this);
+
+        // Add CSRF token if available
+        if (csrfToken) {
+            formData.append('csrf_token', csrfToken);
+        }
 
         // Add reCAPTCHA response to form data
         formData.append('g-recaptcha-response', recaptchaResponse);

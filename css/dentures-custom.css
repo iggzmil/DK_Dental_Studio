@@ -1,0 +1,65 @@
+/* Custom styles for dentures.html page */
+
+/* Mobile enhancements for dentures page */
+@media (max-width: 768px) {
+  .process-section {
+    margin-top: 2rem;
+  }
+
+  .process-header {
+    padding: 1.5rem;
+  }
+
+  .process-header h4 {
+    font-size: 1.2rem;
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .process-header .btn {
+    margin-top: 1rem;
+    margin-left: 0 !important;
+    align-self: stretch;
+  }
+
+  .process-details {
+    padding: 1.5rem;
+  }
+
+  .timeline-item {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .timeline-marker {
+    min-width: 35px !important;
+    height: 35px !important;
+    font-size: 0.9rem;
+    margin-right: 1rem !important;
+  }
+
+  .timeline-content h6 {
+    font-size: 1.1rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .timeline-content p,
+  .timeline-content li {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 0.8rem;
+  }
+
+  .timeline-content ul {
+    padding-left: 1.2rem;
+  }
+
+  .section-title h2 {
+    font-size: 1.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .space-reduced {
+    padding: 2rem 0;
+  }
+}
