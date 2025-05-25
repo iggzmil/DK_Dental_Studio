@@ -17,9 +17,44 @@ require_once __DIR__ . '/session-handler.php';
 // Set content type for AJAX responses
 header('Content-Type: application/json');
 
+// reCAPTCHA configuration
+define('RECAPTCHA_SECRET_KEY', '6LeAOkgrAAAAAKQsPKvtYxUcIgwbGMvK0qaiynRu');
+
 // Get CSRF tokens
 $csrf_token = isset($_POST['csrf_token']) ? $_POST['csrf_token'] : '';
 $valid_csrf = verifyCsrfToken($csrf_token);
+
+// Function to verify reCAPTCHA
+function verifyRecaptcha($recaptchaResponse) {
+    if (empty($recaptchaResponse)) {
+        return false;
+    }
+
+    $url = 'https://www.google.com/recaptcha/api/siteverify';
+    $data = [
+        'secret' => RECAPTCHA_SECRET_KEY,
+        'response' => $recaptchaResponse,
+        'remoteip' => $_SERVER['REMOTE_ADDR']
+    ];
+
+    $options = [
+        'http' => [
+            'header' => "Content-type: application/x-www-form-urlencoded\r\n",
+            'method' => 'POST',
+            'content' => http_build_query($data)
+        ]
+    ];
+
+    $context = stream_context_create($options);
+    $result = file_get_contents($url, false, $context);
+
+    if ($result === false) {
+        return false;
+    }
+
+    $resultJson = json_decode($result, true);
+    return isset($resultJson['success']) && $resultJson['success'] === true;
+}
 
 // Function to validate form data
 function validateContactForm($data) {
@@ -224,6 +259,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Verify reCAPTCHA
+    $recaptchaResponse = isset($_POST['g-recaptcha-response']) ? $_POST['g-recaptcha-response'] : '';
+    if (!verifyRecaptcha($recaptchaResponse)) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'reCAPTCHA verification failed. Please complete the reCAPTCHA and try again.'
+        ]);
+        exit;
+    }
+
     // Sanitize input data
     $sanitizedData = [];
     foreach ($_POST as $key => $value) {
@@ -264,7 +309,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Set recipient email
     $primaryEmail = 'info@dkdental.au';
-    
+
     // Use only the primary email address
     $toEmail = $primaryEmail;
 

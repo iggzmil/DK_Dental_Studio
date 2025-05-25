@@ -210,7 +210,126 @@
       background-color: white !important;
       color: #000 !important;
     }
+
+    /* Mobile enhancements for contact page */
+    @media (max-width: 768px) {
+      .contact-info .feature-item {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      }
+
+      .contact-info .feature-item-icon {
+        margin-bottom: 1rem;
+        font-size: 2.5rem;
+      }
+
+      .contact-info .feature-item-title {
+        font-size: 1.3rem;
+        margin-bottom: 0.8rem;
+      }
+
+      .contact-form-section {
+        padding: 2rem 0 !important;
+      }
+
+      .contact-form .section-title h3 {
+        font-size: 1.6rem;
+        margin-bottom: 1rem;
+      }
+
+      .contact-form .section-title p {
+        font-size: 1rem;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+      }
+
+      .contact-form .form-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .contact-form .form-control {
+        padding: 12px 15px;
+        font-size: 1rem;
+        min-height: 48px;
+      }
+
+      .contact-form textarea.form-control {
+        min-height: 120px;
+      }
+
+      .contact-form .btn {
+        padding: 12px 20px;
+        font-size: 1rem;
+        min-height: 48px;
+        width: 100%;
+      }
+
+      .contact-image-container {
+        text-align: center;
+        margin-top: 2rem;
+      }
+
+      .contact-couple-img {
+        max-width: 60% !important;
+        margin: 0 auto !important;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .contact-info .feature-item {
+        padding: 1rem;
+      }
+
+      .contact-info .feature-item-title {
+        font-size: 1.2rem;
+      }
+
+      .contact-form .section-title h3 {
+        font-size: 1.4rem;
+      }
+
+      .contact-couple-img {
+        max-width: 80% !important;
+      }
+    }
+
+    /* reCAPTCHA Styling */
+    .g-recaptcha {
+      transform: scale(0.9);
+      transform-origin: 0 0;
+    }
+
+    @media (max-width: 768px) {
+      .g-recaptcha {
+        transform: scale(0.8);
+        transform-origin: 0 0;
+        margin-top: 10px;
+      }
+
+      .d-flex.flex-column.flex-md-row {
+        align-items: center !important;
+        text-align: center;
+      }
+
+      .btn.btn-outline-primary {
+        width: 100%;
+        max-width: 200px;
+        margin-bottom: 15px !important;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .g-recaptcha {
+        transform: scale(0.75);
+        transform-origin: center 0;
+      }
+    }
   </style>
+
+  <!-- reCAPTCHA v2 Script -->
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
 </head>
 
@@ -223,7 +342,7 @@
       <div class="container">
         <nav class="navbar navbar-expand-lg">
           <a class="navbar-brand" href="index.html">
-            <img class="img-fluid" src="images/DKD_logo_blue.webp" alt="logo" style="transform: scale(1.2); transform-origin: left center;">
+            <img class="img-fluid" src="images/DKD_logo_blue.webp" alt="DK Dental Studio Logo" style="transform: scale(1.2); transform-origin: left center;">
           </a>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <i class="fas fa-align-left"></i>
@@ -303,7 +422,7 @@
                 <div class="feature-item-content">
                   <h4 class="feature-item-title">Address</h4>
                   <span><a href="https://www.google.com/maps/place/DK+Dental+Studio+(Denture+Clinic)/@-33.9132712,151.2417367,1640m/data=!3m1!1e3!4m6!3m5!1s0x6b12b21971d29285:0x9cb6683a3ef03ce0!8m2!3d-33.9132712!4d151.2417367!16s%2Fg%2F1tgh33vw?entry=ttu&g_ep=EgoyMDI1MDUwMy4wIKXMDSoASAFQAw%3D%3D" target="_blank" style="color: #000000;">Shop 4/126-128 Avoca St,<br>Randwick NSW 2031</a></span>
-                  <div style="margin-top: 5px; font-weight: 500; color: #0576ee;">Entry located on ground floor via Alison Road</div>
+                  <div style="margin-top: 5px; font-weight: 500; color: #0576ee;"><i class="fas fa-info-circle pr-1"></i>Entry located on ground floor via Alison Road</div>
                 </div>
               </div>
               <!-- Address -->
@@ -389,9 +508,12 @@
                   </div>
 
                   <div class="form-group col-sm-12 mb-0">
-                    <button type="submit" class="btn btn-outline-primary" style="min-width: 140px; color: white;">
-                      <i class="fas fa-paper-plane mr-2"></i>Send Message
-                    </button>
+                    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between">
+                      <button type="submit" class="btn btn-outline-primary mb-3 mb-md-0" style="min-width: 140px; color: white;">
+                        <i class="fas fa-paper-plane mr-2"></i>Send Message
+                      </button>
+                      <div class="g-recaptcha" data-sitekey="6LeAOkgrAAAAAAgnzyCkx_lbu21pKMmhTHm3yKCS" data-theme="dark"></div>
+                    </div>
                   </div>
                 </div>
               </form>
@@ -400,7 +522,7 @@
           </div>
           <div class="col-md-6 d-flex align-items-center justify-content-md-start justify-content-center">
             <div class="position-relative w-100 contact-image-container" style="padding-left: 0;">
-              <img src="images/contact-couple.webp" alt="Contact Us" class="img-fluid rounded contact-couple-img"
+              <img src="images/contact-couple.webp" alt="Contact Us" class="img-fluid rounded contact-couple-img" width="400" height="300"
                    style="max-width: 40%; height: auto; display: block; margin-left: 0;"
                    srcset="images/contact-couple.webp 1x, images/contact-couple.webp 2x"
                    loading="lazy">
@@ -465,7 +587,7 @@
                             <div class="time"> CLOSED </div>
                           </li>
                           <li>
-                            <strong style="color: #000;"><i class="far fa-exclamation pr-1 text-black"></i> For appointments outside regular hours, please call us on (02) 9398 7578.</strong>
+                            <strong style="color: #000;"><i class="fas fa-info-circle pr-1"></i> For appointments outside regular hours please call us on (02) 9398 7578.</strong>
                           </li>
                         </ul>
                       </div>
@@ -481,7 +603,7 @@
                     <div class="schedule-morden-content">
                       <h6>Location & Contact</h6>
                       <ul class="list-unstyled mb-0">
-                        <li class="mb-1"><i class="fas fa-map-marker-alt pr-2"></i> <a href="https://www.google.com/maps/place/DK+Dental+Studio+(Denture+Clinic)/@-33.9132712,151.2417367,1640m/data=!3m1!1e3!4m6!3m5!1s0x6b12b21971d29285:0x9cb6683a3ef03ce0!8m2!3d-33.9132712!4d151.2417367!16s%2Fg%2F1tgh33vw?entry=ttu&g_ep=EgoyMDI1MDUwMy4wIKXMDSoASAFQAw%3D%3D" target="_blank">Shop 4/126-128 Avoca St, <br><span style="margin-left: 22px;">Randwick NSW 2031</span></a><br><strong style="margin-left: 22px; color: #000; "><i class="far fa-exclamation pr-1 text-black"></i> Entry located on ground floor<br><span style="margin-left: 22px;">via Alison Road.</strong></span></li>
+                        <li class="mb-1"><i class="fas fa-map-marker-alt pr-2"></i> <a href="https://www.google.com/maps/place/DK+Dental+Studio+(Denture+Clinic)/@-33.9132712,151.2417367,1640m/data=!3m1!1e3!4m6!3m5!1s0x6b12b21971d29285:0x9cb6683a3ef03ce0!8m2!3d-33.9132712!4d151.2417367!16s%2Fg%2F1tgh33vw?entry=ttu&g_ep=EgoyMDI1MDUwMy4wIKXMDSoASAFQAw%3D%3D" target="_blank">Shop 4/126-128 Avoca St, <br><span style="margin-left: 22px;">Randwick NSW 2031</span></a><br><strong style="margin-left: 22px; color: #000; "><i class="fas fa-info-circle pr-1"></i> Entry located on ground floor<br><span style="margin-left: 22px;">via Alison Road.</strong></span></li>
                         <li class="mb-3"><i class="fas fa-walking pr-2"></i> <strong>Visit us!</strong></li>
                         <li class="mb-1"><i class="fas fa-headset pr-2"></i> <a href="tel:0293987578">(02) 9398 7578</a></li>
                         <li class="mb-3"><i class="fas fa-phone pr-2"></i> <strong>Call us!</strong></li>
@@ -595,14 +717,14 @@
           var target = $(this).data('bs-target');
           $(target).toggleClass('show');
         });
-        
+
         // Initialize back-to-top button functionality
         const backToTop = document.getElementById('back-to-top') || document.querySelector('.back-to-top');
         if (backToTop) {
           // Initially hide the button
           backToTop.style.opacity = '0';
           backToTop.style.visibility = 'hidden';
-          
+
           // Show/hide the button based on scroll position
           window.addEventListener('scroll', function() {
             if (window.pageYOffset > 300) {
@@ -613,7 +735,7 @@
               backToTop.style.visibility = 'hidden';
             }
           });
-          
+
           // Force initial check of scroll position
           window.dispatchEvent(new Event('scroll'));
         }

@@ -162,6 +162,58 @@
         color: #666;
         margin-bottom: 0;
       }
+
+      /* Mobile enhancements for appointment page */
+      @media (max-width: 768px) {
+        .service-selection {
+          margin-bottom: 2rem;
+        }
+
+        .service-card {
+          margin-bottom: 1rem;
+          padding: 1.5rem;
+        }
+
+        .service-card h5 {
+          font-size: 1.2rem;
+          margin-bottom: 0.8rem;
+        }
+
+        .service-card p {
+          font-size: 0.95rem;
+          line-height: 1.5;
+        }
+
+        .calendar-container {
+          min-height: 500px;
+          margin-bottom: 2rem;
+        }
+
+        .calendar-instructions {
+          padding: 1.5rem;
+          margin-bottom: 2rem;
+        }
+
+        .calendar-instructions h5 {
+          font-size: 1.2rem;
+          margin-bottom: 1rem;
+        }
+
+        .calendar-instructions ol {
+          padding-left: 1.2rem;
+        }
+
+        .calendar-instructions li {
+          font-size: 0.95rem;
+          line-height: 1.5;
+          margin-bottom: 0.8rem;
+        }
+
+        .appointment-type-indicator h4 {
+          font-size: 1.3rem;
+          margin-bottom: 1.5rem;
+        }
+      }
     </style>
   </head>
 
@@ -174,7 +226,7 @@
         <div class="container">
           <nav class="navbar navbar-expand-lg">
             <a class="navbar-brand" href="index.html">
-              <img class="img-fluid" src="images/DKD_logo_blue.webp" alt="logo" style="transform: scale(1.2); transform-origin: left center;">
+              <img class="img-fluid" src="images/DKD_logo_blue.webp" alt="DK Dental Studio Logo" style="transform: scale(1.2); transform-origin: left center;">
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
               <i class="fas fa-align-left"></i>
@@ -357,7 +409,7 @@
                             <div class="time"> CLOSED </div>
                           </li>
                           <li>
-                            <strong style="color: #000;"><i class="far fa-exclamation pr-1 text-black"></i> For appointments outside regular hours, please call us on (02) 9398 7578.</strong>
+                            <strong style="color: #000;"><i class="fas fa-info-circle pr-1"></i> For appointments outside regular hours please call us on (02) 9398 7578.</strong>
                           </li>
                         </ul>
                       </div>
@@ -373,7 +425,7 @@
                     <div class="schedule-morden-content">
                       <h6>Location & Contact</h6>
                       <ul class="list-unstyled mb-0">
-                        <li class="mb-1"><i class="fas fa-map-marker-alt pr-2"></i> <a href="https://www.google.com/maps/place/DK+Dental+Studio+(Denture+Clinic)/@-33.9132712,151.2417367,1640m/data=!3m1!1e3!4m6!3m5!1s0x6b12b21971d29285:0x9cb6683a3ef03ce0!8m2!3d-33.9132712!4d151.2417367!16s%2Fg%2F1tgh33vw?entry=ttu&g_ep=EgoyMDI1MDUwMy4wIKXMDSoASAFQAw%3D%3D" target="_blank">Shop 4/126-128 Avoca St, <br><span style="margin-left: 22px;">Randwick NSW 2031</span></a><br><strong style="margin-left: 22px; color: #000; "><i class="far fa-exclamation pr-1 text-black"></i> Entry located on ground floor<br><span style="margin-left: 22px;">via Alison Road.</strong></span></li>
+                        <li class="mb-1"><i class="fas fa-map-marker-alt pr-2"></i> <a href="https://www.google.com/maps/place/DK+Dental+Studio+(Denture+Clinic)/@-33.9132712,151.2417367,1640m/data=!3m1!1e3!4m6!3m5!1s0x6b12b21971d29285:0x9cb6683a3ef03ce0!8m2!3d-33.9132712!4d151.2417367!16s%2Fg%2F1tgh33vw?entry=ttu&g_ep=EgoyMDI1MDUwMy4wIKXMDSoASAFQAw%3D%3D" target="_blank">Shop 4/126-128 Avoca St, <br><span style="margin-left: 22px;">Randwick NSW 2031</span></a><br><strong style="margin-left: 22px; color: #000; "><i class="fas fa-info-circle pr-1"></i> Entry located on ground floor<br><span style="margin-left: 22px;">via Alison Road.</strong></span></li>
                         <li class="mb-3"><i class="fas fa-walking pr-2"></i> <strong>Visit us!</strong></li>
                         <li class="mb-1"><i class="fas fa-headset pr-2"></i> <a href="tel:0293987578">(02) 9398 7578</a></li>
                         <li class="mb-3"><i class="fas fa-phone pr-2"></i> <strong>Call us!</strong></li>
@@ -486,16 +538,16 @@
           if (denturesCard) {
             // Set selected service (important for Google Calendar API)
             window.selectedService = 'dentures';
-            
+
             // Update UI
             document.querySelectorAll('.service-card').forEach(card => {
               card.classList.remove('selected');
             });
             denturesCard.classList.add('selected');
-            
+
             // Update appointment type text
             updateAppointmentTypeText('dentures');
-            
+
             // Load the calendar directly (bypassing any basic mode)
             if (typeof window.loadCalendarForService === 'function') {
               window.loadCalendarForService('dentures');
@@ -542,7 +594,7 @@
         // Ensure we're using the token that was already fetched on page load
         if (typeof window.serverAccessToken !== 'undefined' && window.serverAccessToken) {
           console.log('Using existing token for service change');
-          
+
           // If we already have a token, apply it before loading the calendar
           if (window.gapi && window.gapi.client) {
             window.gapi.client.setToken({ access_token: window.serverAccessToken });
@@ -594,17 +646,17 @@
         }
       }
     </script>
-    
+
     <!-- Direct calendar initialization script -->
     <script>
       // This script forcefully initializes the calendar without waiting for user interaction
       document.addEventListener('DOMContentLoaded', function() {
         // Force direct loading of the calendar - this bypasses the normal initialization
         console.log('Force initializing calendar directly');
-        
+
         // Set the global selectedService
         window.selectedService = 'dentures';
-        
+
         // Give enough time for all scripts to load
         setTimeout(function() {
           // Check if booking confirmation is displayed - if so, don't load calendar
@@ -612,14 +664,14 @@
             console.log('Skipping initial calendar load because booking confirmation is displayed');
             return;
           }
-          
+
           // First try the normal method
           if (typeof window.loadCalendarForService === 'function') {
             console.log('Directly calling loadCalendarForService');
             window.loadCalendarForService('dentures');
           } else {
             console.log('Normal method not available, trying direct approach');
-            
+
             // Direct approach to create the calendar
             const calendarContainer = document.getElementById('appointment-calendar');
             if (calendarContainer) {
@@ -627,9 +679,9 @@
               const today = new Date();
               const month = today.getMonth();
               const year = today.getFullYear();
-              
+
               console.log('Directly creating calendar with service: dentures');
-              
+
               // Update UI
               document.querySelectorAll('.service-card').forEach(card => {
                 if (card.dataset.service === 'dentures') {
@@ -638,13 +690,13 @@
                   card.classList.remove('selected');
                 }
               });
-              
+
               // Update heading
               const appointmentTypeText = document.getElementById('appointment-type-text');
               if (appointmentTypeText) {
                 appointmentTypeText.textContent = 'Booking: Dentures Consultation';
               }
-              
+
               // Force the calendar to load by simulating a click on the dentures card
               const denturesCard = document.querySelector('.service-card[data-service="dentures"]');
               if (denturesCard) {

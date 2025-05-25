@@ -64,6 +64,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
+        // reCAPTCHA validation
+        let recaptchaResponse = '';
+        if (typeof grecaptcha !== 'undefined') {
+            recaptchaResponse = grecaptcha.getResponse();
+            if (!recaptchaResponse) {
+                showMessage('error', 'Please complete the reCAPTCHA verification.');
+                isValid = false;
+            }
+        } else {
+            showMessage('error', 'reCAPTCHA is not loaded. Please refresh the page and try again.');
+            isValid = false;
+        }
+
         if (!isValid) {
             e.stopPropagation();
             // Focus the first invalid field
@@ -79,6 +92,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Get form data
         const formData = new FormData(this);
+
+        // Add reCAPTCHA response to form data
+        formData.append('g-recaptcha-response', recaptchaResponse);
 
         // Send AJAX request
         fetch('/script/email/contact-form-handler.php', {
@@ -103,6 +119,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Reset form
                 form.reset();
                 inputs.forEach(input => input.classList.remove('is-invalid'));
+
+                // Reset reCAPTCHA
+                if (typeof grecaptcha !== 'undefined') {
+                    grecaptcha.reset();
+                }
             } else {
                 // Create a more detailed error message
                 let errorMessage = data.message;
