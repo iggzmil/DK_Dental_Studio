@@ -263,37 +263,63 @@
   background: #f5f5f5;
 }
 
-/* Hide chat bubble on mobile - keep icon visible */
+/* Mobile-friendly chat widget */
 @media (max-width: 768px) {
-  /* Force hide expanded chat with maximum specificity */
-  body .tde-chat-container:not(.minimized),
-  body .tde-chat-expanded,
-  body .tde-chat-container.expanded,
-  body div.tde-chat-container:not(.minimized),
-  body div.tde-chat-expanded {
+  /* Make expanded chat mobile-friendly */
+  .tde-chat-container:not(.minimized) {
+    width: calc(100vw - 20px) !important;
+    height: calc(100vh - 40px) !important;
+    max-width: 350px !important;
+    max-height: 500px !important;
+    bottom: 10px !important;
+    right: 10px !important;
+    left: 10px !important;
+    margin: 0 auto !important;
+  }
+
+  /* Hide the minimized button (chat bubble) on mobile */
+  .tde-chat-container.minimized .tde-chat-minimized {
     display: none !important;
     visibility: hidden !important;
     opacity: 0 !important;
-    height: 0 !important;
-    width: 0 !important;
-    overflow: hidden !important;
   }
 
-  /* Force show minimized icon */
-  body .tde-chat-container.minimized,
-  body .tde-chat-minimized,
-  body div.tde-chat-container.minimized {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
+  /* Adjust header for mobile */
+  .tde-chat-header {
+    padding: 10px 12px !important;
+    min-height: 50px !important;
   }
-}
 
-/* Additional mobile breakpoints */
-@media (max-width: 991px) {
-  body .tde-chat-container:not(.minimized),
-  body .tde-chat-expanded {
-    display: none !important;
-    visibility: hidden !important;
+  .tde-chat-title .title-main {
+    font-size: 14px !important;
+  }
+
+  .tde-chat-title .title-sub {
+    font-size: 11px !important;
+  }
+
+  /* Adjust messages area for mobile */
+  .tde-chat-messages {
+    padding: 8px !important;
+  }
+
+  .tde-chat-message {
+    font-size: 13px !important;
+    padding: 6px 10px !important;
+  }
+
+  /* Adjust input area for mobile */
+  .tde-chat-input-area {
+    padding: 8px !important;
+  }
+
+  .tde-chat-input {
+    font-size: 14px !important;
+    padding: 8px 10px !important;
+  }
+
+  .tde-chat-send {
+    font-size: 12px !important;
+    padding: 8px 12px !important;
   }
 }

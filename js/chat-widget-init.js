@@ -19,6 +19,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const urlParams = new URLSearchParams(window.location.search);
   const shouldOpenChat = urlParams.get('openChat') === 'true';
 
+  // Check if we're on mobile
+  const isMobile = window.innerWidth <= 768;
+
+  // On mobile, always auto-expand if coming from chat icon or if already on contact page
+  const shouldAutoExpand = shouldOpenChat || isMobile;
+
   // Create chat container if it doesn't exist
   let chatContainer = document.getElementById('chat-container');
   if (!chatContainer) {
@@ -31,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const chatWidget = new DKDChatWidget({
     target: 'chat-container',
     webhookUrl: 'https://n8n.aaa-city.com/webhook/ab6aa64d-a2e5-40d4-9abb-4c8500a19d49/chat',
-    minimized: !shouldOpenChat, // Auto-expand if openChat=true
+    minimized: !shouldAutoExpand, // Auto-expand if openChat=true or on mobile
     minimizedContent: `
       <img src="images/chat-icon.svg" alt="Chat Icon" style="width: 20px; height: 20px;">
       <span>Chat with DK Dental</span>
@@ -43,13 +49,24 @@ document.addEventListener('DOMContentLoaded', function() {
     metadata: {
       source: 'website',
       page: window.location.pathname.split('/').pop().split('.')[0] || 'home',
-      fromChatIcon: shouldOpenChat
+      fromChatIcon: shouldOpenChat,
+      isMobile: isMobile,
+      autoExpanded: shouldAutoExpand
     },
     fallbackResponses: {
       default: "I'm sorry, I'm having trouble connecting right now. Please try again later or contact us directly at info@dkdental.au.",
       help: "I'd be happy to help! You can ask me about our dental services, pricing, or book a consultation. If you need immediate assistance, please call us at (02) 9398 7578.",
       pricing: "Our pricing varies depending on the specific treatment you need. For a personalized quote, we recommend booking a free consultation where we can assess your needs and provide detailed pricing information.",
       services: "We offer a range of dental services including dentures, mouthguards, and more. Would you like more information about a specific service?"
+    }
+  });
+
+  // Handle window resize for mobile detection
+  window.addEventListener('resize', function() {
+    const newIsMobile = window.innerWidth <= 768;
+    if (newIsMobile && chatWidget.container.classList.contains('minimized')) {
+      // If we're now on mobile and chat is minimized, auto-expand it
+      chatWidget.container.classList.remove('minimized');
     }
   });
 
