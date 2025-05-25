@@ -134,6 +134,55 @@
   }
 }
 
+/* iOS and Mobile Hero Section Fixes */
+.banner {
+  min-height: 500px !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+@media (max-width: 768px) {
+  .banner {
+    min-height: 400px !important;
+    background-attachment: scroll !important; /* Fix iOS background issues */
+    -webkit-background-size: cover !important;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+  }
+
+  /* Ensure hero images display properly on mobile */
+  .banner img {
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  /* Fix for iOS image loading */
+  .d-block.d-lg-none {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Additional iOS Safari Fixes */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari specific fixes */
+  .banner {
+    -webkit-transform: translateZ(0) !important;
+    transform: translateZ(0) !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
+  }
+
+  .banner img {
+    -webkit-transform: translateZ(0) !important;
+    transform: translateZ(0) !important;
+  }
+}
+
 /* Service Cards Mobile Enhancement */
 @media (max-width: 768px) {
   .service-items {
