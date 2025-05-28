@@ -1652,49 +1652,34 @@ const calendarManager = {
     let html = '';
 
     if (isMobile) {
-      // Mobile view: Only show weekdays (Mon-Fri), properly positioned
+      // Mobile view: Generate only weekdays in correct 5-day grid positions
       
-      // Create a grid array to hold the calendar cells (5 columns × multiple rows)
-      const weekdayCells = [];
-      let currentWeekRow = [];
+      // Convert starting day to Monday=0 system
+      const adjustedStartingDay = startingDay === 0 ? 6 : startingDay - 1;
       
-      // Process each day of the month
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month, day);
-        const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
-        
-        // Only process weekdays
-        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-          // Convert to mobile grid position: Monday=0, Tuesday=1, Wednesday=2, Thursday=3, Friday=4
-          const gridPosition = dayOfWeek - 1;
-          
-          // If this is the first weekday or we're starting a new week (Monday), prepare the row
-          if (currentWeekRow.length === 0) {
-            // Fill empty cells before this weekday if needed
-            for (let i = 0; i < gridPosition; i++) {
-              currentWeekRow.push('<div class="calendar-day empty"></div>');
-            }
-          }
-          
-          // Add the actual day cell
-          currentWeekRow[gridPosition] = this.createDayHTML(year, month, day);
-          
-          // If this is Friday or the last day, complete the week
-          if (dayOfWeek === 5 || day === daysInMonth) {
-            // Fill any remaining empty cells in the week
-            while (currentWeekRow.length < 5) {
-              currentWeekRow.push('<div class="calendar-day empty"></div>');
-            }
-            
-            // Add this week to the calendar
-            weekdayCells.push(...currentWeekRow);
-            currentWeekRow = [];
-          }
-        }
+      // For mobile 5-day grid, calculate empty cells only for weekday start positions
+      let emptyCount = 0;
+      if (adjustedStartingDay <= 4) {
+        // Month starts on a weekday, so we need empty cells before it
+        emptyCount = adjustedStartingDay;
+      }
+      // If month starts on weekend (adjustedStartingDay 5 or 6), no empty cells needed
+      
+      // Add empty cells
+      for (let i = 0; i < emptyCount; i++) {
+        html += '<div class="calendar-day empty"></div>';
       }
       
-      // Join all cells into HTML
-      html = weekdayCells.join('');
+      // Add only weekdays
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const dayOfWeek = date.getDay();
+        
+        // Only generate weekdays (skip weekends entirely)
+        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+          html += this.createDayHTML(year, month, day);
+        }
+      }
       
     } else {
       // Desktop view: Show all days including weekends

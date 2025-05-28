@@ -188,9 +188,9 @@
 
   /* 
    * Mobile calendar optimization: 
-   * - CSS creates 5-column grid and hides weekend headers/days
+   * - CSS creates 5-column grid and hides weekend headers
    * - JavaScript generateCalendarDays() function detects mobile view 
-   *   and only generates weekday calendar days to prevent misalignment
+   *   and only generates weekday calendar days (Mon-Fri) to ensure proper alignment
    */
   .calendar-days-header {
     font-size: 12px;
