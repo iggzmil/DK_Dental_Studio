@@ -1654,11 +1654,21 @@ const calendarManager = {
     if (isMobile) {
       // Mobile view: Only show weekdays (Mon-Fri), skip weekend days entirely
       
-      // Add empty cells for days before the first weekday of the month
-      const adjustedStartingDay = startingDay === 0 ? 6 : startingDay - 1; // Convert Sunday (0) to 6, others to index-1
-      const weekdayStartingDay = adjustedStartingDay > 4 ? 0 : adjustedStartingDay; // If first day is weekend, start at 0
+      // Calculate empty cells needed before first weekday
+      // startingDay: 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
+      const adjustedStartingDay = startingDay === 0 ? 6 : startingDay - 1; // Convert to Monday=0 system
       
-      for (let i = 0; i < weekdayStartingDay; i++) {
+      // For mobile 5-day view, we only care about weekday positions (Mon=0, Tue=1, Wed=2, Thu=3, Fri=4)
+      let emptyDays = 0;
+      if (adjustedStartingDay <= 4) {
+        // First day is a weekday, so we need adjustedStartingDay empty cells
+        emptyDays = adjustedStartingDay;
+      } else {
+        // First day is weekend (Sat=5, Sun=6), so first weekday starts at position 0
+        emptyDays = 0;
+      }
+      
+      for (let i = 0; i < emptyDays; i++) {
         html += '<div class="calendar-day empty"></div>';
       }
       
