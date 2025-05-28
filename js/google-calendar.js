@@ -1653,6 +1653,7 @@ const calendarManager = {
 
     if (isMobile) {
       // Mobile view: Generate only weekdays in correct 5-day grid positions
+      // BUT always include today's date even if it's a weekend
       
       // Convert starting day to Monday=0 system
       const adjustedStartingDay = startingDay === 0 ? 6 : startingDay - 1;
@@ -1670,13 +1671,21 @@ const calendarManager = {
         html += '<div class="calendar-day empty"></div>';
       }
       
-      // Add only weekdays
+      // Get today's date for comparison
+      const today = this.dependencies.timezoneUtils.getCurrentBusinessTime();
+      const todayDay = today.getDate();
+      const todayMonth = today.getMonth();
+      const todayYear = today.getFullYear();
+      const isCurrentMonth = (year === todayYear && month === todayMonth);
+      
+      // Add only weekdays, but always include today even if it's a weekend
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
         const dayOfWeek = date.getDay();
+        const isToday = isCurrentMonth && day === todayDay;
         
-        // Only generate weekdays (skip weekends entirely)
-        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+        // Include weekdays OR today (even if today is a weekend)
+        if ((dayOfWeek >= 1 && dayOfWeek <= 5) || isToday) {
           html += this.createDayHTML(year, month, day);
         }
       }
@@ -1761,7 +1770,7 @@ const calendarManager = {
     }
 
     // Add today class if it's today
-    if (dayData.isToday && !dayData.isWeekend && !dayData.isTodayUnavailable && !dayData.isPast) {
+    if (dayData.isToday) {
       dayClasses += ' today';
     }
 

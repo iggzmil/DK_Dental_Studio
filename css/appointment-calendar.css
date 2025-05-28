@@ -188,9 +188,10 @@
 
   /* 
    * Mobile calendar optimization: 
-   * - CSS creates 5-column grid and hides weekend headers
+   * - CSS creates 5-column grid and hides weekend headers only
    * - JavaScript generateCalendarDays() function detects mobile view 
    *   and only generates weekday calendar days (Mon-Fri) to ensure proper alignment
+   * - Closed days (including today after business hours) remain visible but styled as unavailable
    */
   .calendar-days-header {
     font-size: 12px;
@@ -204,11 +205,6 @@
   /* Hide weekend headers in mobile */
   .calendar-days-header div:nth-child(6),
   .calendar-days-header div:nth-child(7) {
-    display: none !important;
-  }
-
-  /* Hide weekend days in mobile */
-  .calendar-day.closed {
     display: none !important;
   }
 
@@ -259,11 +255,6 @@
     display: none !important;
   }
 
-  /* Hide weekend days in mobile */
-  .calendar-day.closed {
-    display: none !important;
-  }
-
   .calendar-header {
     flex-direction: column !important;
     gap: 15px !important;
@@ -304,11 +295,6 @@
     display: none !important;
   }
 
-  /* Hide weekend days in mobile */
-  .calendar-day.closed {
-    display: none !important;
-  }
-
   div.calendar-header h3.calendar-month-title {
     position: static !important;
     text-align: center !important;
@@ -337,11 +323,6 @@
   /* Hide weekend headers in mobile */
   .calendar-days-header div:nth-child(6),
   .calendar-days-header div:nth-child(7) {
-    display: none !important;
-  }
-
-  /* Hide weekend days in mobile */
-  .calendar-day.closed {
     display: none !important;
   }
 
