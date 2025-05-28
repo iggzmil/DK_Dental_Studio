@@ -1397,12 +1397,35 @@ const calendarManager = {
     this.dependencies = dependencies;
     this.currentState.container = document.getElementById('appointment-calendar');
     
+    if (!this.currentState.container) {
+      console.error('Calendar container not found');
+      return;
+    }
+
     // Set initial state
-    const today = new Date();
-    this.currentState.month = today.getMonth();
-    this.currentState.year = today.getFullYear();
+    const now = this.dependencies.timezoneUtils.getCurrentBusinessTime();
+    this.currentState.month = now.getMonth();
+    this.currentState.year = now.getFullYear();
+    this.currentState.service = this.dependencies.appState.selectedService;
     
-    return this;
+    // Add resize event listener to handle mobile/desktop view changes
+    this.setupResizeHandler();
+  },
+
+  /**
+   * Setup resize handler for responsive calendar
+   */
+  setupResizeHandler() {
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        // Re-render calendar when view changes
+        if (this.isSystemReady()) {
+          this.render();
+        }
+      }, 250); // Debounce resize events
+    });
   },
 
   /**
@@ -1568,6 +1591,14 @@ const calendarManager = {
     const monthNames = ["January", "February", "March", "April", "May", "June",
                          "July", "August", "September", "October", "November", "December"];
     
+    // Check if we're in mobile view
+    const isMobile = window.innerWidth <= 991;
+    
+    // Generate appropriate day headers
+    const dayHeaders = isMobile 
+      ? '<div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div>'
+      : '<div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>';
+    
     return {
       header: `
         <div class="calendar-header">
@@ -1585,8 +1616,7 @@ const calendarManager = {
       gridStart: `
         <div class="calendar-grid">
           <div class="calendar-days-header">
-            <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div>
-            <div>Fri</div><div>Sat</div><div>Sun</div>
+            ${dayHeaders}
           </div>
           <div class="calendar-days">`,
       
@@ -1602,6 +1632,13 @@ const calendarManager = {
 
   /**
    * Generate all calendar days HTML
+   * 
+   * Handles responsive design by:
+   * - Desktop (>991px): Shows full 7-day calendar (Mon-Sun)
+   * - Mobile (≤991px): Shows 5-day calendar (Mon-Fri only) to match CSS grid
+   * 
+   * This prevents date misalignment issues where CSS hides weekends but 
+   * JavaScript still generates weekend day elements.
    */
   generateCalendarDays(month, year) {
     const firstDay = new Date(year, month, 1);
@@ -1609,17 +1646,46 @@ const calendarManager = {
     const daysInMonth = lastDay.getDate();
     const startingDay = firstDay.getDay();
     
+    // Check if we're in mobile view
+    const isMobile = window.innerWidth <= 991;
+    
     let html = '';
 
-    // Add empty cells for days before the first of the month
-    const adjustedStartingDay = startingDay === 0 ? 6 : startingDay - 1;
-    for (let i = 0; i < adjustedStartingDay; i++) {
-      html += '<div class="calendar-day empty"></div>';
-    }
-    
-    // Add days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      html += this.createDayHTML(year, month, day);
+    if (isMobile) {
+      // Mobile view: Only show weekdays (Mon-Fri), skip weekend days entirely
+      
+      // Add empty cells for days before the first weekday of the month
+      const adjustedStartingDay = startingDay === 0 ? 6 : startingDay - 1; // Convert Sunday (0) to 6, others to index-1
+      const weekdayStartingDay = adjustedStartingDay > 4 ? 0 : adjustedStartingDay; // If first day is weekend, start at 0
+      
+      for (let i = 0; i < weekdayStartingDay; i++) {
+        html += '<div class="calendar-day empty"></div>';
+      }
+      
+      // Add days of the month, but skip weekend days
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const dayOfWeek = date.getDay();
+        
+        // Only add weekdays (Monday=1 to Friday=5)
+        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+          html += this.createDayHTML(year, month, day);
+        }
+      }
+      
+    } else {
+      // Desktop view: Show all days including weekends
+      
+      // Add empty cells for days before the first of the month
+      const adjustedStartingDay = startingDay === 0 ? 6 : startingDay - 1;
+      for (let i = 0; i < adjustedStartingDay; i++) {
+        html += '<div class="calendar-day empty"></div>';
+      }
+      
+      // Add all days of the month
+      for (let day = 1; day <= daysInMonth; day++) {
+        html += this.createDayHTML(year, month, day);
+      }
     }
     
     return html;

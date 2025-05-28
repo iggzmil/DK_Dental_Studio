@@ -186,6 +186,12 @@
     grid-template-columns: 1fr;
   }
 
+  /* 
+   * Mobile calendar optimization: 
+   * - CSS creates 5-column grid and hides weekend headers/days
+   * - JavaScript generateCalendarDays() function detects mobile view 
+   *   and only generates weekday calendar days to prevent misalignment
+   */
   .calendar-days-header {
     font-size: 12px;
     grid-template-columns: repeat(5, 1fr) !important;
