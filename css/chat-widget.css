@@ -18,6 +18,39 @@
   width: auto;
   height: auto;
   cursor: pointer;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+}
+
+/* Add the chat bubble above the button */
+.tde-chat-container.minimized::before {
+  content: "Need help? Let's chat!" !important;
+  position: relative !important;
+  background-color: #0d6efd !important;
+  color: white !important;
+  padding: 8px 16px !important;
+  border-radius: 16px !important;
+  font-size: 14px !important;
+  white-space: nowrap !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  font-weight: 500 !important;
+  margin-bottom: 8px !important;
+  display: block !important;
+}
+
+/* Add arrow pointing to the button */
+.tde-chat-container.minimized::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: 48px !important;
+  right: 20px !important;
+  width: 0 !important;
+  height: 0 !important;
+  border-left: 8px solid transparent !important;
+  border-right: 8px solid transparent !important;
+  border-top: 8px solid #0d6efd !important;
+  z-index: 9999 !important;
 }
 
 .tde-chat-container.minimized .tde-chat-expanded {
@@ -48,32 +81,48 @@
   display: flex;
 }
 
-/* Minimized button */
+/* Minimized button - Updated to use FontAwesome icon */
 .tde-chat-minimized {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
+  justify-content: center;
+  width: 40px !important;
+  height: 40px !important;
+  padding: 0 !important;
   background: #0d6efd; /* Primary blue color */
   color: white;
-  border-radius: 25px; /* Make it more rounded/pill-shaped */
+  border-radius: 50% !important; /* Make it circular */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  transition: transform 0.2s ease;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
 }
 
 .tde-chat-minimized:hover {
+  background-color: #0b5ed7 !important;
   transform: translateY(-2px);
 }
 
-.tde-chat-minimized img {
-  width: 20px;
-  height: 20px;
+/* Hide any old content and add FontAwesome icon */
+.tde-chat-minimized img,
+.tde-chat-minimized span,
+.tde-chat-minimized i {
+  display: none !important;
 }
 
-.tde-chat-minimized span {
-  font-size: 14px;
-  font-weight: 500;
-  white-space: nowrap;
+.tde-chat-minimized::before {
+  content: '\f075' !important; /* FontAwesome comment icon */
+  font-family: "Font Awesome 6 Free" !important;
+  font-weight: 900 !important;
+  font-size: 18px !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  -webkit-font-smoothing: antialiased !important;
+  display: inline-block !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  line-height: 1 !important;
+  text-rendering: auto !important;
 }
 
 /* Expanded view */
@@ -264,6 +313,45 @@
 }
 
 /* Mobile-friendly chat widget */
+@media (max-width: 991px) {
+  /* Hide chat bubble and arrow on tablets and mobile */
+  .tde-chat-container.minimized::before {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+
+  .tde-chat-container.minimized::after {
+    display: none !important;
+  }
+
+  /* Force circular button on mobile with maximum specificity */
+  .tde-chat-container.minimized .tde-chat-minimized,
+  .tde-chat-container.minimized .tde-chat-minimized:hover,
+  .tde-chat-container.minimized .tde-chat-minimized:focus,
+  .tde-chat-container.minimized .tde-chat-minimized:active {
+    margin-top: 0 !important;
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    background-color: #0d6efd !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+    transition: all 0.3s ease !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 0 !important;
+    font-size: 18px !important;
+    text-decoration: none !important;
+  }
+
+  .tde-chat-container.minimized .tde-chat-minimized:hover {
+    background-color: #0b5ed7 !important;
+    transform: translateY(-2px) !important;
+  }
+}
+
 @media (max-width: 768px) {
   /* Make expanded chat mobile-friendly */
   .tde-chat-container:not(.minimized) {
@@ -277,70 +365,27 @@
     margin: 0 auto !important;
   }
 
-  /* Show the same chat button as desktop on mobile */
-  .tde-chat-container.minimized .tde-chat-minimized {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    /* Keep the same styling as desktop */
-    align-items: center !important;
-    gap: 8px !important;
-    padding: 10px 16px !important;
-    background: #0d6efd !important;
+  .tde-chat-container {
+    align-items: flex-end !important;
+  }
+
+  /* Maximum specificity for small mobile devices */
+  .tde-chat-container.minimized .tde-chat-minimized,
+  .tde-chat-container.minimized .tde-chat-minimized:hover,
+  .tde-chat-container.minimized .tde-chat-minimized:focus,
+  .tde-chat-container.minimized .tde-chat-minimized:active {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 16px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    gap: 0 !important;
+    background-color: #0d6efd !important;
     color: white !important;
-    border-radius: 25px !important; /* Ensure rounded shape on mobile */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
-    transition: transform 0.2s ease !important;
-  }
-
-  /* Keep the icon and text visible on mobile */
-  .tde-chat-container.minimized .tde-chat-minimized img {
-    width: 20px !important;
-    height: 20px !important;
-  }
-
-  .tde-chat-container.minimized .tde-chat-minimized span {
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    white-space: nowrap !important;
-  }
-
-  /* Adjust header for mobile */
-  .tde-chat-header {
-    padding: 10px 12px !important;
-    min-height: 50px !important;
-  }
-
-  .tde-chat-title .title-main {
-    font-size: 14px !important;
-  }
-
-  .tde-chat-title .title-sub {
-    font-size: 11px !important;
-  }
-
-  /* Adjust messages area for mobile */
-  .tde-chat-messages {
-    padding: 8px !important;
-  }
-
-  .tde-chat-message {
-    font-size: 13px !important;
-    padding: 6px 10px !important;
-  }
-
-  /* Adjust input area for mobile */
-  .tde-chat-input-area {
-    padding: 8px !important;
-  }
-
-  .tde-chat-input {
-    font-size: 14px !important;
-    padding: 8px 10px !important;
-  }
-
-  .tde-chat-send {
-    font-size: 12px !important;
-    padding: 8px 12px !important;
+    transition: all 0.3s ease !important;
+    justify-content: center !important;
+    align-items: center !important;
+    text-decoration: none !important;
   }
 }

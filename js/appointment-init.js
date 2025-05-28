@@ -4,11 +4,7 @@
  */
 
 $(document).ready(function() {
-  // Initialize Bootstrap 5 navbar toggler
-  $('.navbar-toggler').on('click', function() {
-    var target = $(this).data('bs-target');
-    $(target).toggleClass('show');
-  });
+  // Mobile navigation is handled by common-init.js - no need to duplicate here
 
   // Show admin info for development environment
   // In production, this should be removed or properly secured
@@ -24,6 +20,23 @@ $(document).ready(function() {
   if (autoSelectService === 'dentures') {
     // Wait for the page to fully load
     setTimeout(function() {
+      // Check if fallback message is displayed by looking at DOM content
+      const calendarContainer = document.getElementById('appointment-calendar');
+      const isFallbackDisplayed = calendarContainer && 
+        (calendarContainer.innerHTML.includes('Our Booking System is Temporarily Unavailable') ||
+         calendarContainer.innerHTML.includes('Booking System is Temporarily Unavailable'));
+      
+      if (isFallbackDisplayed) {
+        console.log('Fallback message detected in DOM, skipping auto-select service calendar load');
+        return;
+      }
+      
+      // Also check fallback flag if available (backup check)
+      if (window.appState && window.appState.fallbackMessageDisplayed) {
+        console.log('Fallback flag is set, skipping auto-select service calendar load');
+        return;
+      }
+      
       // Auto-select the dentures card
       const denturesCard = document.querySelector('.service-card[data-service="dentures"]');
       if (denturesCard) {
@@ -39,13 +52,32 @@ $(document).ready(function() {
         updateAppointmentTypeText('dentures');
 
         // Load the calendar directly (bypassing any basic mode)
-        if (typeof window.loadCalendarForService === 'function') {
-          window.loadCalendarForService('dentures');
+        if (typeof loadCalendar === 'function') {
+          loadCalendar('dentures');
         } else {
           // If the function isn't available yet, wait for it
           const checkInterval = setInterval(function() {
-            if (typeof window.loadCalendarForService === 'function') {
-              window.loadCalendarForService('dentures');
+            // Check fallback state in DOM before attempting to load
+            const calendarContainer = document.getElementById('appointment-calendar');
+            const isFallbackDisplayed = calendarContainer && 
+              (calendarContainer.innerHTML.includes('Our Booking System is Temporarily Unavailable') ||
+               calendarContainer.innerHTML.includes('Booking System is Temporarily Unavailable'));
+            
+            if (isFallbackDisplayed) {
+              console.log('Fallback message detected in DOM during auto-select wait, stopping attempts');
+              clearInterval(checkInterval);
+              return;
+            }
+            
+            // Also check fallback flag if available (backup check)
+            if (window.appState && window.appState.fallbackMessageDisplayed) {
+              console.log('Fallback flag detected during auto-select wait, stopping attempts');
+              clearInterval(checkInterval);
+              return;
+            }
+            
+            if (typeof loadCalendar === 'function') {
+              loadCalendar('dentures');
               clearInterval(checkInterval);
             }
           }, 500);
@@ -71,6 +103,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Give enough time for all scripts to load
   setTimeout(function() {
+    // Check if fallback message is displayed by looking at DOM content
+    const calendarContainer = document.getElementById('appointment-calendar');
+    const isFallbackDisplayed = calendarContainer && 
+      (calendarContainer.innerHTML.includes('Our Booking System is Temporarily Unavailable') ||
+       calendarContainer.innerHTML.includes('Booking System is Temporarily Unavailable'));
+    
+    if (isFallbackDisplayed) {
+      console.log('Fallback message detected in DOM, skipping automatic calendar load');
+      return;
+    }
+    
+    // Also check fallback flag if available (backup check)
+    if (window.appState && window.appState.fallbackMessageDisplayed) {
+      console.log('Fallback flag is set, skipping automatic calendar load');
+      return;
+    }
+    
     // Check if booking confirmation is displayed - if so, don't load calendar
     if (window.bookingConfirmationDisplayed) {
       console.log('Skipping initial calendar load because booking confirmation is displayed');
@@ -78,22 +127,41 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // First try the normal method
-    if (typeof window.loadCalendarForService === 'function') {
-      console.log('Directly calling loadCalendarForService');
-      window.loadCalendarForService('dentures');
+    if (typeof loadCalendar === 'function') {
+      console.log('Directly calling loadCalendar');
+      loadCalendar('dentures');
     } else {
       console.log('Normal method not available, trying direct approach');
       // Direct approach - manually trigger calendar loading
-      if (typeof window.initializeGoogleCalendar === 'function') {
-        console.log('Calling initializeGoogleCalendar directly');
-        window.initializeGoogleCalendar();
+      if (typeof initializeCalendar === 'function') {
+        console.log('Calling initializeCalendar directly');
+        initializeCalendar();
       } else {
         console.log('Google Calendar functions not available yet, waiting...');
         // Keep checking until the functions are available
         const checkForFunctions = setInterval(function() {
-          if (typeof window.loadCalendarForService === 'function') {
+          // Check fallback state in DOM before attempting to load
+          const calendarContainer = document.getElementById('appointment-calendar');
+          const isFallbackDisplayed = calendarContainer && 
+            (calendarContainer.innerHTML.includes('Our Booking System is Temporarily Unavailable') ||
+             calendarContainer.innerHTML.includes('Booking System is Temporarily Unavailable'));
+          
+          if (isFallbackDisplayed) {
+            console.log('Fallback message detected in DOM during wait, stopping calendar attempts');
+            clearInterval(checkForFunctions);
+            return;
+          }
+          
+          // Also check fallback flag if available (backup check)
+          if (window.appState && window.appState.fallbackMessageDisplayed) {
+            console.log('Fallback flag detected during wait, stopping calendar attempts');
+            clearInterval(checkForFunctions);
+            return;
+          }
+          
+          if (typeof loadCalendar === 'function') {
             console.log('Functions now available, loading calendar');
-            window.loadCalendarForService('dentures');
+            loadCalendar('dentures');
             clearInterval(checkForFunctions);
           }
         }, 1000);
@@ -104,22 +172,69 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Service selection function
 function selectService(element, service) {
+  console.log(`selectService called with service: ${service}`);
+  
+  // Check if fallback message is displayed by looking at the DOM content
+  const calendarContainer = document.getElementById('appointment-calendar');
+  const isFallbackDisplayed = calendarContainer && 
+    (calendarContainer.innerHTML.includes('Our Booking System is Temporarily Unavailable') ||
+     calendarContainer.innerHTML.includes('Booking System is Temporarily Unavailable'));
+  
+  if (isFallbackDisplayed) {
+    console.log('Fallback message detected in DOM, skipping calendar manipulation');
+    
+    // Still update the service selection UI, but don't touch the calendar area
+    document.querySelectorAll('.service-card').forEach(card => {
+      card.classList.remove('selected');
+      card.setAttribute('aria-pressed', 'false');
+    });
+    
+    element.classList.add('selected');
+    element.setAttribute('aria-pressed', 'true');
+    
+    updateAppointmentTypeText(service);
+    window.selectedService = service;
+    
+    return; // Exit early - don't manipulate calendar
+  }
+  
+  // Also check the appState fallback flag if available (backup check)
+  if (window.appState && window.appState.fallbackMessageDisplayed) {
+    console.log('Fallback flag is set, skipping calendar manipulation');
+    
+    // Still update the service selection UI, but don't touch the calendar area
+    document.querySelectorAll('.service-card').forEach(card => {
+      card.classList.remove('selected');
+      card.setAttribute('aria-pressed', 'false');
+    });
+    
+    element.classList.add('selected');
+    element.setAttribute('aria-pressed', 'true');
+    
+    updateAppointmentTypeText(service);
+    window.selectedService = service;
+    
+    return; // Exit early - don't manipulate calendar
+  }
+  
   // Remove selected class from all service cards
   document.querySelectorAll('.service-card').forEach(card => {
     card.classList.remove('selected');
+    card.setAttribute('aria-pressed', 'false');
   });
 
   // Add selected class to clicked card
   element.classList.add('selected');
+  element.setAttribute('aria-pressed', 'true');
 
   // Update appointment type text
   updateAppointmentTypeText(service);
 
   // Set the selected service in the window object for Google Calendar
   window.selectedService = service;
+  console.log(`Service set to: ${window.selectedService}`);
 
   // Show loading state first
-  const calendarContainer = document.getElementById('appointment-calendar');
   if (calendarContainer) {
     calendarContainer.innerHTML = `
       <div class="calendar-loading">
@@ -140,19 +255,39 @@ function selectService(element, service) {
   }
 
   // Update calendar with selected service - make sure we're using the already authorized API
-  if (typeof loadCalendarForService === 'function') {
+  if (typeof loadCalendar === 'function') {
     console.log('Loading calendar for service:', service);
-    loadCalendarForService(service);
+    loadCalendar(service);
   } else {
-    // Fallback if loadCalendarForService is not available
-    calendarContainer.innerHTML = `
-      <div class="alert alert-warning">
-        <p>The calendar module is not loaded properly. Please try refreshing the page.</p>
-      </div>
-      <div class="text-center">
-        <button class="btn btn-primary" onclick="window.location.reload()">Refresh Page</button>
-      </div>
-    `;
+    // Fallback if loadCalendar is not available
+    console.log('loadCalendar not available, showing technical difficulties');
+    if (calendarContainer) {
+      showTechnicalDifficulties('Calendar module not loaded properly');
+    }
+  }
+}
+
+// Keyboard navigation handler for service cards
+function handleServiceCardKeydown(event, element, service) {
+  // Handle Enter and Space key presses
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    selectService(element, service);
+  }
+  // Handle arrow key navigation
+  else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+    event.preventDefault();
+    const serviceCards = Array.from(document.querySelectorAll('.service-card'));
+    const currentIndex = serviceCards.indexOf(element);
+    let nextIndex;
+    
+    if (event.key === 'ArrowLeft') {
+      nextIndex = currentIndex > 0 ? currentIndex - 1 : serviceCards.length - 1;
+    } else {
+      nextIndex = currentIndex < serviceCards.length - 1 ? currentIndex + 1 : 0;
+    }
+    
+    serviceCards[nextIndex].focus();
   }
 }
 
@@ -170,16 +305,10 @@ function getServiceName(service) {
   }
 }
 
-// Function to update the appointment type text
+// Helper function to update appointment type text
 function updateAppointmentTypeText(service) {
   const appointmentTypeText = document.getElementById('appointment-type-text');
   if (appointmentTypeText) {
-    let serviceName = 'Dentures Consultation';
-    if (service === 'repairs') {
-      serviceName = 'Repairs & Maintenance';
-    } else if (service === 'mouthguards') {
-      serviceName = 'Mouthguards';
-    }
-    appointmentTypeText.textContent = 'Booking: ' + serviceName;
+    appointmentTypeText.textContent = `Booking: ${getServiceName(service)}`;
   }
 }

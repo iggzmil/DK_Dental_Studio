@@ -608,10 +608,7 @@ document.addEventListener('DOMContentLoaded', function() {
     target: 'chat-container',
     webhookUrl: 'https://n8n.aaa-city.com/webhook/ab6aa64d-a2e5-40d4-9abb-4c8500a19d49/chat',
     minimized: !shouldAutoExpand, // Auto-expand if openChat=true or on mobile
-    minimizedContent: `
-      <i class="fas fa-comment" alt="Chat Icon" style="font-size: 20px;"></i>
-      <span>Chat with DK Dental</span>
-    `,
+    minimizedContent: ``,
     initialMessages: [
       "👋 Hi there! I'm the DK Dental Studio virtual assistant.",
       "How can I help you today? Feel free to ask about our services, pricing, or book a consultation."

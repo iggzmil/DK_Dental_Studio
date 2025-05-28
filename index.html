@@ -24,14 +24,10 @@
 
     <!-- Template Style -->
     <link rel="stylesheet" href="css/style.css" />
-    <link rel="stylesheet" href="css/counter-plus.css" />
-    <link rel="stylesheet" href="css/footer-style.css" />
-    <link rel="stylesheet" href="css/appointment-style.css" />
-    <link rel="stylesheet" href="css/smooth-accordion.css" />
     <!-- <link rel="stylesheet" href="css/google-reviews.css" /> Available for future use -->
 
-    <link rel="stylesheet" href="css/global-common.css" />
-    <link rel="stylesheet" href="css/index-custom.css" />
+    <!-- Consolidated Custom CSS (replaces all individual page-specific CSS files) -->
+    <link rel="stylesheet" href="css/custom.css" />
 
   </head>
 
@@ -44,12 +40,17 @@
         <div class="container">
           <nav class="navbar navbar-expand-lg">
             <a class="navbar-brand" href="index.html">
-              <img class="img-fluid" src="images/DKD_logo_blue.webp" alt="logo" style="transform: scale(1.2); transform-origin: left center;">
+              <img class="img-fluid" src="images/DKD_logo_blue.webp" alt="DK Dental Studio - Home">
+            </a>
+            <!-- Mobile Phone Number (CENTER) - Test Implementation -->
+            <a href="tel:0293987578" class="mobile-phone-link d-block d-sm-none">
+              <i class="fas fa-phone"></i>
+              <span>(02) 9398 7578</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
               <i class="fas fa-align-left"></i>
             </button>
-            <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+            <div class="collapse navbar-collapse" id="navbarNav">
               <ul class="navbar-nav">
                 <li class="nav-item active">
                   <a class="nav-link" href="index.html">Home</a>
@@ -75,7 +76,7 @@
               </ul>
             </div>
             <div class="add-listing d-none d-sm-block">
-              <a class="btn btn-primary text-white" href="appointment.html" style="padding-left: 15px; padding-right: 15px; white-space: nowrap;"><i class="fa fa-calendar"></i> Book Free Consultation</a>
+              <a class="btn btn-primary text-white btn-appointment" href="appointment.html"><i class="fa fa-calendar"></i> Book Free Consultation</a>
             </div>
           </nav>
         </div>
@@ -86,15 +87,15 @@
 
     <!--=================================
     banner -->
-    <section class="banner bg-dark" style="background-image: url(images/bg/pattern-hero.webp);">
+    <section class="banner bg-dark bg-hero">
       <div class="container">
         <div class="row align-items-center">
           <div class="col-12 col-xl-5 col-lg-7 mb-lg-5">
             <div class="banner-content py-5 py-xl-6">
-              <img class="img-fluid mb-4" src="images/DKD_logo_white.webp" alt="DK Dental Studio Logo" style="max-width: 100%; width: 500px;">
+              <img class="img-fluid mb-4 logo-hero" src="images/DKD_logo_white.webp" alt="DK Dental Studio Logo">
               <h1 class="text-white">Welcome To DK Dental Studio!</h1>
-              <p class="mb-5 text-white" style="font-size: 1.25rem; line-height: 1.6;">We offer all types of high-quality dentures, along with fast denture repairs, precise relines, and custom-fitted sports mouthguards for optimal protection.</p>
-              <a class="btn btn-primary" href="appointment.html" style="font-size: 1.2rem; padding: 0.6rem 1.2rem;"><i class="fa fa-calendar"></i> Book Your Free Consultation</a>
+                              <p class="mb-5 text-white text-hero-subtitle">We offer all types of high-quality dentures, along with fast denture repairs, precise relines, and custom-fitted sports mouthguards for optimal protection.</p>
+              <a class="btn btn-primary btn-hero" href="appointment.html"><i class="fa fa-calendar"></i> Book Your Free Consultation</a>
             </div>
           </div>
           <div class="col-12 col-xl-6 col-lg-5 mb-lg-0 mb-5">
@@ -113,27 +114,27 @@
           <div class="col-lg-4">
             <div class="opening-time bg-primary px-4 py-4 h-100 rounded">
               <h4 class="text-white mb-4">Why us?</h4>
-              <p class="text-white" style="font-size: 1.25rem; line-height: 1.4;">At DK Dental Studio, we offer high-quality dentures made by an experienced dental prosthetist. We are not dentists we specialise exclusively in dentures only. By focusing on this area, we ensure every detail is carefully crafted to give you a natural, great-looking smile. Our goal is to help you leave our clinic feeling confident and happy with your new smile.</p>
+              <p class="text-white text-info-card">At DK Dental Studio, we offer high-quality dentures made by an experienced dental prosthetist. We are not dentists we specialise exclusively in dentures only. By focusing on this area, we ensure every detail is carefully crafted to give you a natural, great-looking smile. Our goal is to help you leave our clinic feeling confident and happy with your new smile.</p>
             </div>
           </div>
           <div class="col-lg-4 mt-lg-0 mt-4">
             <div class="opening-time bg-primary px-4 py-4 h-100 rounded">
               <h4 class="text-white mb-4">Opening Hours</h4>
-              <ul class="list-unstyled mb-0" style="font-size: 1.15rem;">
+              <ul class="list-unstyled mb-0 text-opening-hours">
                 <li class="text-white mb-3"><strong class="d-block mb-2">Dentures</strong><i class="far fa-clock pr-1 text-white"></i> Mon–Fri<span class="float-right">10am–4pm</span></li>
                 <li class="text-white mb-3"><strong class="d-block mb-2">Mouthguards</strong><i class="far fa-clock pr-1 text-white"></i> Mon–Thu<span class="float-right">10am–6pm</span></li>
                 <li class="text-white mb-3"><i class="far fa-clock pr-1 text-white"></i>Fri<span class="float-right">10am–4pm</span></li>
                 <li class="text-white mb-3"><strong class="text-white">Saturday–Sunday</strong><span class="float-right text-uppercase">CLOSED</span></li>
-                <li class="text-white mb-3"><span style="color: #ffeb3b; font-weight: bold;"><i class="fas fa-info-circle pr-1 text-yellow"></i> For appointments outside regular hours please call us on (02) 9398 7578.</span></span></li>
+                <li class="text-white mb-3"><span class="text-highlight"><i class="fas fa-info-circle pr-1 text-yellow"></i> For appointments outside regular hours please call us on (02) 9398 7578.</span></span></li>
               </ul>
                </div>
           </div>
           <div class="col-lg-4 mt-lg-0 mt-4">
             <div class="opening-time bg-primary px-4 py-4 h-100 rounded">
               <h4 class="text-white mb-4">Location & Contact</h4>
-              <ul class="list-unstyled mb-0" style="font-size: 1.15rem;">
-                <li class="text-white mb-2"><i class="fas fa-map-marker-alt pr-2 text-white"></i> <a href="https://www.google.com/maps/place/DK+Dental+Studio+(Denture+Clinic)/@-33.9132712,151.2417367,1640m/data=!3m1!1e3!4m6!3m5!1s0x6b12b21971d29285:0x9cb6683a3ef03ce0!8m2!3d-33.9132712!4f151.2417367!16s%2Fg%2F1tgh33vw?entry=ttu&g_ep=EgoyMDI1MDUwMy4wIKXMDSoASAFQAw%3D%3D" target="_blank" class="text-white text-decoration-underline">Shop 4/126-128 Avoca St, <br><span style="padding-left: 28px;">Randwick NSW 2031</span></a><br><span style="padding-left: 28px; color: #ffeb3b; font-weight: bold;"><i class="fas fa-info-circle pr-1 text-yellow"></i> Entry located on ground floor<br><span style="padding-left: 28px;">via Alison Road.</span></span></li>
-                <li class="text-white mb-4"><i class="fas fa-walking pr-2 text-white"></i> <strong style="margin-left: 2px;">Visit us!</strong></li>
+              <ul class="list-unstyled mb-0 text-opening-hours">
+                <li class="text-white mb-2"><i class="fas fa-map-marker-alt pr-2 text-white"></i> <a href="https://www.google.com/maps/place/DK+Dental+Studio+(Denture+Clinic)/@-33.9132712,151.2417367,1640m/data=!3m1!1e3!4m6!3m5!1s0x6b12b21971d29285:0x9cb6683a3ef03ce0!8m2!3d-33.9132712!4f151.2417367!16s%2Fg%2F1tgh33vw?entry=ttu&g_ep=EgoyMDI1MDUwMy4wIKXMDSoASAFQAw%3D%3D" target="_blank" class="text-white text-decoration-underline">Shop 4/126-128 Avoca St, <br><span class="address-indent">Randwick NSW 2031</span></a><br><span class="address-indent text-highlight"><i class="fas fa-info-circle pr-1 text-yellow"></i> Entry located on ground floor<br><span class="address-indent">via Alison Road.</span></span></li>
+                <li class="text-white mb-4"><i class="fas fa-walking pr-2 text-white"></i> <strong class="address-indent-xs">Visit us!</strong></li>
                 <li class="text-white mb-2"><i class="fas fa-headset pr-2 text-white"></i> <a href="tel:0293987578" class="text-white text-decoration-underline">(02) 9398 7578</a></li>
                 <li class="text-white mb-4"><i class="fas fa-phone pr-2 text-white"></i> <strong>Call us!</strong></li>
                 <li class="text-white mb-2"><i class="fas fa-envelope pr-2 text-white"></i> <a href="mailto:info@dkdental.au" class="text-white text-decoration-underline">info@dkdental.au</a></li>
@@ -160,10 +161,10 @@
         </div>
         <div class="row">
           <div class="col-md-4 text-center mb-md-0 mb-4">
-            <a href="dentures.html" style="text-decoration: none; color: inherit;">
+            <a href="dentures.html" class="service-link">
               <div class="service-items">
                 <div class="service-img">
-                  <img class="img-fluid" src="images/dentures.webp" alt="">
+                  <img class="img-fluid" src="images/dentures.webp" alt="High-quality dentures service at DK Dental Studio">
                 </div>
                 <div class="service-content">
                   <h5>Dentures</h5>
@@ -173,10 +174,10 @@
             </a>
           </div>
           <div class="col-md-4 text-center mb-md-0 mb-4">
-            <a href="maintenance-repairs.html" style="text-decoration: none; color: inherit;">
+            <a href="maintenance-repairs.html" class="service-link">
               <div class="service-items">
                 <div class="service-img">
-                  <img class="img-fluid" src="images/maintenance-repairs.webp" alt="">
+                  <img class="img-fluid" src="images/maintenance-repairs.webp" alt="Denture maintenance and repair services">
                 </div>
                 <div class="service-content">
                   <h5>Maintenance & Repairs</h5>
@@ -186,10 +187,10 @@
             </a>
           </div>
           <div class="col-md-4 text-center">
-            <a href="mouthguards.html" style="text-decoration: none; color: inherit;">
+            <a href="mouthguards.html" class="service-link">
               <div class="service-items">
                 <div class="service-img">
-                  <img class="img-fluid" src="images/mouthguards.webp" alt="">
+                  <img class="img-fluid" src="images/mouthguards.webp" alt="Custom-fitted mouthguards for sports and nighttime protection">
                 </div>
                 <div class="service-content">
                   <h5>Mouthguards</h5>
@@ -201,7 +202,7 @@
         </div>
         <div class="row mt-5">
           <div class="col-12 text-center">
-            <a class="btn btn-primary" href="appointment.html" style="font-size: 1.2rem; padding: 0.6rem 1.2rem;"><i class="fa fa-calendar"></i> Book Your Free Consultation</a>
+            <a class="btn btn-primary btn-hero" href="appointment.html"><i class="fa fa-calendar"></i> Book Your Free Consultation</a>
           </div>
         </div>
       </div>
@@ -281,13 +282,13 @@
         </div>
         <div class="row justify-content-center mt-4">
           <div class="col-sm-6 text-center">
-            <a href="https://www.google.com/search?hl=en-AU&gl=au&q=DK+Dental+Studio+(Denture+Clinic),+Shop+4/126+-128+Avoca+St,+Randwick+NSW+2031&ludocid=11292327715051420896&lsig=AB86z5UTsw3TpFN6JA4CWehg6nYU&hl=en&gl=AU#lrd=0x6b12b21971d29285:0x9cb6683a3ef03ce0,1" target="_blank" class="btn btn-outline-light btn-lg" style="width: 220px; display: inline-block;">
+            <a href="https://www.google.com/search?hl=en-AU&gl=au&q=DK+Dental+Studio+(Denture+Clinic),+Shop+4/126+-128+Avoca+St,+Randwick+NSW+2031&ludocid=11292327715051420896&lsig=AB86z5UTsw3TpFN6JA4CWehg6nYU&hl=en&gl=AU#lrd=0x6b12b21971d29285:0x9cb6683a3ef03ce0,1" target="_blank" class="btn btn-outline-light btn-lg btn-review">
               <i class="fas fa-star mr-2"></i>Read Our Reviews
             </a>
             <p class="text-white mt-2">Hear it straight from our customers!</p>
           </div>
           <div class="col-sm-6 text-center">
-            <a href="https://www.google.com/search?hl=en-AU&gl=au&q=DK+Dental+Studio+(Denture+Clinic),+Shop+4/126+-128+Avoca+St,+Randwick+NSW+2031&ludocid=11292327715051420896&lsig=AB86z5UTsw3TpFN6JA4CWehg6nYU#lrd=0x6b12b21971d29285:0x9cb6683a3ef03ce0,3" target="_blank" class="btn btn-outline-light btn-lg" style="width: 220px; display: inline-block;">
+            <a href="https://www.google.com/search?hl=en-AU&gl=au&q=DK+Dental+Studio+(Denture+Clinic),+Shop+4/126+-128+Avoca+St,+Randwick+NSW+2031&ludocid=11292327715051420896&lsig=AB86z5UTsw3TpFN6JA4CWehg6nYU#lrd=0x6b12b21971d29285:0x9cb6683a3ef03ce0,3" target="_blank" class="btn btn-outline-light btn-lg btn-review">
               <i class="fas fa-pencil-alt mr-2"></i> Write a Review
             </a>
             <p class="text-white mt-2">We value your insight!</p>
@@ -443,7 +444,7 @@
             </div>
           </div>
          <div class="col-md-5 col-lg-4 mb-4 mb-md-0 align-self-end order-1 order-md-2">
-            <img class="img-fluid" src="images/FAQs-home.webp" alt="">
+            <img class="img-fluid" src="images/FAQs-home.webp" alt="Frequently asked questions about dental services">
           </div>
         </div>
       </div>
@@ -454,7 +455,7 @@
 
 <!--=================================
     Schedule -->
-    <section class="overflow-hidden" style="padding-top: 30px; padding-bottom: 0;">
+    <section class="overflow-hidden section-schedule">
       <div class="container">
         <div class="row">
           <div class="col-sm-12">
@@ -472,7 +473,7 @@
                       <p class="mb-0">Booking an appointment at DK Dental Studio is easy and convenient. Our expert team is here to provide personalised treatments tailored to your unique needs. Click below to schedule your session and start your journey to a more radiant, confident you.</p>
 
                       <div class="mt-4">
-                        <a class="btn btn-primary" href="appointment.html" style="padding-left: 15px; padding-right: 15px; white-space: nowrap;"><i class="fa fa-calendar"></i> Book Your Free Consultation</a>
+                        <a class="btn btn-primary btn-appointment" href="appointment.html"><i class="fa fa-calendar"></i> Book Your Free Consultation</a>
                       </div>
                     </div>
                   </div>
@@ -505,7 +506,7 @@
                             <div class="time"> CLOSED </div>
                           </li>
                           <li>
-                            <strong style="color: #000;"><i class="fas fa-info-circle pr-1"></i> For appointments outside regular hours please call us on (02) 9398 7578.</strong>
+                            <strong class="text-dark-strong"><i class="fas fa-info-circle pr-1"></i> For appointments outside regular hours please call us on (02) 9398 7578.</strong>
                           </li>
                         </ul>
                       </div>
@@ -521,7 +522,7 @@
                     <div class="schedule-morden-content">
                       <h6>Location & Contact</h6>
                       <ul class="list-unstyled mb-0">
-                        <li class="mb-1"><i class="fas fa-map-marker-alt pr-2"></i> <a href="https://www.google.com/maps/place/DK+Dental+Studio+(Denture+Clinic)/@-33.9132712,151.2417367,1640m/data=!3m1!1e3!4m6!3m5!1s0x6b12b21971d29285:0x9cb6683a3ef03ce0!8m2!3d-33.9132712!4d151.2417367!16s%2Fg%2F1tgh33vw?entry=ttu&g_ep=EgoyMDI1MDUwMy4wIKXMDSoASAFQAw%3D%3D" target="_blank">Shop 4/126-128 Avoca St, <br><span style="margin-left: 22px;">Randwick NSW 2031</span></a><br><strong style="margin-left: 22px; color: #000; "><i class="fas fa-info-circle pr-1"></i> Entry located on ground floor<br><span style="margin-left: 22px;">via Alison Road.</strong></span></li>
+                        <li class="mb-1"><i class="fas fa-map-marker-alt pr-2"></i> <a href="https://www.google.com/maps/place/DK+Dental+Studio+(Denture+Clinic)/@-33.9132712,151.2417367,1640m/data=!3m1!1e3!4m6!3m5!1s0x6b12b21971d29285:0x9cb6683a3ef03ce0!8m2!3d-33.9132712!4d151.2417367!16s%2Fg%2F1tgh33vw?entry=ttu&g_ep=EgoyMDI1MDUwMy4wIKXMDSoASAFQAw%3D%3D" target="_blank">Shop 4/126-128 Avoca St, <br><span class="address-indent-sm">Randwick NSW 2031</span></a><br><strong class="address-indent-sm text-dark-strong"><i class="fas fa-info-circle pr-1"></i> Entry located on ground floor<br><span class="address-indent-sm">via Alison Road.</strong></span></li>
                         <li class="mb-3"><i class="fas fa-walking pr-2"></i> <strong>Visit us!</strong></li>
                         <li class="mb-1"><i class="fas fa-headset pr-2"></i> <a href="tel:0293987578">(02) 9398 7578</a></li>
                         <li class="mb-3"><i class="fas fa-phone pr-2"></i> <strong>Call us!</strong></li>
@@ -548,12 +549,12 @@
 
     <!--=================================
     Contact-info-->
-    <section style="padding: 0; position: relative; height: 500px;">
+    <section class="map-container">
 
 
 
       <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3310.9612856034584!2d151.23924837677354!3d-33.91327121639855!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6b12b21971d29285%3A0x9cb6683a3ef03ce0!2sDK%20Dental%20Studio%20(Denture%20Clinic)!5e0!3m2!1sen!2sau!4v1715066518764!5m2!1sen!2sau"
-        style="border: 0; width: 100%; height: 100%; position: absolute; top: 0; left: 0;"
+        class="map-iframe"
         allowfullscreen="" loading="lazy"></iframe>
 
 
@@ -570,9 +571,9 @@
               <p class="mb-0 text-white mt-2">Web Development and AI Automation by <a href="https://www.aaa-city.com" target="_blank">AAA.City</a></p>
             </div>
                           <div class="col-md-4 text-center mb-3 mb-md-0">
-                <a href="#" class="footer-logo-back-to-top" style="cursor: pointer; display: block; position: relative;">
-                  <img class="img-fluid" src="images/DKD_logo_white.webp" alt="DK Dental Studio Logo" style="max-width: 200px;">
-                  <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); color: white; font-size: 16px;">
+                <a href="#" class="footer-logo-container">
+                  <img class="img-fluid" src="images/DKD_logo_white.webp" alt="DK Dental Studio Logo">
+                  <div class="footer-back-to-top-icon">
                     <i class="fas fa-chevron-up"></i>
                   </div>
                 </a>

@@ -1,0 +1,378 @@
+/* 
+ * DK Dental Studio - Appointment Calendar Styles
+ * Extracted from JavaScript for better organization and performance
+ */
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  position: relative;
+}
+
+.calendar-header .calendar-month-title {
+  margin: 0;
+  text-align: center;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+.calendar-navigation {
+  display: flex;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+  margin-left: auto;
+}
+
+.calendar-grid {
+  margin-bottom: 30px;
+}
+
+.calendar-days-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 10px;
+  background-color: #0576ee;
+  color: white;
+  padding: 10px 0;
+  border-radius: 8px;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.calendar-day {
+  aspect-ratio: 1/1;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  background-color: white;
+}
+
+.calendar-day.empty {
+  background-color: transparent;
+  border: none;
+}
+
+.calendar-day.today {
+  border-color: #0576ee;
+  background-color: rgba(5, 118, 238, 0.05);
+}
+
+.calendar-day.past {
+  background-color: #f8f9fa;
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+.calendar-day.closed {
+  background-color: #f8f9fa;
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+.calendar-day.closed .availability {
+  color: #aaa;
+}
+
+.calendar-day.available {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.calendar-day.available:hover {
+  transform: scale(1.05);
+  border-color: #0576ee;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.calendar-day.selected {
+  background-color: #0576ee;
+  color: white;
+  border-color: #0576ee;
+}
+
+.day-number {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.availability {
+  font-size: 12px;
+  color: #4caf50;
+}
+
+.time-slots-container {
+  margin-top: 30px;
+}
+
+.time-slots-container h4 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.time-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+  margin-bottom: 30px;
+}
+
+.time-slot {
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.time-slot:hover {
+  border-color: #0576ee;
+  background-color: rgba(5, 118, 238, 0.05);
+}
+
+.time-slot.selected {
+  background-color: #0576ee;
+  color: white;
+  border-color: #0576ee;
+}
+
+.booking-form-container {
+  margin-top: 30px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.booking-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+@media (max-width: 991px) {
+  .booking-form {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-days-header {
+    font-size: 12px;
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+
+  .calendar-days {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+
+  /* Hide weekend headers in mobile */
+  .calendar-days-header div:nth-child(6),
+  .calendar-days-header div:nth-child(7) {
+    display: none !important;
+  }
+
+  /* Hide weekend days in mobile */
+  .calendar-day.closed {
+    display: none !important;
+  }
+
+  .day-number {
+    font-size: 14px;
+  }
+
+  /* Fix calendar header layout on mobile */
+  .calendar-header {
+    flex-direction: column !important;
+    gap: 15px !important;
+    padding: 15px 10px !important;
+  }
+
+  .calendar-header .calendar-month-title {
+    position: static !important;
+    text-align: center !important;
+    width: 100% !important;
+    margin: 0 !important;
+    font-size: 1.3rem !important;
+  }
+
+  .calendar-navigation {
+    margin-left: 0 !important;
+    justify-content: center !important;
+    width: 100% !important;
+  }
+
+  .calendar-navigation button {
+    padding: 8px 12px !important;
+    font-size: 0.9rem !important;
+  }
+}
+
+/* Additional iPhone-specific fixes */
+@media screen and (max-width: 480px) {
+  .calendar-days-header {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+
+  .calendar-days {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+
+  /* Hide weekend headers in mobile */
+  .calendar-days-header div:nth-child(6),
+  .calendar-days-header div:nth-child(7) {
+    display: none !important;
+  }
+
+  /* Hide weekend days in mobile */
+  .calendar-day.closed {
+    display: none !important;
+  }
+
+  .calendar-header {
+    flex-direction: column !important;
+    gap: 15px !important;
+    padding: 15px 10px !important;
+    align-items: flex-start !important;
+  }
+
+  .calendar-header .calendar-month-title {
+    position: static !important;
+    text-align: center !important;
+    width: 100% !important;
+    margin: 0 !important;
+    font-size: 1.2rem !important;
+    order: 1 !important;
+  }
+
+  .calendar-navigation {
+    margin-left: 0 !important;
+    justify-content: center !important;
+    width: 100% !important;
+    order: 2 !important;
+  }
+}
+
+/* Force override for very small screens */
+@media screen and (max-width: 414px) {
+  .calendar-days-header {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+
+  .calendar-days {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+
+  /* Hide weekend headers in mobile */
+  .calendar-days-header div:nth-child(6),
+  .calendar-days-header div:nth-child(7) {
+    display: none !important;
+  }
+
+  /* Hide weekend days in mobile */
+  .calendar-day.closed {
+    display: none !important;
+  }
+
+  div.calendar-header h3.calendar-month-title {
+    position: static !important;
+    text-align: center !important;
+    width: 100% !important;
+    margin: 0 !important;
+    font-size: 1.1rem !important;
+  }
+
+  div.calendar-header {
+    flex-direction: column !important;
+    gap: 12px !important;
+    padding: 12px 8px !important;
+  }
+}
+
+/* iPhone specific targeting */
+@media only screen and (max-device-width: 812px) and (-webkit-min-device-pixel-ratio: 2) {
+  .calendar-days-header {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+
+  .calendar-days {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+
+  /* Hide weekend headers in mobile */
+  .calendar-days-header div:nth-child(6),
+  .calendar-days-header div:nth-child(7) {
+    display: none !important;
+  }
+
+  /* Hide weekend days in mobile */
+  .calendar-day.closed {
+    display: none !important;
+  }
+
+  .calendar-header {
+    flex-direction: column !important;
+    gap: 15px !important;
+    padding: 15px 10px !important;
+    align-items: flex-start !important;
+  }
+
+  .calendar-header .calendar-month-title {
+    position: static !important;
+    text-align: center !important;
+    width: 100% !important;
+    margin: 0 !important;
+    font-size: 1.2rem !important;
+    order: 1 !important;
+  }
+
+  .calendar-navigation {
+    margin-left: 0 !important;
+    justify-content: center !important;
+    width: 100% !important;
+    order: 2 !important;
+  }
+}
+
+/* Technical Difficulties Styling */
+.technical-difficulties {
+  padding: 40px 20px;
+  text-align: center;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.technical-difficulties h4 {
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.technical-difficulties p {
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.technical-difficulties .alert {
+  text-align: left;
+  margin: 20px 0;
+}
+
+.technical-difficulties .btn {
+  margin: 5px;
+} 
