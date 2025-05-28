@@ -16,7 +16,7 @@ Allow: /images/
 Allow: /fonts/
 
 # Sitemap location
-Sitemap: https://dkdental.au/sitemap.xml
+Sitemap: https://www.dkdental.au/sitemap.xml
 
 # Crawl delay for respectful crawling
 Crawl-delay: 1 
