@@ -64,8 +64,18 @@
 /* Icon Definitions - Only icons actually used in the project */
 .fa-align-left:before { content: "\f036"; }
 .fa-calendar:before { content: "\f133"; }
-.fa-chevron-left:before { content: "\f053"; color: #0576ee !important; font-size: 14px; }
-.fa-chevron-right:before { content: "\f054"; color: #0576ee !important; font-size: 14px; }
+.fa-chevron-left:before { 
+  content: "\f053"; 
+  display: inline-block;
+  text-align: center;
+  vertical-align: middle;
+}
+.fa-chevron-right:before { 
+  content: "\f054"; 
+  display: inline-block;
+  text-align: center;
+  vertical-align: middle;
+}
 .fa-star:before { content: "\f005"; }
 .fa-info-circle:before { content: "\f05a"; }
 .fa-angle-up:before { content: "\f106"; }
