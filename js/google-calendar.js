@@ -1532,9 +1532,6 @@ const calendarManager = {
     // Mark available dates
     this.markAvailableDates();
     
-    // Add status notice
-    this.addStatusNotice();
-    
     // Update state
     this.currentState.isRendered = true;
     window.currentCalendarService = this.currentState.service;
@@ -1780,34 +1777,6 @@ const calendarManager = {
         }
       }
     });
-  },
-
-  /**
-   * Add status notice to calendar
-   */
-  addStatusNotice() {
-    const container = this.currentState.container;
-    const notice = document.createElement('div');
-
-    if (this.dependencies.appState.availabilityLoaded) {
-      notice.className = 'alert alert-success mb-4';
-      notice.innerHTML = `
-        <p><strong>Calendar loaded successfully.</strong> Please select a date to see available appointment times.</p>
-        <p class="mb-0 small">Green dates have available slots. Click on a date to view available time slots.</p>
-      `;
-    } else {
-      notice.className = 'alert alert-warning mb-4';
-      notice.innerHTML = `
-        <p><strong>Note:</strong> The calendar is showing all possible appointment times. Your booking will be confirmed by our staff after submission.</p>
-        <p class="mb-0 small">All weekdays show available slots in this mode. Select any date to view available times.</p>
-      `;
-    }
-
-    if (container.firstChild) {
-      container.insertBefore(notice, container.firstChild);
-    } else {
-      container.appendChild(notice);
-    }
   },
 
   /**
@@ -2437,3 +2406,6 @@ function showBookingSuccess(firstName, lastName, email) {
     </div>
   `;
 }
+
+// Make calendarManager globally accessible for onclick handlers
+window.calendarManager = calendarManager;
