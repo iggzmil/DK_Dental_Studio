@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+
+# Block access to admin areas and scripts
+Disallow: /admin/
+Disallow: /script/
+Disallow: /cache/
+Disallow: /.git/
+Disallow: /.vscode/
+Disallow: /.github/
+
+# Allow access to important resources
+Allow: /css/
+Allow: /js/
+Allow: /images/
+Allow: /fonts/
+
+# Sitemap location
+Sitemap: https://dkdental.au/sitemap.xml
+
+# Crawl delay for respectful crawling
+Crawl-delay: 1 
