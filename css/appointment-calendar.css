@@ -39,6 +39,11 @@
   height: 35px;
 }
 
+.calendar-navigation button i {
+  width: 14px;
+  text-align: center;
+}
+
 .calendar-grid {
   margin-bottom: 30px;
 }
