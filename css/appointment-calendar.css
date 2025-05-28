@@ -31,29 +31,12 @@
   margin-left: auto;
 }
 
-/* Calendar navigation button styling */
 .calendar-navigation button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  border: 1px solid #0576ee;
-  background-color: transparent;
-  color: #0576ee;
-  transition: all 0.2s ease;
-}
-
-.calendar-navigation button:hover {
-  background-color: #0576ee;
-  color: white;
-}
-
-.calendar-navigation button i {
-  font-size: 14px;
-  line-height: 1;
-  text-align: center;
+  min-width: 35px;
+  height: 35px;
 }
 
 .calendar-grid {
