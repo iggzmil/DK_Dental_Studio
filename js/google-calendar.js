@@ -339,6 +339,9 @@ document.addEventListener('DOMContentLoaded', function() {
     timezoneUtils: timezoneUtils
   });
 
+  // Make calendarManager globally accessible for onclick handlers
+  window.calendarManager = calendarManager;
+
   // Set initial service
   calendarManager.setService(window.selectedService);
 
@@ -2406,6 +2409,3 @@ function showBookingSuccess(firstName, lastName, email) {
     </div>
   `;
 }
-
-// Make calendarManager globally accessible for onclick handlers
-window.calendarManager = calendarManager;
