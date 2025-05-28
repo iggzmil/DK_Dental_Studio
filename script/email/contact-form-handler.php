@@ -254,7 +254,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // This is likely a bot - silently exit with a fake success message
         echo json_encode([
             'success' => true,
-            'message' => 'Thank you for your message. We will get back to you shortly.'
+            'message' => 'Thanks for contacting DK Dental Studio. A member of our team will get back to you shortly.'
         ]);
         exit;
     }
@@ -328,7 +328,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($result['success']) {
         echo json_encode([
             'success' => true,
-            'message' => 'Thank you for your message. We will get back to you shortly.'
+            'message' => 'Thanks for contacting DK Dental Studio. A member of our team will get back to you shortly.'
         ]);
     } else {
         echo json_encode([

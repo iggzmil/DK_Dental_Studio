@@ -60,7 +60,7 @@
  * - .contact-*: Contact page specific utilities
  * - .hidden-form-field: Form field hiding utility
  * - .timeline-marker: Timeline styling utility
- * - .process-details, .process-toggle-btn: Process section utilities
+ * - .process-details: Process section utilities
  * - .address-indent-*: Address indentation utilities
  * - .service-link: Service card link styling
  * - .footer-*: Footer specific utilities
@@ -268,6 +268,13 @@
   .header-sticky.is-sticky .navbar-brand {
     padding: 20px 0px;
     margin-right: 0;
+  }
+
+  /* Fix for logo position shifting on scroll - Override template's bottom: 20px */
+  .header.is-sticky .main-header .navbar .navbar-brand {
+    bottom: auto !important;
+    position: relative;
+    padding: 20px 0px;
   }
 
   /* Override container padding that affects logo positioning */
@@ -667,7 +674,6 @@
   background-color: #0461c7;
   transform: translateY(-2px);
 }
-
 #back-to-top i, .back-to-top i {
   font-size: 18px;
   line-height: 40px;
@@ -1356,6 +1362,72 @@
     margin-bottom: 0.5rem;
   }
 
+  /* Success and Error Alert Styles for Contact Form */
+  .alert-success {
+    background-color: #d4edda;
+    border: 2px solid #28a745;
+    color: #155724;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+    position: relative;
+  }
+
+  .alert-success::before {
+    content: "✓";
+    display: inline-block;
+    margin-right: 10px;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #28a745;
+  }
+
+  .alert-danger {
+    background-color: #f8d7da;
+    border: 2px solid #dc3545;
+    color: #721c24;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
+    position: relative;
+  }
+
+  .alert-danger::before {
+    content: "⚠";
+    display: inline-block;
+    margin-right: 10px;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #dc3545;
+  }
+
+  /* Enhanced visibility on blue background */
+  .contact-form-section .alert-success {
+    background-color: #ffffff;
+    border: 3px solid #28a745;
+    color: #155724;
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+    animation: slideInFromTop 0.5s ease-out;
+  }
+
+  .contact-form-section .alert-danger {
+    background-color: #ffffff;
+    border: 3px solid #dc3545;
+    color: #721c24;
+    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.3);
+    animation: slideInFromTop 0.5s ease-out;
+  }
+
+  /* Slide-in animation for alerts */
+  @keyframes slideInFromTop {
+    from {
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
   /* Badge and Label Improvements */
   .badge {
     font-size: 0.85rem;
@@ -1626,10 +1698,6 @@
   display: none;
 }
 
-.process-toggle-btn {
-  min-width: 140px;
-}
-
 /* ===== CONTACT INFO UTILITIES ===== */
 .contact-link {
   color: #000000;
@@ -1765,5 +1833,11 @@
 .schedule-morden-content .mt-4 {
   text-align: center;
 }
-
 /* ===== END OF CONSOLIDATED CUSTOM CSS ===== */
+
+/* CRITICAL LOGO FIX - Must be last to override template */
+.header.is-sticky .main-header .navbar .navbar-brand {
+  bottom: auto !important;
+}
+
+
