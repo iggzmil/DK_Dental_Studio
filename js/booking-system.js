@@ -149,7 +149,7 @@ const ApiClient = {
             const data = await response.json();
             
             // Log API call to debug panel
-            if (window.DebugPanel) {
+            if (window.DebugPanel && typeof window.DebugPanel.addApiCall === 'function') {
                 window.DebugPanel.addApiCall('GET', 'get-access-token.php', data);
             }
             
@@ -268,7 +268,7 @@ const ApiClient = {
             const result = await response.json();
             
             // Log API call to debug panel
-            if (window.DebugPanel) {
+            if (window.DebugPanel && typeof window.DebugPanel.addApiCall === 'function') {
                 window.DebugPanel.addApiCall('POST', 'create-event.php', result);
             }
             

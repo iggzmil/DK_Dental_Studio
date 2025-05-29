@@ -158,21 +158,6 @@ const DebugPanel = {
         });
         output += '\n';
         
-        // Service configuration
-        if (typeof ServiceManager !== 'undefined') {
-            output += `SERVICE CONFIGURATION\n`;
-            Object.keys(ServiceManager.services).forEach(serviceId => {
-                const service = ServiceManager.services[serviceId];
-                output += `${service.name}:\n`;
-                Object.keys(service.schedule).forEach(day => {
-                    const schedule = service.schedule[day];
-                    const hours = schedule ? `${schedule.start}:00-${schedule.end}:00` : 'closed';
-                    output += `  ${day}: ${hours}\n`;
-                });
-                output += '\n';
-            });
-        }
-        
         container.textContent = output;
     },
 
@@ -227,15 +212,25 @@ const DebugPanel = {
         if (this.panel) {
             this.panel.remove();
         }
+    },
+
+    // Stub method to prevent errors from booking system
+    addApiCall(method, endpoint, response) {
+        // Log API call as a regular log entry
+        if (response && typeof response === 'object') {
+            this.addLog('info', `API ${method} ${endpoint}: ${response.success ? 'SUCCESS' : 'FAILED'}`);
+        } else {
+            this.addLog('info', `API ${method} ${endpoint}: called`);
+        }
     }
 };
+
+// Make it globally available immediately
+window.DebugPanel = DebugPanel;
 
 // Initialize debug panel when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => DebugPanel.init());
 } else {
     DebugPanel.init();
-}
-
-// Make it globally available
-window.DebugPanel = DebugPanel; 
+} 
