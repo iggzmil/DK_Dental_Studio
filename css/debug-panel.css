@@ -57,6 +57,21 @@
     max-height: calc(80vh - 60px);
     overflow-y: auto;
     background: #1a1a1a;
+    padding: 16px;
+}
+
+#debug-output {
+    background: #000;
+    color: #f8f9fa;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    padding: 12px;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    height: calc(80vh - 120px);
+    overflow-y: auto;
 }
 
 /* ========================================

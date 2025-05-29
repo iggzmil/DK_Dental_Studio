@@ -99,7 +99,7 @@ const ServiceManager = {
         const service = this.getServiceConfig(serviceId);
         if (!service) return false;
 
-        const dayName = date.toLocaleDateString('en-US', { weekday: 'lowercase' });
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
         const schedule = service.schedule[dayName];
         
         return schedule !== null;
@@ -109,7 +109,7 @@ const ServiceManager = {
         const service = this.getServiceConfig(serviceId);
         if (!service) return [];
 
-        const dayName = date.toLocaleDateString('en-US', { weekday: 'lowercase' });
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
         const schedule = service.schedule[dayName];
         
         if (!schedule) return [];
@@ -515,7 +515,7 @@ const BookingFlow = {
         const availableSlots = BookingState.availableSlots[dateString];
         
         if (!availableSlots || availableSlots.length === 0) {
-            ErrorHandler.showMessage('No available time slots for this date. Please select another date.', 'warning');
+            ErrorHandler.showSystemUnavailableMessage();
             return;
         }
 
@@ -775,23 +775,6 @@ const BookingFlow = {
 // =============================================================================
 
 const ErrorHandler = {
-    showMessage(message, type = 'info') {
-        const container = document.getElementById('appointment-calendar');
-        if (!container) return;
-
-        const alertClass = type === 'error' ? 'alert-danger' : 
-                          type === 'warning' ? 'alert-warning' : 
-                          type === 'success' ? 'alert-success' : 'alert-info';
-
-        container.innerHTML = `
-            <div class="alert ${alertClass} text-center">
-                <h5><i class="fas fa-exclamation-triangle"></i> ${message}</h5>
-                <button type="button" class="btn btn-outline-secondary mt-3" onclick="location.reload()">
-                    Try Again
-                </button>
-            </div>`;
-    },
-
     showSystemUnavailableMessage() {
         const container = document.getElementById('appointment-calendar');
         if (!container) return;
@@ -831,18 +814,12 @@ const ErrorHandler = {
 
     handleAvailabilityError(error) {
         console.error('Availability error:', error);
-        this.showMessage(
-            'Unable to load calendar availability. Please try again or call us at (02) 9398 7578.',
-            'error'
-        );
+        this.showSystemUnavailableMessage();
     },
 
     handleBookingError(error) {
         console.error('Booking error:', error);
-        this.showMessage(
-            'Unable to complete your booking. Please try again or call us at (02) 9398 7578.',
-            'error'
-        );
+        this.showSystemUnavailableMessage();
     }
 };
 
