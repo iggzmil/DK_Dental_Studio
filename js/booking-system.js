@@ -101,12 +101,6 @@ const ServiceManager = {
 
         const dayName = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
         const schedule = service.schedule[dayName];
-        const dayOfWeek = date.getDay();
-        
-        // Debug weekend days
-        if (dayOfWeek === 0 || dayOfWeek === 6) {
-            console.log(`ServiceManager check - ${dayName} (${dayOfWeek}): schedule=${JSON.stringify(schedule)}, available=${schedule !== null}`);
-        }
         
         return schedule !== null;
     },
@@ -424,12 +418,6 @@ const CalendarRenderer = {
 
         const date = new Date(dateString + 'T00:00:00');
         const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
-        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-
-        // Debug weekend days
-        if (dayOfWeek === 0 || dayOfWeek === 6) {
-            console.log(`Weekend Debug - ${dayName} (${dayOfWeek}): dateString=${dateString}, availableSlots=${availableSlots.length}, isPastDate=${isPastDate}`);
-        }
 
         // For future dates, check if there are available slots
         if (availableSlots.length > 0) {
@@ -441,7 +429,6 @@ const CalendarRenderer = {
             // No slots available - determine if weekend (closed) or business day (blank)
             if (dayOfWeek === 0 || dayOfWeek === 6) {
                 // Weekend - show "Closed"
-                console.log(`Setting ${dayName} as closed`);
                 indicator.innerHTML = '<span class="closed-text">Closed</span>';
                 indicator.parentElement.classList.add('closed');
                 indicator.parentElement.classList.remove('available', 'unavailable');
@@ -502,11 +489,6 @@ const AvailabilityManager = {
             const dayOfWeek = date.getDay();
             const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
 
-            // Debug weekend processing
-            if (dayOfWeek === 0 || dayOfWeek === 6) {
-                console.log(`Processing ${dayName} ${dateString}: isPast=${isPastDate}, serviceAvailable=${ServiceManager.isServiceAvailableOnDate(serviceId, date)}`);
-            }
-
             // For past dates, always show no text regardless of service
             if (isPastDate) {
                 CalendarRenderer.updateDateAvailability(dateString, [], true);
@@ -532,7 +514,10 @@ const AvailabilityManager = {
             // Update UI - this will show "Available", "Closed", or nothing based on the day and slots
             CalendarRenderer.updateDateAvailability(dateString, availableHours, false);
 
-            // Store in state
+            // Store in state - with debugging for weekend dates
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                console.log(`STORING SLOTS for ${dayName} ${dateString}: ${availableHours.length} slots = [${availableHours.join(', ')}]`);
+            }
             BookingState.availableSlots[dateString] = availableHours;
         }
     },
