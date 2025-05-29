@@ -14,13 +14,14 @@
   position: relative;
 }
 
-.calendar-header .calendar-month-title {
+.calendar-header .calendar-month-year {
   margin: 0;
   text-align: center;
   width: 100%;
   position: absolute;
   left: 0;
   right: 0;
+  pointer-events: none;
 }
 
 .calendar-navigation {
@@ -419,42 +420,47 @@
   /* Fix calendar header layout on mobile - keep single line with arrows on edges */
   .calendar-header {
     display: flex !important;
+    flex-direction: row !important;
     justify-content: space-between !important;
     align-items: center !important;
-    padding: 12px 15px !important;
+    padding: 10px 12px !important;
     position: relative !important;
+    gap: 0 !important;
   }
 
-  .calendar-header .calendar-month-title {
+  .calendar-header .calendar-month-year {
     position: absolute !important;
     left: 50% !important;
-    transform: translateX(-50%) !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
     text-align: center !important;
     margin: 0 !important;
-    font-size: 1.1rem !important;
+    font-size: 1rem !important;
     pointer-events: none !important;
+    white-space: nowrap !important;
+  }
+
+  .calendar-header #prev-month {
+    order: 1 !important;
+    margin-right: auto !important;
+    z-index: 10 !important;
+  }
+
+  .calendar-header #next-month {
+    order: 3 !important;
+    margin-left: auto !important;
+    z-index: 10 !important;
   }
 
   .calendar-navigation {
-    display: flex !important;
-    gap: 8px !important;
-    position: relative !important;
-    z-index: 2 !important;
-  }
-
-  .calendar-navigation:first-child {
-    margin-right: auto !important;
-  }
-
-  .calendar-navigation:last-child {
-    margin-left: auto !important;
+    display: contents !important;
   }
 
   .calendar-navigation button {
-    padding: 8px 12px !important;
-    font-size: 0.9rem !important;
-    min-width: 32px !important;
-    height: 32px !important;
+    padding: 6px 10px !important;
+    font-size: 0.8rem !important;
+    min-width: 28px !important;
+    height: 28px !important;
   }
 
   .time-slots-grid {
@@ -569,13 +575,43 @@
     margin: 5px 0;
   }
 
-  /* Keep calendar header single line on small mobile */
+  /* Ensure calendar header stays single line on iPhone */
   .calendar-header {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
     padding: 10px 12px !important;
+    position: relative !important;
+    gap: 0 !important;
   }
 
-  .calendar-header .calendar-month-title {
+  .calendar-header .calendar-month-year {
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    text-align: center !important;
+    margin: 0 !important;
     font-size: 1rem !important;
+    pointer-events: none !important;
+    white-space: nowrap !important;
+  }
+
+  .calendar-header #prev-month {
+    order: 1 !important;
+    margin-right: auto !important;
+    z-index: 10 !important;
+  }
+
+  .calendar-header #next-month {
+    order: 3 !important;
+    margin-left: auto !important;
+    z-index: 10 !important;
+  }
+
+  .calendar-navigation {
+    display: contents !important;
   }
 
   .calendar-navigation button {
@@ -599,13 +635,15 @@
   /* Ensure calendar header stays single line on iPhone */
   .calendar-header {
     display: flex !important;
+    flex-direction: row !important;
     justify-content: space-between !important;
     align-items: center !important;
     padding: 10px 12px !important;
     position: relative !important;
+    gap: 0 !important;
   }
 
-  .calendar-header .calendar-month-title {
+  .calendar-header .calendar-month-year {
     position: absolute !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
@@ -636,27 +674,40 @@
   /* Maintain single line header for very small screens */
   .calendar-header {
     display: flex !important;
+    flex-direction: row !important;
     justify-content: space-between !important;
     align-items: center !important;
     padding: 8px 10px !important;
     position: relative !important;
+    gap: 0 !important;
   }
 
-  .calendar-header .calendar-month-title {
+  .calendar-header .calendar-month-year {
     position: absolute !important;
     left: 50% !important;
-    transform: translateX(-50%) !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
     text-align: center !important;
     margin: 0 !important;
     font-size: 0.95rem !important;
     pointer-events: none !important;
+    white-space: nowrap !important;
+  }
+
+  .calendar-header #prev-month {
+    order: 1 !important;
+    margin-right: auto !important;
+    z-index: 10 !important;
+  }
+
+  .calendar-header #next-month {
+    order: 3 !important;
+    margin-left: auto !important;
+    z-index: 10 !important;
   }
 
   .calendar-navigation {
-    display: flex !important;
-    gap: 4px !important;
-    position: relative !important;
-    z-index: 2 !important;
+    display: contents !important;
   }
 
   .calendar-navigation button {
@@ -685,7 +736,7 @@
     position: relative !important;
   }
 
-  .calendar-header .calendar-month-title {
+  .calendar-header .calendar-month-year {
     position: absolute !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
