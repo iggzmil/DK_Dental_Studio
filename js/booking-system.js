@@ -482,6 +482,14 @@ const AvailabilityManager = {
         const monthIndex = month.getMonth();
         const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
 
+        // Clear existing slots for this month to prevent stale data
+        const monthKey = `${year}-${(monthIndex + 1).toString().padStart(2, '0')}`;
+        Object.keys(BookingState.availableSlots).forEach(dateKey => {
+            if (dateKey.startsWith(monthKey)) {
+                delete BookingState.availableSlots[dateKey];
+            }
+        });
+
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, monthIndex, day);
             const dateString = date.toISOString().split('T')[0];
@@ -514,10 +522,7 @@ const AvailabilityManager = {
             // Update UI - this will show "Available", "Closed", or nothing based on the day and slots
             CalendarRenderer.updateDateAvailability(dateString, availableHours, false);
 
-            // Store in state - with debugging for weekend dates
-            if (dayOfWeek === 0 || dayOfWeek === 6) {
-                console.log(`STORING SLOTS for ${dayName} ${dateString}: ${availableHours.length} slots = [${availableHours.join(', ')}]`);
-            }
+            // Store in state
             BookingState.availableSlots[dateString] = availableHours;
         }
     },
