@@ -409,6 +409,15 @@ const CalendarRenderer = {
         const indicator = document.getElementById(`avail-${dateString}`);
         if (!indicator) return;
 
+        const date = new Date(dateString + 'T00:00:00');
+        const dayOfWeek = date.getDay();
+        
+        // Track all calls for Saturday dates
+        if (dayOfWeek === 6) {
+            console.log(`🔍 updateDateAvailability CALL for ${dateString}: slots=${availableSlots.length}, isPast=${isPastDate}`);
+            console.trace(`📍 Call stack for Saturday ${dateString}:`);
+        }
+
         // For past dates, show no text
         if (isPastDate) {
             indicator.innerHTML = '';
@@ -416,9 +425,6 @@ const CalendarRenderer = {
             return;
         }
 
-        const date = new Date(dateString + 'T00:00:00');
-        const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
-        
         // Debug Saturday processing specifically
         if (dayOfWeek === 6) {
             console.log(`DEBUG SAT ${dateString}: dayOfWeek=${dayOfWeek}, availableSlots=${availableSlots.length}`);
@@ -439,7 +445,7 @@ const CalendarRenderer = {
                 indicator.parentElement.classList.remove('available', 'unavailable');
                 
                 if (dayOfWeek === 6) {
-                    console.log(`DEBUG SAT ${dateString}: SET TO CLOSED`);
+                    console.log(`✅ DEBUG SAT ${dateString}: SET TO CLOSED - classes now: ${indicator.parentElement.className}`);
                 }
             } else {
                 // Business day with no slots - show nothing (blank but potentially bookable)
@@ -447,7 +453,7 @@ const CalendarRenderer = {
                 indicator.parentElement.classList.remove('available', 'unavailable', 'closed');
                 
                 if (dayOfWeek === 6) {
-                    console.log(`DEBUG SAT ${dateString}: WENT TO BUSINESS DAY BRANCH - THIS IS WRONG!`);
+                    console.log(`❌ DEBUG SAT ${dateString}: WENT TO BUSINESS DAY BRANCH - THIS IS WRONG!`);
                 }
             }
         }
@@ -535,14 +541,14 @@ const AvailabilityManager = {
             if (dayOfWeek === 0 || dayOfWeek === 6) {
                 availableHours = [];
                 
-                // Debug the actual HTML being generated
+                // Debug the actual HTML being generated with a longer delay
                 setTimeout(() => {
                     const dayElement = document.querySelector(`[data-date="${dateString}"]`);
                     if (dayElement) {
                         const dayName = dayOfWeek === 0 ? 'SUNDAY' : 'SATURDAY';
                         console.log(`${dayName} ${dateString}:`, dayElement.outerHTML);
                     }
-                }, 100);
+                }, 500); // Increased delay to ensure all DOM updates are complete
             }
 
             // Update UI - this will show "Available", "Closed", or nothing based on the day and slots
