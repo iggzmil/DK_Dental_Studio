@@ -30,8 +30,124 @@ function logMessage($message) {
     }
 }
 
+/**
+ * Check if reminders should be sent today based on weekend logic
+ * DK Dental Studio is closed on weekends, so:
+ * - Friday: Don't send reminders for Saturday (clinic closed)
+ * - Saturday: Don't send reminders for Sunday (clinic closed)  
+ * - Sunday: DO send reminders for Monday appointments
+ * - Monday-Thursday: Send reminders for next business day
+ */
+function shouldSendRemindersToday() {
+    $today = new DateTime();
+    $dayOfWeek = (int)$today->format('w'); // 0=Sunday, 1=Monday, ..., 6=Saturday
+    $dayName = $today->format('l');
+    
+    switch($dayOfWeek) {
+        case 5: // Friday
+            logMessage("Today is Friday - NOT sending reminders for Saturday (clinic closed on weekends)");
+            return false;
+            
+        case 6: // Saturday  
+            logMessage("Today is Saturday - NOT sending reminders for Sunday (clinic closed on weekends)");
+            return false;
+            
+        case 0: // Sunday
+            logMessage("Today is Sunday - WILL send reminders for Monday appointments");
+            return true;
+            
+        default: // Monday (1) through Thursday (4)
+            logMessage("Today is $dayName - WILL send reminders for tomorrow's appointments");
+            return true;
+    }
+}
+
+/**
+ * Validate if appointment is during business hours
+ * Business hours:
+ * - Dentures/Maintenance: Mon-Fri 10am-4pm  
+ * - Mouthguards: Mon-Thu 10am-6pm, Fri 10am-4pm
+ */
+function isValidBusinessHourAppointment($appointmentDateTime, $service = null) {
+    $appointmentDate = new DateTime($appointmentDateTime);
+    $dayOfWeek = strtolower($appointmentDate->format('l'));
+    $hour = (int)$appointmentDate->format('H');
+    
+    // Check if appointment is on weekend (should never happen, but good to validate)
+    if ($dayOfWeek === 'saturday' || $dayOfWeek === 'sunday') {
+        logMessage("WARNING: Found appointment on $dayOfWeek - clinic is closed on weekends");
+        return false;
+    }
+    
+    // Define business hours for each service
+    $businessHours = [
+        'dentures' => [
+            'monday' => ['start' => 10, 'end' => 16],
+            'tuesday' => ['start' => 10, 'end' => 16],
+            'wednesday' => ['start' => 10, 'end' => 16],
+            'thursday' => ['start' => 10, 'end' => 16],
+            'friday' => ['start' => 10, 'end' => 16]
+        ],
+        'maintenance' => [
+            'monday' => ['start' => 10, 'end' => 16],
+            'tuesday' => ['start' => 10, 'end' => 16],
+            'wednesday' => ['start' => 10, 'end' => 16],
+            'thursday' => ['start' => 10, 'end' => 16],
+            'friday' => ['start' => 10, 'end' => 16]
+        ],
+        'mouthguards' => [
+            'monday' => ['start' => 10, 'end' => 18],
+            'tuesday' => ['start' => 10, 'end' => 18],
+            'wednesday' => ['start' => 10, 'end' => 18],
+            'thursday' => ['start' => 10, 'end' => 18],
+            'friday' => ['start' => 10, 'end' => 16] // Friday ends at 4pm for mouthguards
+        ]
+    ];
+    
+    // Determine service type from appointment title if not provided
+    if (!$service) {
+        // This will be used later when we have the appointment details
+        return true; // Skip validation if service unknown
+    }
+    
+    $serviceKey = strtolower($service);
+    
+    // Map service names to our business hours keys
+    if (stripos($serviceKey, 'denture') !== false) {
+        $serviceKey = 'dentures';
+    } elseif (stripos($serviceKey, 'maintenance') !== false || stripos($serviceKey, 'repair') !== false) {
+        $serviceKey = 'maintenance';
+    } elseif (stripos($serviceKey, 'mouthguard') !== false) {
+        $serviceKey = 'mouthguards';
+    } else {
+        // Default to denture hours for unknown services
+        $serviceKey = 'dentures';
+    }
+    
+    // Check if day and hour are within business hours
+    if (isset($businessHours[$serviceKey][$dayOfWeek])) {
+        $hours = $businessHours[$serviceKey][$dayOfWeek];
+        $isValid = $hour >= $hours['start'] && $hour < $hours['end'];
+        
+        if (!$isValid) {
+            logMessage("WARNING: Appointment at {$hour}:00 on $dayOfWeek is outside business hours for $serviceKey");
+        }
+        
+        return $isValid;
+    }
+    
+    logMessage("WARNING: No business hours defined for $serviceKey on $dayOfWeek");
+    return false;
+}
+
 // Log script start
 logMessage("Starting Google Calendar appointment reminder check" . (LOG_ONLY_MODE ? " (LOG-ONLY MODE)" : ""));
+
+// Check if we should send reminders today based on weekend logic
+if (!shouldSendRemindersToday()) {
+    logMessage("Reminder system completed - no reminders sent due to weekend schedule");
+    exit(0);
+}
 
 // OAuth token handling
 $tokenFile = __DIR__ . '/../../vendor/google/oauth/secure/google_refresh_token.json';
@@ -277,6 +393,14 @@ foreach ($calendarIds as $service => $calendarId) {
                 // Log for debugging
                 logMessage("Event time: " . $event['start']['dateTime'] . " formatted as: " . $formattedTime);
                 
+                // Validate business hours BEFORE checking email
+                if (isset($event['start']['dateTime'])) {
+                    if (!isValidBusinessHourAppointment($event['start']['dateTime'], $serviceName)) {
+                        logMessage("Skipping appointment outside business hours: $eventSummary at $formattedTime");
+                        continue;
+                    }
+                }
+                
                 // If we don't have an email, we can't send a reminder
                 if (!$clientEmail) {
                     logMessage("No email found for event: $eventSummary - Cannot send reminder");
@@ -285,6 +409,8 @@ foreach ($calendarIds as $service => $calendarId) {
                 
                 // Count this as a valid client appointment
                 $clientAppointmentCount++;
+                
+                logMessage("Validated appointment for reminder: $serviceName appointment for $firstName ($clientEmail) at $formattedTime");
                 
                 // Generate email subject and body
                 $subject = "Appointment Reminder - DK Dental Studio";
