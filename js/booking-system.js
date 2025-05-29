@@ -418,29 +418,24 @@ const CalendarRenderer = {
 
         // For future dates, check if there are available slots
         if (availableSlots.length > 0) {
-            // Show "Available" if there are slots
+            // Business day with slots - show "Available"
             indicator.innerHTML = '<span class="available-text">Available</span>';
             indicator.parentElement.classList.add('available');
             indicator.parentElement.classList.remove('unavailable', 'closed');
         } else {
-            // No slots available - could be weekend or fully booked business day
-            // We need to determine if this is a business day or weekend
+            // No slots available - determine if weekend (closed) or business day (blank)
             const date = new Date(dateString + 'T00:00:00');
             const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
             
-            // Check if this is a weekend using day number (more reliable than string comparison)
-            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
-            
-            if (isWeekend) {
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
                 // Weekend - show "Closed"
                 indicator.innerHTML = '<span class="closed-text">Closed</span>';
                 indicator.parentElement.classList.add('closed');
                 indicator.parentElement.classList.remove('available', 'unavailable');
             } else {
-                // Business day with no slots - show nothing (fully booked)
+                // Business day with no slots - show nothing (blank but potentially bookable)
                 indicator.innerHTML = '';
-                indicator.parentElement.classList.add('unavailable');
-                indicator.parentElement.classList.remove('available', 'closed');
+                indicator.parentElement.classList.remove('available', 'unavailable', 'closed');
             }
         }
     },
