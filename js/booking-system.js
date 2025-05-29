@@ -101,6 +101,12 @@ const ServiceManager = {
 
         const dayName = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
         const schedule = service.schedule[dayName];
+        const dayOfWeek = date.getDay();
+        
+        // Debug weekend days
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            console.log(`ServiceManager check - ${dayName} (${dayOfWeek}): schedule=${JSON.stringify(schedule)}, available=${schedule !== null}`);
+        }
         
         return schedule !== null;
     },
