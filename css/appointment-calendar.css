@@ -188,24 +188,16 @@
 
   /* 
    * Mobile calendar optimization: 
-   * - CSS creates 5-column grid and hides weekend headers only
-   * - JavaScript generateCalendarDays() function detects mobile view 
-   *   and only generates weekday calendar days (Mon-Fri) to ensure proper alignment
-   * - Closed days (including today after business hours) remain visible but styled as unavailable
+   * - Show all 7 days including weekends to maintain proper grid layout
+   * - Weekend days will be styled as closed/unavailable
    */
   .calendar-days-header {
     font-size: 12px;
-    grid-template-columns: repeat(5, 1fr) !important;
+    grid-template-columns: repeat(7, 1fr) !important;
   }
 
   .calendar-days {
-    grid-template-columns: repeat(5, 1fr) !important;
-  }
-
-  /* Hide weekend headers in mobile */
-  .calendar-days-header div:nth-child(6),
-  .calendar-days-header div:nth-child(7) {
-    display: none !important;
+    grid-template-columns: repeat(7, 1fr) !important;
   }
 
   .day-number {
@@ -242,17 +234,11 @@
 /* Additional iPhone-specific fixes */
 @media screen and (max-width: 480px) {
   .calendar-days-header {
-    grid-template-columns: repeat(5, 1fr) !important;
+    grid-template-columns: repeat(7, 1fr) !important;
   }
 
   .calendar-days {
-    grid-template-columns: repeat(5, 1fr) !important;
-  }
-
-  /* Hide weekend headers in mobile */
-  .calendar-days-header div:nth-child(6),
-  .calendar-days-header div:nth-child(7) {
-    display: none !important;
+    grid-template-columns: repeat(7, 1fr) !important;
   }
 
   .calendar-header {
@@ -282,17 +268,11 @@
 /* Force override for very small screens */
 @media screen and (max-width: 414px) {
   .calendar-days-header {
-    grid-template-columns: repeat(5, 1fr) !important;
+    grid-template-columns: repeat(7, 1fr) !important;
   }
 
   .calendar-days {
-    grid-template-columns: repeat(5, 1fr) !important;
-  }
-
-  /* Hide weekend headers in mobile */
-  .calendar-days-header div:nth-child(6),
-  .calendar-days-header div:nth-child(7) {
-    display: none !important;
+    grid-template-columns: repeat(7, 1fr) !important;
   }
 
   div.calendar-header h3.calendar-month-title {
@@ -313,17 +293,11 @@
 /* iPhone specific targeting */
 @media only screen and (max-device-width: 812px) and (-webkit-min-device-pixel-ratio: 2) {
   .calendar-days-header {
-    grid-template-columns: repeat(5, 1fr) !important;
+    grid-template-columns: repeat(7, 1fr) !important;
   }
 
   .calendar-days {
-    grid-template-columns: repeat(5, 1fr) !important;
-  }
-
-  /* Hide weekend headers in mobile */
-  .calendar-days-header div:nth-child(6),
-  .calendar-days-header div:nth-child(7) {
-    display: none !important;
+    grid-template-columns: repeat(7, 1fr) !important;
   }
 
   .calendar-header {
