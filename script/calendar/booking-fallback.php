@@ -184,7 +184,7 @@ if ($isFullyLoaded) {
 } else {
     // Appointment request message (calendar in basic mode)
     $patientMessage .= "
-            <p>Our team will contact you shortly to confirm your appointment. If you don't hear from us within 24 hours, please call us at (02) 9398 7578.</p>
+            <p>You will receive a confirmation booking sent to your email. If you don't hear from us within 24 hours, please call us at (02) 9398 7578.</p>
             
             <p>If you need to make any changes to your appointment request, please contact us as soon as possible.</p>";
 }
@@ -260,8 +260,8 @@ if ($mailSent) {
     echo json_encode([
         'success' => true, 
         'message' => $isFullyLoaded ? 
-            'Your appointment has been confirmed. You will receive a confirmation email shortly.' : 
-            'Appointment request received. Our team will contact you shortly to confirm.'
+            'You will receive a confirmation booking sent to your email.' : 
+            'You will receive a confirmation booking sent to your email.'
     ]);
 } else {
     http_response_code(500); // Internal Server Error

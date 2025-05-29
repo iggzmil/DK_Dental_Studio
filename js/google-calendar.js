@@ -2476,7 +2476,7 @@ function showBookingSuccess(firstName, lastName, email) {
       </div>
       <h4 class="text-center">Booking Request Submitted!</h4>
       <p class="text-center">We've received your appointment request for ${getServiceName(window.selectedService)} on ${formatDate(appState.selectedDateTime.date)} at ${formatTime(appState.selectedDateTime.time)}.</p>
-      <p class="text-center">Our staff will contact you shortly to confirm your appointment.</p>
+      <p class="text-center">You will receive a confirmation booking sent to your email.</p>
       <div class="alert alert-info mt-3">
         <p class="mb-0"><strong>What happens next:</strong></p>
         <ul class="mb-0 text-left">
