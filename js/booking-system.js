@@ -534,6 +534,11 @@ const AvailabilityManager = {
 
             // Update UI - this will show "Available", "Closed", or nothing based on the day and slots
             CalendarRenderer.updateDateAvailability(dateString, availableHours, false);
+            
+            // Debug what's happening with Saturday calls
+            if (dayOfWeek === 6) {
+                console.log(`SATURDAY ${dateString}: Called updateDateAvailability with ${availableHours.length} hours`);
+            }
 
             // Store in state
             BookingState.availableSlots[dateString] = availableHours;
