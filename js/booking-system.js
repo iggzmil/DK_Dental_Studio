@@ -426,10 +426,10 @@ const CalendarRenderer = {
             // No slots available - could be weekend or fully booked business day
             // We need to determine if this is a business day or weekend
             const date = new Date(dateString + 'T00:00:00');
-            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+            const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
             
-            // Check if this is a weekend by looking at the day name
-            const isWeekend = dayName === 'saturday' || dayName === 'sunday';
+            // Check if this is a weekend using day number (more reliable than string comparison)
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
             
             if (isWeekend) {
                 // Weekend - show "Closed"
