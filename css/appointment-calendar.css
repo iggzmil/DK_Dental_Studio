@@ -401,16 +401,24 @@
 
   /* 
    * Mobile calendar optimization: 
-   * - Show all 7 days including weekends to maintain proper grid layout
-   * - Weekend days will be styled as closed/unavailable
+   * - CSS creates 5-column grid and hides weekend headers only
+   * - JavaScript generateCalendarHTML() function detects mobile view 
+   *   and only generates weekday calendar days (Mon-Fri) to ensure proper alignment
+   * - Closed days (including today after business hours) remain visible but styled as unavailable
    */
   .calendar-days-header {
     font-size: 12px;
-    grid-template-columns: repeat(7, 1fr) !important;
+    grid-template-columns: repeat(5, 1fr) !important;
   }
 
   .calendar-days {
-    grid-template-columns: repeat(7, 1fr) !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+
+  /* Hide weekend headers in mobile */
+  .calendar-days-header .weekday:nth-child(6),
+  .calendar-days-header .weekday:nth-child(7) {
+    display: none !important;
   }
 
   .day-number {
@@ -423,7 +431,7 @@
     flex-direction: row !important;
     justify-content: space-between !important;
     align-items: center !important;
-    padding: 10px 12px !important;
+    padding: 12px 15px !important;
     position: relative !important;
     gap: 0 !important;
   }
@@ -435,7 +443,7 @@
     transform: translate(-50%, -50%) !important;
     text-align: center !important;
     margin: 0 !important;
-    font-size: 1rem !important;
+    font-size: 1.1rem !important;
     pointer-events: none !important;
     white-space: nowrap !important;
   }
@@ -457,10 +465,10 @@
   }
 
   .calendar-navigation button {
-    padding: 6px 10px !important;
-    font-size: 0.8rem !important;
-    min-width: 28px !important;
-    height: 28px !important;
+    padding: 8px 12px !important;
+    font-size: 0.9rem !important;
+    min-width: 32px !important;
+    height: 32px !important;
   }
 
   .time-slots-grid {
@@ -533,6 +541,21 @@
   .booking-success h4 {
     font-size: 1.2rem;
   }
+
+  /* 5-day calendar for tablets */
+  .calendar-days-header {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+
+  .calendar-days {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+
+  /* Hide weekend headers in mobile */
+  .calendar-days-header .weekday:nth-child(6),
+  .calendar-days-header .weekday:nth-child(7) {
+    display: none !important;
+  }
 }
 
 @media (max-width: 480px) {
@@ -575,7 +598,22 @@
     margin: 5px 0;
   }
 
-  /* Ensure calendar header stays single line on iPhone */
+  /* 5-day calendar for small mobile */
+  .calendar-days-header {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+
+  .calendar-days {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+
+  /* Hide weekend headers in mobile */
+  .calendar-days-header .weekday:nth-child(6),
+  .calendar-days-header .weekday:nth-child(7) {
+    display: none !important;
+  }
+
+  /* Keep calendar header single line on small mobile */
   .calendar-header {
     display: flex !important;
     flex-direction: row !important;
@@ -625,11 +663,17 @@
 /* Additional iPhone-specific fixes */
 @media screen and (max-width: 480px) {
   .calendar-days-header {
-    grid-template-columns: repeat(7, 1fr) !important;
+    grid-template-columns: repeat(5, 1fr) !important;
   }
 
   .calendar-days {
-    grid-template-columns: repeat(7, 1fr) !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+
+  /* Hide weekend headers in mobile */
+  .calendar-days-header .weekday:nth-child(6),
+  .calendar-days-header .weekday:nth-child(7) {
+    display: none !important;
   }
 
   /* Ensure calendar header stays single line on iPhone */
@@ -646,29 +690,53 @@
   .calendar-header .calendar-month-year {
     position: absolute !important;
     left: 50% !important;
-    transform: translateX(-50%) !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
     text-align: center !important;
     margin: 0 !important;
     font-size: 1rem !important;
     pointer-events: none !important;
+    white-space: nowrap !important;
+  }
+
+  .calendar-header #prev-month {
+    order: 1 !important;
+    margin-right: auto !important;
+    z-index: 10 !important;
+  }
+
+  .calendar-header #next-month {
+    order: 3 !important;
+    margin-left: auto !important;
+    z-index: 10 !important;
   }
 
   .calendar-navigation {
-    display: flex !important;
-    gap: 6px !important;
-    position: relative !important;
-    z-index: 2 !important;
+    display: contents !important;
+  }
+
+  .calendar-navigation button {
+    padding: 6px 10px !important;
+    font-size: 0.8rem !important;
+    min-width: 28px !important;
+    height: 28px !important;
   }
 }
 
 /* Force override for very small screens */
 @media screen and (max-width: 414px) {
   .calendar-days-header {
-    grid-template-columns: repeat(7, 1fr) !important;
+    grid-template-columns: repeat(5, 1fr) !important;
   }
 
   .calendar-days {
-    grid-template-columns: repeat(7, 1fr) !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+
+  /* Hide weekend headers in mobile */
+  .calendar-days-header .weekday:nth-child(6),
+  .calendar-days-header .weekday:nth-child(7) {
+    display: none !important;
   }
 
   /* Maintain single line header for very small screens */
@@ -721,36 +789,55 @@
 /* iPhone specific targeting - maintain single line */
 @media only screen and (max-device-width: 812px) and (-webkit-min-device-pixel-ratio: 2) {
   .calendar-days-header {
-    grid-template-columns: repeat(7, 1fr) !important;
+    grid-template-columns: repeat(5, 1fr) !important;
   }
 
   .calendar-days {
-    grid-template-columns: repeat(7, 1fr) !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+
+  /* Hide weekend headers in mobile */
+  .calendar-days-header .weekday:nth-child(6),
+  .calendar-days-header .weekday:nth-child(7) {
+    display: none !important;
   }
 
   .calendar-header {
     display: flex !important;
+    flex-direction: row !important;
     justify-content: space-between !important;
     align-items: center !important;
     padding: 10px 12px !important;
     position: relative !important;
+    gap: 0 !important;
   }
 
   .calendar-header .calendar-month-year {
     position: absolute !important;
     left: 50% !important;
-    transform: translateX(-50%) !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
     text-align: center !important;
     margin: 0 !important;
     font-size: 1rem !important;
     pointer-events: none !important;
+    white-space: nowrap !important;
+  }
+
+  .calendar-header #prev-month {
+    order: 1 !important;
+    margin-right: auto !important;
+    z-index: 10 !important;
+  }
+
+  .calendar-header #next-month {
+    order: 3 !important;
+    margin-left: auto !important;
+    z-index: 10 !important;
   }
 
   .calendar-navigation {
-    display: flex !important;
-    gap: 6px !important;
-    position: relative !important;
-    z-index: 2 !important;
+    display: contents !important;
   }
 
   .calendar-navigation button {

@@ -380,10 +380,9 @@ const CalendarRenderer = {
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
         const daysInMonth = lastDay.getDate();
-        // Adjust for Monday start (0=Sunday, 1=Monday, etc.)
-        // Convert JavaScript's 0=Sunday to 0=Monday by subtracting 1 and handling Sunday wrap-around
-        let startingDayOfWeek = firstDay.getDay() - 1;
-        if (startingDayOfWeek < 0) startingDayOfWeek = 6; // Sunday becomes 6
+        
+        // Check if we're in mobile view
+        const isMobile = window.innerWidth <= 991;
 
         let calendarHTML = `
             <div class="calendar-widget">
@@ -397,39 +396,115 @@ const CalendarRenderer = {
                     </button>
                 </div>
                 <div class="calendar-grid">
-                    <div class="calendar-weekdays">
+                    <div class="calendar-days-header">`;
+
+        // Add weekday headers based on view type
+        if (isMobile) {
+            // Mobile: Show only Mon-Fri headers
+            calendarHTML += `
+                        <div class="weekday">Mon</div>
+                        <div class="weekday">Tue</div>
+                        <div class="weekday">Wed</div>
+                        <div class="weekday">Thu</div>
+                        <div class="weekday">Fri</div>`;
+        } else {
+            // Desktop: Show all weekday headers
+            calendarHTML += `
                         <div class="weekday">Mon</div>
                         <div class="weekday">Tue</div>
                         <div class="weekday">Wed</div>
                         <div class="weekday">Thu</div>
                         <div class="weekday">Fri</div>
                         <div class="weekday">Sat</div>
-                        <div class="weekday">Sun</div>
+                        <div class="weekday">Sun</div>`;
+        }
+
+        calendarHTML += `
                     </div>
                     <div class="calendar-days">`;
 
-        // Add empty cells for days before the first day of the month
-        for (let i = 0; i < startingDayOfWeek; i++) {
-            calendarHTML += '<div class="calendar-day empty"></div>';
-        }
-
-        // Add days of the month
-        for (let day = 1; day <= daysInMonth; day++) {
-            const date = new Date(year, month, day);
-            // Use local date formatting instead of toISOString() to avoid timezone shifts
-            const dateString = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-            const isToday = this.isToday(date);
-            const isPast = this.isPast(date);
+        if (isMobile) {
+            // Mobile view: Generate only weekdays in correct 5-day grid positions
+            // BUT always include today's date even if it's a weekend
             
-            calendarHTML += `
-                <div class="calendar-day ${isPast ? 'past' : ''} ${isToday ? 'today' : ''}" 
-                     data-date="${dateString}" 
-                     data-day="${day}">
-                    <span class="day-number">${day}</span>
-                    <div class="availability-indicator" id="avail-${dateString}">
-                        <div class="loading-spinner"></div>
-                    </div>
-                </div>`;
+            // Convert starting day to Monday=0 system (0=Monday, 1=Tuesday, ..., 6=Sunday)
+            let startingDayOfWeek = firstDay.getDay() - 1;
+            if (startingDayOfWeek < 0) startingDayOfWeek = 6; // Sunday becomes 6
+            
+            // For mobile 5-day grid, calculate empty cells only for weekday start positions
+            let emptyCount = 0;
+            if (startingDayOfWeek <= 4) {
+                // Month starts on a weekday, so we need empty cells before it
+                emptyCount = startingDayOfWeek;
+            }
+            // If month starts on weekend (startingDayOfWeek 5 or 6), no empty cells needed
+            
+            // Add empty cells
+            for (let i = 0; i < emptyCount; i++) {
+                calendarHTML += '<div class="calendar-day empty"></div>';
+            }
+            
+            // Get today's date for comparison
+            const today = new Date();
+            const todayDay = today.getDate();
+            const todayMonth = today.getMonth();
+            const todayYear = today.getFullYear();
+            const isCurrentMonth = (year === todayYear && month === todayMonth);
+            
+            // Add only weekdays, but always include today even if it's a weekend
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                const dayOfWeek = date.getDay();
+                const isToday = isCurrentMonth && day === todayDay;
+                
+                // Include weekdays OR today (even if today is a weekend)
+                if ((dayOfWeek >= 1 && dayOfWeek <= 5) || isToday) {
+                    const dateString = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    const isPast = this.isPast(date);
+                    
+                    calendarHTML += `
+                        <div class="calendar-day ${isPast ? 'past' : ''} ${isToday ? 'today' : ''}" 
+                             data-date="${dateString}" 
+                             data-day="${day}">
+                            <span class="day-number">${day}</span>
+                            <div class="availability-indicator" id="avail-${dateString}">
+                                <div class="loading-spinner"></div>
+                            </div>
+                        </div>`;
+                }
+            }
+            
+        } else {
+            // Desktop view: Show all days including weekends
+            
+            // Adjust for Monday start (0=Sunday, 1=Monday, etc.)
+            // Convert JavaScript's 0=Sunday to 0=Monday by subtracting 1 and handling Sunday wrap-around
+            let startingDayOfWeek = firstDay.getDay() - 1;
+            if (startingDayOfWeek < 0) startingDayOfWeek = 6; // Sunday becomes 6
+
+            // Add empty cells for days before the first day of the month
+            for (let i = 0; i < startingDayOfWeek; i++) {
+                calendarHTML += '<div class="calendar-day empty"></div>';
+            }
+
+            // Add all days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                // Use local date formatting instead of toISOString() to avoid timezone shifts
+                const dateString = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                const isToday = this.isToday(date);
+                const isPast = this.isPast(date);
+                
+                calendarHTML += `
+                    <div class="calendar-day ${isPast ? 'past' : ''} ${isToday ? 'today' : ''}" 
+                         data-date="${dateString}" 
+                         data-day="${day}">
+                        <span class="day-number">${day}</span>
+                        <div class="availability-indicator" id="avail-${dateString}">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>`;
+            }
         }
 
         calendarHTML += `
