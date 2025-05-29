@@ -803,189 +803,147 @@ const BookingFlow = {
         const bookingFormContainer = document.getElementById('booking-form-container');
         if (!bookingFormContainer) return;
 
+        bookingFormContainer.style.display = 'block';
+
         const selectedDate = new Date(BookingState.selectedDate + 'T00:00:00');
-        const formattedDate = selectedDate.toLocaleDateString('en-AU', { 
+        const serviceName = ServiceManager.getServiceName(BookingState.selectedService);
+        const serviceDuration = ServiceManager.getServiceConfig(BookingState.selectedService).duration;
+
+        // Use the exact formatDate and formatTime functions from Sample system
+        const formattedDate = this.formatDateSample(BookingState.selectedDate);
+        const formattedTime = this.formatTimeSample(BookingState.selectedTime + ':00');
+
+        bookingFormContainer.innerHTML = `
+            <h4 class="mb-4">Complete Your Booking</h4>
+            <p><strong>Service:</strong> ${serviceName}</p>
+            <p><strong>Date:</strong> ${formattedDate}</p>
+            <p><strong>Time:</strong> ${formattedTime}</p>
+            <p><strong>Duration:</strong> ${serviceDuration} minutes</p>
+
+            <form class="booking-form mt-4" onsubmit="event.preventDefault(); BookingFlow.submitBookingForm();">
+                <div class="form-group">
+                    <label for="booking-first-name">First Name *</label>
+                    <input type="text" class="form-control" id="booking-first-name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="booking-last-name">Last Name *</label>
+                    <input type="text" class="form-control" id="booking-last-name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="booking-email">Email *</label>
+                    <input type="email" class="form-control" id="booking-email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="booking-phone">Phone Number *</label>
+                    <input type="tel" class="form-control" id="booking-phone" required>
+                </div>
+
+                <div class="form-group" style="grid-column: span 2;">
+                    <label for="booking-notes">Additional Notes</label>
+                    <textarea class="form-control" id="booking-notes" rows="3"></textarea>
+                </div>
+
+                <div class="form-group" style="grid-column: span 2;">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="booking-consent" required>
+                        <label class="form-check-label" for="booking-consent">
+                            I confirm that I want to receive content from DK Dental Studio using any contact information I provide.
+                        </label>
+                    </div>
+                </div>
+
+                <div style="grid-column: span 2; text-align: center; margin-top: 20px;">
+                    <button type="button" class="btn btn-outline-secondary mr-2" onclick="BookingFlow.resetBookingForm()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Confirm Booking</button>
+                </div>
+            </form>
+        `;
+
+        // Scroll to the form
+        bookingFormContainer.scrollIntoView({ behavior: 'smooth' });
+    },
+
+    /**
+     * Format date exactly like Sample system
+     */
+    formatDateSample(dateString) {
+        const [year, month, day] = dateString.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        return date.toLocaleDateString('en-AU', { 
             weekday: 'long', 
             year: 'numeric', 
             month: 'long', 
             day: 'numeric' 
         });
-        const displayTime = this.formatTime12Hour(BookingState.selectedTime);
-        const serviceName = ServiceManager.getServiceName(BookingState.selectedService);
-
-        const formHTML = `
-            <div class="booking-form-content">
-                <div class="booking-summary">
-                    <h4 class="text-center mb-3">Complete Your Booking</h4>
-                    <div class="text-center mb-4">
-                        <p class="mb-1"><strong>Service:</strong> ${serviceName}</p>
-                        <p class="mb-1"><strong>Date:</strong> ${formattedDate}</p>
-                        <p class="mb-1"><strong>Time:</strong> ${displayTime}</p>
-                        <p class="mb-0"><strong>Duration:</strong> 1 hour</p>
-                    </div>
-                </div>
-                
-                <form id="booking-form" class="booking-form">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="firstName">First Name *</label>
-                                <input type="text" class="form-control" id="firstName" name="firstName" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="lastName">Last Name *</label>
-                                <input type="text" class="form-control" id="lastName" name="lastName" required>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="email">Email Address *</label>
-                                <input type="email" class="form-control" id="email" name="email" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label for="phone">Phone Number *</label>
-                                <input type="tel" class="form-control" id="phone" name="phone" required>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group mb-4">
-                        <label for="notes">Additional Notes (Optional)</label>
-                        <textarea class="form-control" id="notes" name="notes" rows="3" 
-                                  placeholder="Any specific requirements or questions?"></textarea>
-                    </div>
-                    
-                    <div class="form-actions text-center">
-                        <button type="button" class="btn btn-outline-secondary me-3" onclick="BookingFlow.clearBookingForm()">
-                            <i class="fas fa-times"></i> Cancel
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-calendar-check"></i> Confirm Booking
-                        </button>
-                    </div>
-                </form>
-            </div>`;
-
-        bookingFormContainer.innerHTML = formHTML;
-        bookingFormContainer.style.display = 'block';
-
-        // Attach form submission handler
-        document.getElementById('booking-form').addEventListener('submit', this.handleBookingSubmission.bind(this));
-        
-        // Scroll to booking form smoothly
-        bookingFormContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
     },
 
-    async handleBookingSubmission(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(e.target);
-        const bookingData = {
-            service: BookingState.selectedService,
-            event: this.createGoogleEventData(formData),
-            customerData: {
-                firstName: formData.get('firstName'),
-                lastName: formData.get('lastName'),
-                email: formData.get('email'),
-                phone: formData.get('phone'),
-                notes: formData.get('notes') || ''
-            }
-        };
+    /**
+     * Format time exactly like Sample system
+     */
+    formatTimeSample(timeString) {
+        const [hours, minutes] = timeString.split(':');
+        const hour = parseInt(hours, 10);
+        const paddedMinutes = minutes.padStart(2, '0');
 
-        try {
-            // Show loading state
-            const submitButton = e.target.querySelector('button[type="submit"]');
-            const originalText = submitButton.innerHTML;
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Booking...';
-            submitButton.disabled = true;
-
-            // Create the booking
-            const result = await ApiClient.createBooking(bookingData);
-            
-            // Show success message
-            this.showBookingConfirmation(result, bookingData.customerData);
-
-        } catch (error) {
-            console.error('Booking submission error:', error);
-            ErrorHandler.handleBookingError(error);
-            
-            // Reset button
-            const submitButton = e.target.querySelector('button[type="submit"]');
-            submitButton.innerHTML = '<i class="fas fa-calendar-check"></i> Confirm Booking';
-            submitButton.disabled = false;
+        if (hour === 0) {
+            return `12:${paddedMinutes}am`;
+        } else if (hour < 12) {
+            return `${hour}:${paddedMinutes}am`;
+        } else if (hour === 12) {
+            return `12:${paddedMinutes}pm`;
+        } else {
+            return `${hour - 12}:${paddedMinutes}pm`;
         }
     },
 
-    createGoogleEventData(formData) {
-        const startDateTime = new Date(BookingState.selectedDate + `T${BookingState.selectedTime.toString().padStart(2, '0')}:00:00`);
-        const endDateTime = new Date(startDateTime.getTime() + (60 * 60 * 1000)); // Add 1 hour
+    /**
+     * Submit booking form - matches Sample system functionality
+     */
+    submitBookingForm() {
+        // Get form values
+        const firstName = document.getElementById('booking-first-name').value;
+        const lastName = document.getElementById('booking-last-name').value;
+        const email = document.getElementById('booking-email').value;
+        const phone = document.getElementById('booking-phone').value;
+        const notes = document.getElementById('booking-notes').value;
 
-        return {
-            summary: `${ServiceManager.getServiceName(BookingState.selectedService)} - ${formData.get('firstName')} ${formData.get('lastName')}`,
-            description: `Booking Details:\n\nService: ${ServiceManager.getServiceName(BookingState.selectedService)}\nCustomer: ${formData.get('firstName')} ${formData.get('lastName')}\nEmail: ${formData.get('email')}\nPhone: ${formData.get('phone')}\n\nNotes: ${formData.get('notes') || 'None'}`,
-            start: {
-                dateTime: startDateTime.toISOString(),
-                timeZone: 'Australia/Sydney'
-            },
-            end: {
-                dateTime: endDateTime.toISOString(),
-                timeZone: 'Australia/Sydney'
-            },
-            attendees: [
-                { email: formData.get('email') }
-            ]
-        };
-    },
+        // Validate form
+        if (!firstName || !lastName || !email || !phone) {
+            alert('Please fill in all required fields.');
+            return;
+        }
 
-    showBookingConfirmation(result, customerData) {
+        // Get the booking form container
         const bookingFormContainer = document.getElementById('booking-form-container');
         if (!bookingFormContainer) return;
 
-        const selectedDate = new Date(BookingState.selectedDate + 'T00:00:00');
-        const formattedDate = selectedDate.toLocaleDateString('en-AU', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-        });
-        const displayTime = this.formatTime12Hour(BookingState.selectedTime);
-        const serviceName = ServiceManager.getServiceName(BookingState.selectedService);
-
+        // Show processing message exactly like Sample
         bookingFormContainer.innerHTML = `
-            <div class="booking-success">
-                <div class="text-center mb-4">
-                    <i class="fas fa-check-circle text-success" style="font-size: 48px;"></i>
-                </div>
-                <h4 class="text-center mb-3">Booking Request Submitted!</h4>
-                <p class="text-center mb-3">We've received your appointment request for <strong>${serviceName}</strong> on <strong>${formattedDate}</strong> at <strong>${displayTime}</strong>.</p>
-                <p class="text-center mb-4">A confirmation email has been sent to <strong>${customerData.email}</strong>.</p>
-                
-                <div class="alert alert-info">
-                    <h6 class="mb-2"><i class="fas fa-info-circle"></i> What happens next:</h6>
-                    <ul class="mb-0">
-                        <li>Our team will review your booking request</li>
-                        <li>You'll receive a confirmation email with appointment details</li>
-                        <li>You'll receive a reminder email 24 hours before your appointment</li>
-                        <li>If you need to change your appointment, please call us at <a href="tel:0293987578">(02) 9398 7578</a></li>
-                    </ul>
-                </div>
-                
-                <div class="text-center mt-4">
-                    <button type="button" class="btn btn-primary" onclick="BookingFlow.resetBooking()">
-                        <i class="fas fa-plus"></i> Book Another Appointment
-                    </button>
-                </div>
-            </div>`;
+            <div class="text-center">
+                <div class="spinner" style="margin: 20px auto;"></div>
+                <h4 class="mt-3">Processing Your Booking</h4>
+                <p>Please wait while we confirm your appointment...</p>
+            </div>
+        `;
 
-        // Scroll to confirmation message
-        bookingFormContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Create booking data exactly like Sample
+        const bookingData = {
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+            phone: phone,
+            notes: notes,
+            service: BookingState.selectedService,
+            date: BookingState.selectedDate,
+            time: BookingState.selectedTime + ':00',
+            isFullyLoaded: true
+        };
+
+        // Create the booking using existing API
+        this.createBookingRequest(bookingData);
     },
 
     updateServiceSelection(serviceId) {
@@ -1051,6 +1009,161 @@ const BookingFlow = {
         const calendarContainer = document.getElementById('appointment-calendar');
         if (calendarContainer) {
             calendarContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    },
+
+    /**
+     * Create booking request - matches Sample system API calls
+     */
+    async createBookingRequest(bookingData) {
+        try {
+            // Create Google Calendar event data
+            const startDateTime = new Date(bookingData.date + `T${bookingData.time}`);
+            const endDateTime = new Date(startDateTime.getTime() + (60 * 60 * 1000)); // Add 1 hour
+
+            const eventData = {
+                'summary': `${ServiceManager.getServiceName(bookingData.service)} - ${bookingData.firstName} ${bookingData.lastName}`,
+                'description': `
+                    Appointment Details:
+                    Service: ${ServiceManager.getServiceName(bookingData.service)}
+                    Name: ${bookingData.firstName} ${bookingData.lastName}
+                    Email: ${bookingData.email}
+                    Phone: ${bookingData.phone}
+                    Notes: ${bookingData.notes}
+                `,
+                'start': {
+                    'dateTime': startDateTime.toISOString(),
+                    'timeZone': 'Australia/Sydney'
+                },
+                'end': {
+                    'dateTime': endDateTime.toISOString(),
+                    'timeZone': 'Australia/Sydney'
+                },
+                'reminders': {
+                    'useDefault': false,
+                    'overrides': [
+                        {'method': 'popup', 'minutes': 60} // 1 hour before
+                    ]
+                }
+            };
+
+            // Try to create calendar event first
+            try {
+                const eventResult = await fetch('script/calendar/create-event.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        event: eventData,
+                        service: bookingData.service
+                    })
+                });
+
+                const eventResponse = await eventResult.json();
+                if (!eventResponse.success) {
+                    console.warn('Calendar event creation failed, proceeding with email confirmation');
+                }
+            } catch (error) {
+                console.warn('Calendar event creation error, proceeding with email confirmation:', error);
+            }
+
+            // Send booking confirmation regardless of calendar event success
+            this.sendBookingConfirmation(bookingData);
+
+        } catch (error) {
+            console.error('Booking request error:', error);
+            // Fallback to email confirmation only
+            this.sendBookingConfirmation(bookingData);
+        }
+    },
+
+    /**
+     * Send booking confirmation email - matches Sample system
+     */
+    async sendBookingConfirmation(bookingData) {
+        try {
+            const response = await fetch('script/calendar/booking-fallback.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(bookingData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Booking submission failed: ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            if (data.success) {
+                this.showBookingSuccess(bookingData.firstName, bookingData.lastName, bookingData.email);
+            } else {
+                throw new Error('Booking submission unsuccessful');
+            }
+
+        } catch (error) {
+            console.error('Booking confirmation error:', error);
+            ErrorHandler.handleBookingError(error);
+        }
+    },
+
+    /**
+     * Show booking success message - exactly matches Sample system
+     */
+    showBookingSuccess(firstName, lastName, email) {
+        const bookingFormContainer = document.getElementById('booking-form-container');
+        if (!bookingFormContainer) return;
+
+        const serviceName = ServiceManager.getServiceName(BookingState.selectedService);
+        const formattedDate = this.formatDateSample(BookingState.selectedDate);
+        const formattedTime = this.formatTimeSample(BookingState.selectedTime + ':00');
+
+        bookingFormContainer.innerHTML = `
+            <div class="booking-success">
+                <div class="text-center mb-4">
+                    <i class="fas fa-check-circle text-success" style="font-size: 48px;"></i>
+                </div>
+                <h4 class="text-center">Booking Request Submitted!</h4>
+                <p class="text-center">We've received your appointment request for ${serviceName} on ${formattedDate} at ${formattedTime}.</p>
+                <p class="text-center">You will receive a confirmation booking sent to your email.</p>
+                <div class="alert alert-info mt-3">
+                    <p class="mb-0"><strong>What happens next:</strong></p>
+                    <ul class="mb-0 text-left">
+                        <li>Our team will review your booking</li>
+                        <li>You'll receive a confirmation email</li>
+                        <li>You'll receive a reminder email 24 hours before your appointment</li>
+                        <li>If you need to change your appointment, please call us at (02) 9398 7578</li>
+                    </ul>
+                </div>
+                <div class="text-center mt-4">
+                    <button class="btn btn-primary" onclick="BookingFlow.resetBookingForm()">Book Another Appointment</button>
+                </div>
+            </div>
+        `;
+    },
+
+    /**
+     * Reset booking form - matches Sample system functionality
+     */
+    resetBookingForm() {
+        // Reset booking state
+        BookingState.selectedDate = null;
+        BookingState.selectedTime = null;
+        BookingState.currentStep = 'calendar';
+        
+        // Clear all containers
+        this.clearTimeSlots();
+        this.clearBookingForm();
+        
+        // Re-render calendar to refresh availability data
+        CalendarRenderer.renderCalendar(BookingState.currentMonth);
+        
+        // Scroll back to calendar
+        const calendarContainer = document.getElementById('appointment-calendar');
+        if (calendarContainer) {
+            calendarContainer.scrollIntoView({ behavior: 'smooth' });
         }
     }
 };

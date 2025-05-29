@@ -124,6 +124,22 @@
   border-color: #0576ee;
 }
 
+.calendar-day.selected:hover {
+  background-color: #0576ee;
+  color: white;
+  border-color: #0576ee;
+  transform: scale(1.05);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.calendar-day.selected .day-number {
+  color: white;
+}
+
+.calendar-day.selected:hover .day-number {
+  color: white;
+}
+
 .day-number {
   font-size: 16px;
   font-weight: bold;
@@ -203,27 +219,69 @@
 }
 
 .booking-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
   background-color: white;
   padding: 25px;
   border-radius: 8px;
   border: 1px solid #e9ecef;
 }
 
+.booking-form .form-group {
+  margin-bottom: 15px;
+}
+
 .booking-form .form-group label {
   font-weight: 600;
   color: #333;
   margin-bottom: 5px;
+  display: block;
 }
 
 .booking-form .form-control {
   border-radius: 6px;
   border: 1px solid #ced4da;
   padding: 10px 12px;
+  width: 100%;
 }
 
 .booking-form .form-control:focus {
   border-color: #0576ee;
   box-shadow: 0 0 0 0.2rem rgba(5, 118, 238, 0.25);
+}
+
+.booking-form .form-check {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 10px;
+}
+
+.booking-form .form-check-input {
+  margin-right: 8px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.booking-form .form-check-label {
+  font-size: 14px;
+  line-height: 1.4;
+  color: #333;
+}
+
+/* Spinner styles for processing state */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #0576ee;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .form-actions {
@@ -359,6 +417,7 @@
   
   .booking-form {
     padding: 20px;
+    grid-template-columns: 1fr;
   }
   
   .booking-success {
