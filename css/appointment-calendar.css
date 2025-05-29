@@ -416,30 +416,45 @@
     font-size: 14px;
   }
 
-  /* Fix calendar header layout on mobile */
+  /* Fix calendar header layout on mobile - keep single line with arrows on edges */
   .calendar-header {
-    flex-direction: column !important;
-    gap: 15px !important;
-    padding: 15px 10px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 12px 15px !important;
+    position: relative !important;
   }
 
   .calendar-header .calendar-month-title {
-    position: static !important;
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
     text-align: center !important;
-    width: 100% !important;
     margin: 0 !important;
-    font-size: 1.3rem !important;
+    font-size: 1.1rem !important;
+    pointer-events: none !important;
   }
 
   .calendar-navigation {
-    margin-left: 0 !important;
-    justify-content: center !important;
-    width: 100% !important;
+    display: flex !important;
+    gap: 8px !important;
+    position: relative !important;
+    z-index: 2 !important;
+  }
+
+  .calendar-navigation:first-child {
+    margin-right: auto !important;
+  }
+
+  .calendar-navigation:last-child {
+    margin-left: auto !important;
   }
 
   .calendar-navigation button {
     padding: 8px 12px !important;
     font-size: 0.9rem !important;
+    min-width: 32px !important;
+    height: 32px !important;
   }
 
   .time-slots-grid {
@@ -553,6 +568,22 @@
     width: 100%;
     margin: 5px 0;
   }
+
+  /* Keep calendar header single line on small mobile */
+  .calendar-header {
+    padding: 10px 12px !important;
+  }
+
+  .calendar-header .calendar-month-title {
+    font-size: 1rem !important;
+  }
+
+  .calendar-navigation button {
+    padding: 6px 10px !important;
+    font-size: 0.8rem !important;
+    min-width: 28px !important;
+    height: 28px !important;
+  }
 }
 
 /* Additional iPhone-specific fixes */
@@ -565,27 +596,30 @@
     grid-template-columns: repeat(7, 1fr) !important;
   }
 
+  /* Ensure calendar header stays single line on iPhone */
   .calendar-header {
-    flex-direction: column !important;
-    gap: 15px !important;
-    padding: 15px 10px !important;
-    align-items: flex-start !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 10px 12px !important;
+    position: relative !important;
   }
 
   .calendar-header .calendar-month-title {
-    position: static !important;
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
     text-align: center !important;
-    width: 100% !important;
     margin: 0 !important;
-    font-size: 1.2rem !important;
-    order: 1 !important;
+    font-size: 1rem !important;
+    pointer-events: none !important;
   }
 
   .calendar-navigation {
-    margin-left: 0 !important;
-    justify-content: center !important;
-    width: 100% !important;
-    order: 2 !important;
+    display: flex !important;
+    gap: 6px !important;
+    position: relative !important;
+    z-index: 2 !important;
   }
 }
 
@@ -599,22 +633,41 @@
     grid-template-columns: repeat(7, 1fr) !important;
   }
 
-  div.calendar-header h3.calendar-month-title {
-    position: static !important;
-    text-align: center !important;
-    width: 100% !important;
-    margin: 0 !important;
-    font-size: 1.1rem !important;
+  /* Maintain single line header for very small screens */
+  .calendar-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 8px 10px !important;
+    position: relative !important;
   }
 
-  div.calendar-header {
-    flex-direction: column !important;
-    gap: 12px !important;
-    padding: 12px 8px !important;
+  .calendar-header .calendar-month-title {
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    text-align: center !important;
+    margin: 0 !important;
+    font-size: 0.95rem !important;
+    pointer-events: none !important;
+  }
+
+  .calendar-navigation {
+    display: flex !important;
+    gap: 4px !important;
+    position: relative !important;
+    z-index: 2 !important;
+  }
+
+  .calendar-navigation button {
+    padding: 5px 8px !important;
+    font-size: 0.75rem !important;
+    min-width: 26px !important;
+    height: 26px !important;
   }
 }
 
-/* iPhone specific targeting */
+/* iPhone specific targeting - maintain single line */
 @media only screen and (max-device-width: 812px) and (-webkit-min-device-pixel-ratio: 2) {
   .calendar-days-header {
     grid-template-columns: repeat(7, 1fr) !important;
@@ -625,26 +678,35 @@
   }
 
   .calendar-header {
-    flex-direction: column !important;
-    gap: 15px !important;
-    padding: 15px 10px !important;
-    align-items: flex-start !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 10px 12px !important;
+    position: relative !important;
   }
 
   .calendar-header .calendar-month-title {
-    position: static !important;
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
     text-align: center !important;
-    width: 100% !important;
     margin: 0 !important;
-    font-size: 1.2rem !important;
-    order: 1 !important;
+    font-size: 1rem !important;
+    pointer-events: none !important;
   }
 
   .calendar-navigation {
-    margin-left: 0 !important;
-    justify-content: center !important;
-    width: 100% !important;
-    order: 2 !important;
+    display: flex !important;
+    gap: 6px !important;
+    position: relative !important;
+    z-index: 2 !important;
+  }
+
+  .calendar-navigation button {
+    padding: 6px 10px !important;
+    font-size: 0.8rem !important;
+    min-width: 28px !important;
+    height: 28px !important;
   }
 }
 
