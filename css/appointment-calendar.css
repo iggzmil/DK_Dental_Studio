@@ -375,4 +375,73 @@
 
 .technical-difficulties .btn {
   margin: 5px;
+}
+
+/* Booking unavailable message styles */
+.booking-unavailable-container {
+  margin: 30px 0;
+  padding: 30px;
+  text-align: center;
+}
+
+.booking-unavailable-container .alert {
+  border: none;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  border-radius: 15px;
+  padding: 40px 30px;
+}
+
+.booking-unavailable-container h5 {
+  color: #0576ee;
+  margin-bottom: 20px;
+  font-size: 1.4rem;
+}
+
+.booking-unavailable-container .contact-options {
+  margin: 30px 0;
+}
+
+.booking-unavailable-container .contact-method {
+  padding: 20px;
+  background-color: rgba(5, 118, 238, 0.05);
+  border-radius: 10px;
+  height: 100%;
+}
+
+.booking-unavailable-container .contact-method i {
+  color: #0576ee;
+}
+
+.booking-unavailable-container .contact-method h6 {
+  color: #333;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.booking-unavailable-container .contact-method a {
+  color: #0576ee;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.booking-unavailable-container .contact-method a:hover {
+  text-decoration: underline;
+}
+
+.booking-unavailable-container .text-muted {
+  color: #666 !important;
+}
+
+@media (max-width: 768px) {
+  .booking-unavailable-container {
+    padding: 20px;
+  }
+  
+  .booking-unavailable-container .alert {
+    padding: 30px 20px;
+  }
+  
+  .booking-unavailable-container h5 {
+    font-size: 1.2rem;
+  }
 } 

@@ -1,0 +1,465 @@
+/**
+ * DK Dental Studio - Debug Panel Styles
+ * Professional debugging interface for development
+ */
+
+.debug-panel {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 450px;
+    max-height: 80vh;
+    background: #1a1a1a;
+    color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.debug-panel.hidden {
+    opacity: 0;
+    transform: translateX(100%);
+    pointer-events: none;
+}
+
+.debug-header {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #333;
+}
+
+.debug-header h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+}
+
+.debug-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.debug-controls .btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+}
+
+.debug-content {
+    max-height: calc(80vh - 60px);
+    overflow-y: auto;
+    background: #1a1a1a;
+}
+
+/* ========================================
+   DEBUG TABS
+======================================== */
+
+.debug-tabs {
+    display: flex;
+    background: #2d2d2d;
+    border-bottom: 1px solid #444;
+}
+
+.debug-tab {
+    flex: 1;
+    padding: 10px 12px;
+    background: none;
+    border: none;
+    color: #adb5bd;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 3px solid transparent;
+}
+
+.debug-tab:hover {
+    background: #3a3a3a;
+    color: #f8f9fa;
+}
+
+.debug-tab.active {
+    background: #1a1a1a;
+    color: #007bff;
+    border-bottom-color: #007bff;
+}
+
+.debug-tab-content {
+    padding: 16px;
+}
+
+.debug-tab-panel {
+    display: none;
+}
+
+.debug-tab-panel.active {
+    display: block;
+}
+
+.debug-tab-panel h5 {
+    font-size: 13px;
+    color: #007bff;
+    margin: 0 0 10px 0;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #333;
+}
+
+.debug-tab-panel h6 {
+    font-size: 12px;
+    color: #28a745;
+    margin: 12px 0 6px 0;
+}
+
+/* ========================================
+   STATE DISPLAY
+======================================== */
+
+#debug-state-content {
+    background: #2d2d2d;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 12px;
+    margin-bottom: 16px;
+    font-size: 11px;
+    overflow-x: auto;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#debug-system-status {
+    background: #2d2d2d;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    border-left: 4px solid #007bff;
+}
+
+#debug-current-selection {
+    background: #2d2d2d;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
+#debug-current-selection div {
+    margin: 4px 0;
+    font-size: 11px;
+}
+
+/* ========================================
+   LOGS DISPLAY
+======================================== */
+
+#debug-logs-content {
+    max-height: 300px;
+    overflow-y: auto;
+    background: #000;
+    border-radius: 4px;
+    padding: 8px;
+}
+
+.debug-log {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 4px;
+    padding: 4px 6px;
+    border-radius: 2px;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.debug-log-time {
+    color: #6c757d;
+    margin-right: 8px;
+    flex-shrink: 0;
+    font-size: 10px;
+}
+
+.debug-log-message {
+    flex: 1;
+    word-break: break-word;
+}
+
+.debug-log-log {
+    border-left: 3px solid #17a2b8;
+}
+
+.debug-log-error {
+    background: rgba(220, 53, 69, 0.1);
+    border-left: 3px solid #dc3545;
+    color: #f8d7da;
+}
+
+.debug-log-warn {
+    background: rgba(255, 193, 7, 0.1);
+    border-left: 3px solid #ffc107;
+    color: #fff3cd;
+}
+
+.debug-log-info {
+    background: rgba(23, 162, 184, 0.1);
+    border-left: 3px solid #17a2b8;
+    color: #d1ecf1;
+}
+
+/* ========================================
+   API CALLS DISPLAY
+======================================== */
+
+.debug-quick-tests {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #444;
+}
+
+.debug-quick-tests .btn {
+    font-size: 10px;
+    padding: 6px 10px;
+}
+
+#debug-api-content {
+    max-height: 250px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+}
+
+.debug-api-call {
+    background: #2d2d2d;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.debug-api-header {
+    padding: 8px 12px;
+    background: #3a3a3a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+}
+
+.debug-api-endpoint {
+    flex: 1;
+    color: #f8f9fa;
+    font-weight: 500;
+}
+
+.debug-api-time {
+    color: #6c757d;
+    font-size: 10px;
+}
+
+.debug-api-response {
+    padding: 8px 12px;
+}
+
+.debug-api-response pre {
+    margin: 0;
+    font-size: 10px;
+    max-height: 150px;
+    overflow-y: auto;
+    background: #1a1a1a;
+    padding: 8px;
+    border-radius: 2px;
+}
+
+/* ========================================
+   CONFIG DISPLAY
+======================================== */
+
+#debug-config-content {
+    background: #2d2d2d;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 12px;
+    margin-bottom: 16px;
+    font-size: 10px;
+    overflow-x: auto;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#debug-business-hours {
+    background: #2d2d2d;
+    padding: 12px;
+    border-radius: 4px;
+}
+
+#debug-business-hours ul {
+    margin: 6px 0 12px 0;
+    padding-left: 16px;
+    list-style-type: none;
+}
+
+#debug-business-hours li {
+    margin: 2px 0;
+    font-size: 11px;
+    padding: 2px 0;
+}
+
+/* ========================================
+   BADGES AND STATUS INDICATORS
+======================================== */
+
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 4px;
+}
+
+.badge-primary {
+    color: #fff;
+    background-color: #007bff;
+}
+
+.badge-success {
+    color: #fff;
+    background-color: #28a745;
+}
+
+.badge-warning {
+    color: #212529;
+    background-color: #ffc107;
+}
+
+.badge-danger {
+    color: #fff;
+    background-color: #dc3545;
+}
+
+.badge-secondary {
+    color: #fff;
+    background-color: #6c757d;
+}
+
+/* ========================================
+   RESPONSIVE ADJUSTMENTS
+======================================== */
+
+@media (max-width: 1200px) {
+    .debug-panel {
+        width: 400px;
+        right: 10px;
+        top: 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .debug-panel {
+        width: calc(100vw - 20px);
+        right: 10px;
+        left: 10px;
+        top: 10px;
+        max-height: 70vh;
+    }
+    
+    .debug-tabs {
+        overflow-x: auto;
+    }
+    
+    .debug-tab {
+        flex-shrink: 0;
+        min-width: 80px;
+    }
+}
+
+/* ========================================
+   SCROLLBAR STYLING
+======================================== */
+
+.debug-panel ::-webkit-scrollbar {
+    width: 6px;
+}
+
+.debug-panel ::-webkit-scrollbar-track {
+    background: #2d2d2d;
+}
+
+.debug-panel ::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 3px;
+}
+
+.debug-panel ::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+/* ========================================
+   BUTTON OVERRIDES FOR DEBUG PANEL
+======================================== */
+
+.debug-panel .btn-outline-light {
+    color: #f8f9fa;
+    border-color: rgba(248, 249, 250, 0.5);
+}
+
+.debug-panel .btn-outline-light:hover {
+    color: #212529;
+    background-color: #f8f9fa;
+    border-color: #f8f9fa;
+}
+
+.debug-panel .btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.debug-panel .btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+/* ========================================
+   ANIMATION AND TRANSITIONS
+======================================== */
+
+.debug-panel * {
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.debug-api-call {
+    animation: slideInLeft 0.3s ease;
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.debug-log {
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+} 
