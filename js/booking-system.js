@@ -418,6 +418,11 @@ const CalendarRenderer = {
 
         const date = new Date(dateString + 'T00:00:00');
         const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+        
+        // Debug Saturday processing specifically
+        if (dayOfWeek === 6) {
+            console.log(`DEBUG SAT ${dateString}: dayOfWeek=${dayOfWeek}, availableSlots=${availableSlots.length}`);
+        }
 
         // For future dates, check if there are available slots
         if (availableSlots.length > 0) {
@@ -432,10 +437,18 @@ const CalendarRenderer = {
                 indicator.innerHTML = '<span class="closed-text">Closed</span>';
                 indicator.parentElement.classList.add('closed');
                 indicator.parentElement.classList.remove('available', 'unavailable');
+                
+                if (dayOfWeek === 6) {
+                    console.log(`DEBUG SAT ${dateString}: SET TO CLOSED`);
+                }
             } else {
                 // Business day with no slots - show nothing (blank but potentially bookable)
                 indicator.innerHTML = '';
                 indicator.parentElement.classList.remove('available', 'unavailable', 'closed');
+                
+                if (dayOfWeek === 6) {
+                    console.log(`DEBUG SAT ${dateString}: WENT TO BUSINESS DAY BRANCH - THIS IS WRONG!`);
+                }
             }
         }
     },
