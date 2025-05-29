@@ -29,6 +29,17 @@ const BookingState = {
     busySlots: {},
     availableSlots: {},
     
+    // Cache system for 6 weeks of data
+    cache: {
+        busyTimes: {},           // Cached busy times from Google Calendar
+        loadedRange: {           // Date range currently loaded in cache
+            start: null,
+            end: null
+        },
+        lastRefresh: null,       // When cache was last refreshed
+        isLoading: false         // Cache loading state
+    },
+    
     // UI state
     showingBookingForm: false,
     currentStep: 'service-selection', // service-selection, calendar, time-selection, booking-form
@@ -132,9 +143,62 @@ const ServiceManager = {
             return slots;
         }
 
-        // Filter out past hours for today
+        // For today: filter out any slot whose start time has passed or is currently happening
         const currentHour = now.getHours();
-        return slots.filter(hour => hour > currentHour);
+        const currentMinute = now.getMinutes();
+        
+        return slots.filter(hour => {
+            // If the slot hour is greater than current hour, it's definitely in the future
+            if (hour > currentHour) {
+                return true;
+            }
+            // If the slot hour equals current hour, check if we're still within the booking window
+            // Since slots are 1-hour bookings, once the hour starts (e.g., 4:00 PM), it's no longer bookable
+            if (hour === currentHour) {
+                return false; // Slot has started, no longer available
+            }
+            // If slot hour is less than current hour, it has definitely passed
+            return false;
+        });
+    },
+
+    /**
+     * Check if an entire day should be considered unavailable for bookings
+     * This happens when all possible time slots for all services have passed
+     */
+    isDayCompletelyUnavailable(date) {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        
+        // If not today, the day is available (weekend/business hours will be handled elsewhere)
+        if (targetDate.getTime() !== today.getTime()) {
+            return false;
+        }
+
+        // For today: check if all services have no future slots
+        const currentHour = now.getHours();
+        let hasAnyFutureSlots = false;
+
+        // Check each service to see if any have future slots available
+        Object.keys(this.services).forEach(serviceId => {
+            const service = this.services[serviceId];
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+            const schedule = service.schedule[dayName];
+            
+            if (schedule) {
+                // Generate potential hours for this service
+                for (let hour = schedule.start; hour < schedule.end; hour++) {
+                    // If any hour is still in the future, the day is not completely unavailable
+                    if (hour > currentHour) {
+                        hasAnyFutureSlots = true;
+                        break;
+                    }
+                }
+            }
+        });
+
+        return !hasAnyFutureSlots;
     }
 };
 
@@ -415,27 +479,11 @@ const CalendarRenderer = {
         const date = new Date(year, month - 1, day); // month is 0-indexed in Date constructor
         const dayOfWeek = date.getDay();
         
-        // Track all calls for Saturday dates
-        if (dayOfWeek === 6) {
-            console.log(`🔍 updateDateAvailability CALL for ${dateString}: slots=${availableSlots.length}, isPast=${isPastDate}`);
-            console.trace(`📍 Call stack for Saturday ${dateString}:`);
-            
-            // Also log to debug panel if available
-            if (window.DebugPanel && typeof window.DebugPanel.addLog === 'function') {
-                window.DebugPanel.addLog(`🔍 updateDateAvailability CALL for ${dateString}: slots=${availableSlots.length}, isPast=${isPastDate}`);
-            }
-        }
-
         // For past dates, show no text
         if (isPastDate) {
             indicator.innerHTML = '';
             indicator.parentElement.classList.add('past-date');
             return;
-        }
-
-        // Debug Saturday processing specifically
-        if (dayOfWeek === 6) {
-            console.log(`DEBUG SAT ${dateString}: dayOfWeek=${dayOfWeek}, availableSlots=${availableSlots.length}`);
         }
 
         // For future dates, check if there are available slots
@@ -451,29 +499,10 @@ const CalendarRenderer = {
                 indicator.innerHTML = '<span class="closed-text">Closed</span>';
                 indicator.parentElement.classList.add('closed');
                 indicator.parentElement.classList.remove('available', 'unavailable');
-                
-                if (dayOfWeek === 6) {
-                    console.log(`✅ DEBUG SAT ${dateString}: SET TO CLOSED - classes now: ${indicator.parentElement.className}`);
-                    
-                    // Check if the class gets removed later
-                    setTimeout(() => {
-                        const laterCheck = document.querySelector(`[data-date="${dateString}"]`);
-                        if (laterCheck) {
-                            console.log(`🕐 LATER CHECK SAT ${dateString}: classes are now: ${laterCheck.className}`);
-                            if (window.DebugPanel && typeof window.DebugPanel.addLog === 'function') {
-                                window.DebugPanel.addLog(`🕐 LATER CHECK SAT ${dateString}: classes are now: ${laterCheck.className}`);
-                            }
-                        }
-                    }, 1000);
-                }
             } else {
                 // Business day with no slots - show nothing (blank but potentially bookable)
                 indicator.innerHTML = '';
                 indicator.parentElement.classList.remove('available', 'unavailable', 'closed');
-                
-                if (dayOfWeek === 6) {
-                    console.log(`❌ DEBUG SAT ${dateString}: WENT TO BUSINESS DAY BRANCH - THIS IS WRONG!`);
-                }
             }
         }
     },
@@ -500,11 +529,13 @@ const AvailabilityManager = {
             BookingState.isLoading = true;
             this.showLoadingState();
 
-            // Get busy times from Google Calendar
-            const busySlots = await ApiClient.getCalendarBusyTimes(month);
-            BookingState.busySlots = busySlots;
+            // Check if we need to refresh our cache
+            if (CacheManager.needsRefresh()) {
+                console.log('Cache refresh needed, loading fresh data...');
+                await CacheManager.loadSixWeeksData();
+            }
 
-            // Calculate available slots for each day
+            // Use cached data instead of making API calls
             this.calculateAndDisplayAvailability(serviceId, month);
 
         } catch (error) {
@@ -533,52 +564,52 @@ const AvailabilityManager = {
             // Use local date formatting instead of toISOString() to avoid timezone shifts
             const dateString = `${year}-${(monthIndex + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
             const isPastDate = CalendarRenderer.isPast(date);
+            const isToday = CalendarRenderer.isToday(date);
             const dayOfWeek = date.getDay();
-            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
 
-            // For past dates, always show no text regardless of service
+            // For past dates, always show no availability
             if (isPastDate) {
                 CalendarRenderer.updateDateAvailability(dateString, [], true);
+                BookingState.availableSlots[dateString] = [];
                 continue;
             }
 
-            // For future dates, get available hours based on service schedule
+            // Check if it's a weekend first (applies to all services)
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                // Weekend - no services available
+                CalendarRenderer.updateDateAvailability(dateString, [], false);
+                BookingState.availableSlots[dateString] = [];
+                continue;
+            }
+
+            // For today: check if entire day should be unavailable due to all slots being past
+            if (isToday && ServiceManager.isDayCompletelyUnavailable(date)) {
+                // All time slots for all services have passed - day is effectively over
+                CalendarRenderer.updateDateAvailability(dateString, [], true);
+                BookingState.availableSlots[dateString] = [];
+                continue;
+            }
+
+            // Calculate available hours for the selected service on this date
             let availableHours = [];
             
             if (ServiceManager.isServiceAvailableOnDate(serviceId, date)) {
-                // Business day - get potential hours
+                // Get potential hours for this service
                 availableHours = ServiceManager.getAvailableHoursForDate(serviceId, date);
                 
-                // Filter out past slots if today
-                availableHours = ServiceManager.filterPastSlots(availableHours, date);
+                // Apply current day filtering if today
+                if (isToday) {
+                    availableHours = ServiceManager.filterPastSlots(availableHours, date);
+                }
 
-                // Remove busy slots
-                const busyHours = BookingState.busySlots[dateString] || [];
+                // Remove busy slots using cached calendar data
+                const busyHours = CacheManager.getBusyTimesForDate(dateString);
                 availableHours = availableHours.filter(hour => !busyHours.includes(hour));
             }
-            
-            // Force weekends to have no available hours (double-check)
-            if (dayOfWeek === 0 || dayOfWeek === 6) {
-                availableHours = [];
-                
-                // Debug the actual HTML being generated with a longer delay
-                setTimeout(() => {
-                    const dayElement = document.querySelector(`[data-date="${dateString}"]`);
-                    if (dayElement) {
-                        const dayName = dayOfWeek === 0 ? 'SUNDAY' : 'SATURDAY';
-                        console.log(`${dayName} ${dateString}:`, dayElement.outerHTML);
-                    }
-                }, 500); // Increased delay to ensure all DOM updates are complete
-            }
 
-            // Update UI - this will show "Available", "Closed", or nothing based on the day and slots
+            // Update UI with availability
             CalendarRenderer.updateDateAvailability(dateString, availableHours, false);
             
-            // Debug what's happening with Saturday calls
-            if (dayOfWeek === 6) {
-                console.log(`SATURDAY ${dateString}: Called updateDateAvailability with ${availableHours.length} hours`);
-            }
-
             // Store in state
             BookingState.availableSlots[dateString] = availableHours;
         }
@@ -624,6 +655,48 @@ const BookingFlow = {
     },
 
     selectTime(hour) {
+        // Validate that the selected time is still available
+        const selectedDate = new Date(BookingState.selectedDate + 'T00:00:00');
+        const dateString = BookingState.selectedDate;
+        const isToday = CalendarRenderer.isToday(selectedDate);
+        
+        // Double-check availability before proceeding
+        if (isToday) {
+            // For today, ensure the slot hasn't passed since the page was loaded
+            const now = new Date();
+            const currentHour = now.getHours();
+            
+            if (hour <= currentHour) {
+                // This slot is no longer available - refresh the time slots
+                alert('This time slot is no longer available. Please select a different time.');
+                
+                // Recalculate and show updated time slots
+                let availableHours = [];
+                if (ServiceManager.isServiceAvailableOnDate(BookingState.selectedService, selectedDate)) {
+                    availableHours = ServiceManager.getAvailableHoursForDate(BookingState.selectedService, selectedDate);
+                    availableHours = ServiceManager.filterPastSlots(availableHours, selectedDate);
+                    
+                    // Remove busy slots
+                    const busyHours = CacheManager.getBusyTimesForDate(dateString);
+                    availableHours = availableHours.filter(h => !busyHours.includes(h));
+                }
+                
+                // Update stored availability
+                BookingState.availableSlots[dateString] = availableHours;
+                
+                if (availableHours.length > 0) {
+                    // Show updated time slots
+                    this.showTimeSlotSelection(dateString, availableHours);
+                } else {
+                    // No slots left for today
+                    alert('No more time slots are available for today. Please select a different date.');
+                    this.backToCalendar();
+                }
+                return;
+            }
+        }
+        
+        // Slot is valid, proceed with selection
         BookingState.selectedTime = hour;
         BookingState.currentStep = 'booking-form';
         
@@ -922,6 +995,388 @@ const ErrorHandler = {
 };
 
 // =============================================================================
+// CACHE MANAGER - 6 Week Data Loading
+// =============================================================================
+
+const CacheManager = {
+    // Load 6 weeks of busy times starting from current date
+    async loadSixWeeksData() {
+        try {
+            console.log('Loading 6 weeks of calendar data...');
+            BookingState.cache.isLoading = true;
+
+            // Calculate 6 weeks range starting from today
+            const today = new Date();
+            const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + (6 * 7)); // 6 weeks = 42 days
+
+            // Store the range we're loading
+            BookingState.cache.loadedRange.start = new Date(startDate);
+            BookingState.cache.loadedRange.end = new Date(endDate);
+            BookingState.cache.lastRefresh = new Date();
+
+            // Get busy times from Google Calendar for the entire 6-week period
+            const busyTimes = await this.fetchBusyTimesRange(startDate, endDate);
+            
+            // Store in cache
+            BookingState.cache.busyTimes = busyTimes;
+
+            console.log(`✅ Loaded 6 weeks of data (${startDate.toDateString()} to ${endDate.toDateString()})`);
+            console.log(`📊 Found busy slots for ${Object.keys(busyTimes).length} days`);
+
+            // Log cache status to debug panel
+            if (window.DebugPanel && typeof window.DebugPanel.addLog === 'function') {
+                const cacheInfo = `📊 Cache loaded: ${BookingState.cache.loadedRange.start?.toDateString()} to ${BookingState.cache.loadedRange.end?.toDateString()}`;
+                window.DebugPanel.addLog(cacheInfo);
+                window.DebugPanel.addLog(`🗄️ Cached ${Object.keys(BookingState.cache.busyTimes).length} days with busy slots`);
+            }
+
+            return busyTimes;
+
+        } catch (error) {
+            console.error('Error loading 6 weeks data:', error);
+            throw error;
+        } finally {
+            BookingState.cache.isLoading = false;
+        }
+    },
+
+    async fetchBusyTimesRange(startDate, endDate) {
+        if (!BookingState.accessToken) {
+            await ApiClient.getAccessToken();
+        }
+
+        try {
+            // Try direct Google Calendar API call first
+            try {
+                const params = new URLSearchParams({
+                    calendarId: 'info@dkdental.au',
+                    timeMin: startDate.toISOString(),
+                    timeMax: endDate.toISOString(),
+                    singleEvents: 'true',
+                    orderBy: 'startTime'
+                });
+
+                const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/info@dkdental.au/events?${params}`, {
+                    headers: {
+                        'Authorization': `Bearer ${BookingState.accessToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Google Calendar API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return ApiClient.parseBusyTimes(data.items || []);
+                
+            } catch (corsError) {
+                console.warn('Direct Google Calendar API failed, using server-side proxy:', corsError);
+                
+                // Fallback: Use server-side proxy if direct call fails due to CORS
+                const proxyResponse = await fetch('script/calendar/get-busy-times.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        startDate: startDate.toISOString(),
+                        endDate: endDate.toISOString()
+                    })
+                });
+
+                if (!proxyResponse.ok) {
+                    throw new Error(`Server proxy error: ${proxyResponse.status}`);
+                }
+
+                const proxyData = await proxyResponse.json();
+                if (!proxyData.success) {
+                    throw new Error(proxyData.error || 'Failed to get busy times');
+                }
+
+                return proxyData.busyTimes || {};
+            }
+        } catch (error) {
+            console.error('Error fetching busy times range:', error);
+            // Return empty busy times so calendar still works
+            return {};
+        }
+    },
+
+    // Get busy times for a specific date from cache
+    getBusyTimesForDate(dateString) {
+        return BookingState.cache.busyTimes[dateString] || [];
+    },
+
+    // Check if we have cached data for a specific date
+    hasDataForDate(dateString) {
+        const targetDate = new Date(dateString + 'T00:00:00');
+        const start = BookingState.cache.loadedRange.start;
+        const end = BookingState.cache.loadedRange.end;
+        
+        return start && end && targetDate >= start && targetDate <= end;
+    },
+
+    // Check if cache needs refresh (older than 1 hour or missing data)
+    needsRefresh() {
+        if (!BookingState.cache.lastRefresh) return true;
+        
+        const oneHourAgo = new Date(Date.now() - (60 * 60 * 1000));
+        return BookingState.cache.lastRefresh < oneHourAgo;
+    }
+};
+
+// =============================================================================
+// REAL-TIME AVAILABILITY MANAGER
+// =============================================================================
+
+const RealTimeManager = {
+    intervalId: null,
+    
+    /**
+     * Start monitoring current day availability and update in real-time
+     */
+    startMonitoring() {
+        // Check every minute for current day availability changes
+        this.intervalId = setInterval(() => {
+            this.checkAndUpdateCurrentDay();
+        }, 60000); // 60 seconds
+        
+        console.log('✅ Real-time availability monitoring started');
+    },
+    
+    /**
+     * Stop the real-time monitoring
+     */
+    stopMonitoring() {
+        if (this.intervalId) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+            console.log('⏹️ Real-time availability monitoring stopped');
+        }
+    },
+    
+    /**
+     * Check if today's availability has changed and update if necessary
+     */
+    checkAndUpdateCurrentDay() {
+        const today = new Date();
+        const todayString = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+        
+        // Only update if we're currently showing today and user hasn't selected a date/time yet
+        if (BookingState.currentStep !== 'calendar') {
+            return; // User is in booking flow, don't disrupt
+        }
+        
+        // Check if today should now be completely unavailable
+        if (ServiceManager.isDayCompletelyUnavailable(today)) {
+            // Update the calendar display for today
+            CalendarRenderer.updateDateAvailability(todayString, [], true);
+            BookingState.availableSlots[todayString] = [];
+            
+            console.log(`📅 Today (${todayString}) is now completely unavailable - all time slots have passed`);
+        } else {
+            // Recalculate today's availability for the current service
+            const currentService = BookingState.selectedService;
+            
+            let availableHours = [];
+            if (ServiceManager.isServiceAvailableOnDate(currentService, today)) {
+                availableHours = ServiceManager.getAvailableHoursForDate(currentService, today);
+                availableHours = ServiceManager.filterPastSlots(availableHours, today);
+                
+                // Remove busy slots
+                const busyHours = CacheManager.getBusyTimesForDate(todayString);
+                availableHours = availableHours.filter(hour => !busyHours.includes(hour));
+            }
+            
+            // Update only if availability has changed
+            const currentAvailability = BookingState.availableSlots[todayString] || [];
+            if (JSON.stringify(availableHours) !== JSON.stringify(currentAvailability)) {
+                CalendarRenderer.updateDateAvailability(todayString, availableHours, false);
+                BookingState.availableSlots[todayString] = availableHours;
+                
+                console.log(`📅 Updated today's availability: ${availableHours.length} slots remaining`);
+            }
+        }
+    }
+};
+
+// =============================================================================
+// BUSINESS LOGIC TESTING & DEBUGGING
+// =============================================================================
+
+const BusinessLogicTester = {
+    /**
+     * Test the business rules for a specific date and service
+     */
+    testBusinessRules(serviceId, dateString) {
+        const date = new Date(dateString + 'T00:00:00');
+        const dayOfWeek = date.getDay();
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+        const isToday = CalendarRenderer.isToday(date);
+        const isPast = CalendarRenderer.isPast(date);
+        
+        console.log(`\n🧪 Testing Business Rules for ${serviceId} on ${dateString} (${dayName})`);
+        console.log(`📅 Is Today: ${isToday}, Is Past: ${isPast}, Day of Week: ${dayOfWeek}`);
+        
+        // Test 1: Weekend Check
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            console.log(`❌ Weekend Day - No services available`);
+            return [];
+        }
+        
+        // Test 2: Past Date Check
+        if (isPast) {
+            console.log(`❌ Past Date - No services available`);
+            return [];
+        }
+        
+        // Test 3: Service Availability
+        const service = ServiceManager.getServiceConfig(serviceId);
+        if (!service) {
+            console.log(`❌ Invalid Service ID: ${serviceId}`);
+            return [];
+        }
+        
+        const schedule = service.schedule[dayName.toLowerCase()];
+        if (!schedule) {
+            console.log(`❌ Service not available on ${dayName}`);
+            return [];
+        }
+        
+        console.log(`✅ Service Schedule: ${schedule.start}:00 - ${schedule.end}:00`);
+        
+        // Test 4: Generate potential slots
+        let potentialSlots = [];
+        for (let hour = schedule.start; hour < schedule.end; hour++) {
+            potentialSlots.push(hour);
+        }
+        console.log(`📋 Potential Slots: ${potentialSlots.map(h => h + ':00').join(', ')}`);
+        
+        // Test 5: Current Day Logic
+        if (isToday) {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            
+            console.log(`⏰ Current Time: ${currentHour}:${currentMinute.toString().padStart(2, '0')}`);
+            
+            const futureSlots = potentialSlots.filter(hour => hour > currentHour);
+            console.log(`🔮 Future Slots After Current Hour: ${futureSlots.map(h => h + ':00').join(', ') || 'None'}`);
+            
+            // Test if day is completely unavailable
+            const isDayUnavailable = ServiceManager.isDayCompletelyUnavailable(date);
+            console.log(`🚫 Is Day Completely Unavailable: ${isDayUnavailable}`);
+            
+            potentialSlots = futureSlots;
+        }
+        
+        // Test 6: Busy Times Check
+        const busyHours = CacheManager.getBusyTimesForDate(dateString);
+        console.log(`🗓️  Busy Hours from Calendar: ${busyHours.map(h => h + ':00').join(', ') || 'None'}`);
+        
+        const finalSlots = potentialSlots.filter(hour => !busyHours.includes(hour));
+        console.log(`✅ Final Available Slots: ${finalSlots.map(h => h + ':00').join(', ') || 'None'}`);
+        
+        return finalSlots;
+    },
+    
+    /**
+     * Test all services for a given date
+     */
+    testAllServicesForDate(dateString) {
+        console.log(`\n🔍 Testing all services for ${dateString}`);
+        const services = ['dentures', 'repairs', 'mouthguards'];
+        
+        services.forEach(serviceId => {
+            this.testBusinessRules(serviceId, dateString);
+        });
+    },
+    
+    /**
+     * Test the current day scenario with different times
+     */
+    testCurrentDayScenarios() {
+        const today = new Date();
+        const todayString = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+        
+        console.log(`\n📊 Current Day Business Logic Test for ${todayString}`);
+        
+        // Test each service
+        const services = ['dentures', 'repairs', 'mouthguards'];
+        services.forEach(serviceId => {
+            console.log(`\n--- Testing ${serviceId.toUpperCase()} ---`);
+            const slots = this.testBusinessRules(serviceId, todayString);
+            
+            if (slots.length === 0) {
+                console.log(`🔴 No slots available for ${serviceId} today`);
+            } else {
+                console.log(`🟢 ${slots.length} slots available for ${serviceId} today`);
+            }
+        });
+    },
+    
+    /**
+     * Verify the example from business rules (Thursday, May 29, 2025, 5:41:21 PM AEST)
+     */
+    testBusinessRuleExample() {
+        // Test the original example (4:23 PM)
+        console.log('\n📋 Testing Business Rule Example 1: Thursday, May 29, 2025, 4:23:39 PM AEST');
+        
+        // Create a mock current time for testing
+        const originalNow = Date.now;
+        const mockTime1 = new Date('2025-05-29T16:23:39+10:00'); // 4:23 PM AEST
+        Date.now = () => mockTime1.getTime();
+        
+        // Test each service
+        console.log('\n--- Dentures (closes 4 PM) ---');
+        const dentureSlots1 = this.testBusinessRules('dentures', '2025-05-29');
+        console.log(`Expected: No slots (closes at 4 PM, current time 4:23 PM)`);
+        console.log(`Actual: ${dentureSlots1.length} slots`);
+        
+        console.log('\n--- Maintenance & Repairs (closes 4 PM) ---');
+        const repairSlots1 = this.testBusinessRules('repairs', '2025-05-29');
+        console.log(`Expected: No slots (closes at 4 PM, current time 4:23 PM)`);
+        console.log(`Actual: ${repairSlots1.length} slots`);
+        
+        console.log('\n--- Mouthguards (closes 6 PM) ---');
+        const mouthguardSlots1 = this.testBusinessRules('mouthguards', '2025-05-29');
+        console.log(`Expected: Only 5:00 PM slot available`);
+        console.log(`Actual: ${mouthguardSlots1.map(h => h + ':00').join(', ')}`);
+        
+        // Test the new example (5:41 PM)
+        console.log('\n📋 Testing Business Rule Example 2: Thursday, May 29, 2025, 5:41:21 PM AEST');
+        
+        const mockTime2 = new Date('2025-05-29T17:41:21+10:00'); // 5:41 PM AEST
+        Date.now = () => mockTime2.getTime();
+        
+        console.log('\n--- Dentures (closes 4 PM) ---');
+        const dentureSlots2 = this.testBusinessRules('dentures', '2025-05-29');
+        console.log(`Expected: No slots (closes at 4 PM, last slot 3 PM, current time 5:41 PM)`);
+        console.log(`Actual: ${dentureSlots2.length} slots`);
+        
+        console.log('\n--- Maintenance & Repairs (closes 4 PM) ---');
+        const repairSlots2 = this.testBusinessRules('repairs', '2025-05-29');
+        console.log(`Expected: No slots (closes at 4 PM, last slot 3 PM, current time 5:41 PM)`);
+        console.log(`Actual: ${repairSlots2.length} slots`);
+        
+        console.log('\n--- Mouthguards (closes 6 PM) ---');
+        const mouthguardSlots2 = this.testBusinessRules('mouthguards', '2025-05-29');
+        console.log(`Expected: No slots (closes at 6 PM, last slot 5 PM, current time 5:41 PM)`);
+        console.log(`Actual: ${mouthguardSlots2.length} slots`);
+        
+        // Test if entire day becomes unavailable at 5:41 PM
+        const isDayUnavailable = ServiceManager.isDayCompletelyUnavailable(new Date('2025-05-29T17:41:21+10:00'));
+        console.log(`\n🚫 Is entire day unavailable at 5:41 PM: ${isDayUnavailable}`);
+        console.log(`Expected: true (all services have no future slots)`);
+        
+        // Restore original Date.now
+        Date.now = originalNow;
+    }
+};
+
+// =============================================================================
 // INITIALIZATION
 // =============================================================================
 
@@ -937,19 +1392,44 @@ const BookingSystem = {
             // Get access token
             await ApiClient.getAccessToken();
             
+            // Load 6 weeks of calendar data upfront
+            console.log('Loading 6 weeks of calendar data...');
+            await CacheManager.loadSixWeeksData();
+            
+            // Log cache status to debug panel
+            if (window.DebugPanel && typeof window.DebugPanel.addLog === 'function') {
+                const cacheInfo = `📊 Cache loaded: ${BookingState.cache.loadedRange.start?.toDateString()} to ${BookingState.cache.loadedRange.end?.toDateString()}`;
+                window.DebugPanel.addLog(cacheInfo);
+                window.DebugPanel.addLog(`🗄️ Cached ${Object.keys(BookingState.cache.busyTimes).length} days with busy slots`);
+            }
+            
             // Initialize with default service
             BookingFlow.selectService(BookingState.selectedService);
+            
+            // Start real-time availability monitoring
+            RealTimeManager.startMonitoring();
             
             BookingState.systemStatus = 'ready';
             BookingState.isInitialized = true;
             
-            console.log('Booking system initialized successfully');
+            console.log('✅ Booking system initialized successfully with 6 weeks of cached data');
 
         } catch (error) {
             console.error('Failed to initialize booking system:', error);
             BookingState.systemStatus = 'error';
             ErrorHandler.showSystemUnavailableMessage();
+            
+            // Stop monitoring if initialization failed
+            RealTimeManager.stopMonitoring();
         }
+    },
+
+    /**
+     * Clean shutdown of the booking system
+     */
+    shutdown() {
+        RealTimeManager.stopMonitoring();
+        console.log('📴 Booking system shut down');
     }
 };
 
@@ -960,4 +1440,32 @@ window.BookingState = BookingState;
 window.ServiceManager = ServiceManager;
 window.AvailabilityManager = AvailabilityManager;
 window.CalendarRenderer = CalendarRenderer;
-window.ErrorHandler = ErrorHandler; 
+window.ErrorHandler = ErrorHandler;
+window.CacheManager = CacheManager;
+window.RealTimeManager = RealTimeManager;
+window.BusinessLogicTester = BusinessLogicTester;
+
+// Quick test function for verifying business logic
+window.testBusinessLogic = () => {
+    console.log('🧪 Running Business Logic Tests...');
+    
+    // Test current day scenarios
+    BusinessLogicTester.testCurrentDayScenarios();
+    
+    // Test the business rule example
+    BusinessLogicTester.testBusinessRuleExample();
+    
+    // Test a weekend
+    const nextSaturday = new Date();
+    nextSaturday.setDate(nextSaturday.getDate() + (6 - nextSaturday.getDay()));
+    const saturdayString = `${nextSaturday.getFullYear()}-${(nextSaturday.getMonth() + 1).toString().padStart(2, '0')}-${nextSaturday.getDate().toString().padStart(2, '0')}`;
+    BusinessLogicTester.testAllServicesForDate(saturdayString);
+    
+    console.log('\n✅ Business Logic Tests Complete! Check the output above for results.');
+    console.log('💡 To test a specific date, use: BusinessLogicTester.testBusinessRules("mouthguards", "2024-12-25")');
+};
+
+// Clean up monitoring when page is unloaded
+window.addEventListener('beforeunload', () => {
+    BookingSystem.shutdown();
+}); 
