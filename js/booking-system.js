@@ -102,11 +102,6 @@ const ServiceManager = {
         const dayName = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
         const schedule = service.schedule[dayName];
         
-        // Debug weekend service availability
-        if (dayName === 'saturday' || dayName === 'sunday') {
-            console.log(`🔍 SERVICE CHECK ${dayName.toUpperCase()}: schedule=${schedule}, returning ${schedule !== null}`);
-        }
-        
         return schedule !== null;
     },
 
@@ -412,10 +407,7 @@ const CalendarRenderer = {
 
     updateDateAvailability(dateString, availableSlots, isPastDate = false) {
         const indicator = document.getElementById(`avail-${dateString}`);
-        if (!indicator) {
-            console.log(`❌ NO INDICATOR FOUND for ${dateString}`);
-            return;
-        }
+        if (!indicator) return;
 
         // For past dates, show no text
         if (isPastDate) {
@@ -426,12 +418,6 @@ const CalendarRenderer = {
 
         const date = new Date(dateString + 'T00:00:00');
         const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
-        
-        // Debug weekend processing
-        if (dayOfWeek === 0 || dayOfWeek === 6) {
-            const dayName = dayOfWeek === 0 ? 'SUNDAY' : 'SATURDAY';
-            console.log(`🔍 ${dayName} ${dateString}: availableSlots=${availableSlots.length}`);
-        }
 
         // For future dates, check if there are available slots
         if (availableSlots.length > 0) {
@@ -446,9 +432,6 @@ const CalendarRenderer = {
                 indicator.innerHTML = '<span class="closed-text">Closed</span>';
                 indicator.parentElement.classList.add('closed');
                 indicator.parentElement.classList.remove('available', 'unavailable');
-                
-                const dayName = dayOfWeek === 0 ? 'SUNDAY' : 'SATURDAY';
-                console.log(`✅ ${dayName} ${dateString}: Set to closed, classes=${indicator.parentElement.className}`);
             } else {
                 // Business day with no slots - show nothing (blank but potentially bookable)
                 indicator.innerHTML = '';
@@ -523,20 +506,9 @@ const AvailabilityManager = {
             // For future dates, get available hours based on service schedule
             let availableHours = [];
             
-            // Debug weekend processing
-            if (dayOfWeek === 0 || dayOfWeek === 6) {
-                const dayName = dayOfWeek === 0 ? 'SUNDAY' : 'SATURDAY';
-                console.log(`🔍 CALC ${dayName} ${dateString}: Starting with availableHours=[]`);
-            }
-            
             if (ServiceManager.isServiceAvailableOnDate(serviceId, date)) {
                 // Business day - get potential hours
                 availableHours = ServiceManager.getAvailableHoursForDate(serviceId, date);
-                
-                if (dayOfWeek === 0 || dayOfWeek === 6) {
-                    const dayName = dayOfWeek === 0 ? 'SUNDAY' : 'SATURDAY';
-                    console.log(`❌ ${dayName} ${dateString}: SHOULD NOT BE HERE! Got ${availableHours.length} hours from service`);
-                }
                 
                 // Filter out past slots if today
                 availableHours = ServiceManager.filterPastSlots(availableHours, date);
@@ -544,18 +516,11 @@ const AvailabilityManager = {
                 // Remove busy slots
                 const busyHours = BookingState.busySlots[dateString] || [];
                 availableHours = availableHours.filter(hour => !busyHours.includes(hour));
-            } else {
-                if (dayOfWeek === 0 || dayOfWeek === 6) {
-                    const dayName = dayOfWeek === 0 ? 'SUNDAY' : 'SATURDAY';
-                    console.log(`✅ ${dayName} ${dateString}: Service not available, keeping availableHours=[]`);
-                }
             }
-            // If not available (weekend), availableHours remains empty array
-
-            // Debug final result
+            
+            // Force weekends to have no available hours (double-check)
             if (dayOfWeek === 0 || dayOfWeek === 6) {
-                const dayName = dayOfWeek === 0 ? 'SUNDAY' : 'SATURDAY';
-                console.log(`🎯 ${dayName} ${dateString}: Final availableHours=${availableHours.length} (${availableHours.join(', ')})`);
+                availableHours = [];
             }
 
             // Update UI - this will show "Available", "Closed", or nothing based on the day and slots
