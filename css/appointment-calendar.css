@@ -508,19 +508,22 @@
   
   .booking-form {
     padding: 20px 15px;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
     gap: 20px;
     max-width: 100%;
     box-sizing: border-box;
   }
 
-  .booking-form .form-group {
+  /* Force all form elements to single column on mobile */
+  .booking-form .form-group,
+  .booking-form div[style*="grid-column"] {
+    grid-column: 1 !important;
     margin-bottom: 20px;
     width: 100%;
   }
 
   .booking-form .form-control {
-    width: 100%;
+    width: 100% !important;
     min-height: 44px;
     font-size: 16px;
     padding: 12px 15px;
@@ -540,6 +543,23 @@
   .booking-form .form-check-label {
     font-size: 15px;
     line-height: 1.5;
+  }
+
+  /* Force buttons container to single column */
+  .booking-form div[style*="text-align: center"] {
+    grid-column: 1 !important;
+    text-align: center !important;
+    margin-top: 20px;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .booking-form div[style*="text-align: center"] .btn {
+    width: 100% !important;
+    margin: 5px 0 !important;
+    min-height: 44px;
+    font-size: 16px;
   }
   
   .booking-success {
@@ -577,27 +597,51 @@
   
   .booking-form {
     padding: 15px 12px;
+    grid-template-columns: 1fr !important;
     gap: 18px;
   }
 
-  .booking-form .form-group {
+  /* Force all form elements to single column on tablets */
+  .booking-form .form-group,
+  .booking-form div[style*="grid-column"] {
+    grid-column: 1 !important;
     margin-bottom: 18px;
+    width: 100%;
   }
 
   .booking-form .form-control {
+    width: 100% !important;
     min-height: 42px;
     font-size: 16px;
     padding: 11px 14px;
+    box-sizing: border-box;
   }
 
   .booking-form textarea.form-control {
     min-height: 90px;
   }
+
+  /* Force buttons container to single column on tablets */
+  .booking-form div[style*="text-align: center"] {
+    grid-column: 1 !important;
+    text-align: center !important;
+    margin-top: 15px;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .booking-form div[style*="text-align: center"] .btn {
+    width: 100% !important;
+    margin: 4px 0 !important;
+    min-height: 42px;
+    font-size: 15px;
+  }
   
   .booking-success {
     padding: 15px 12px;
   }
-  
+
   .booking-success h4 {
     font-size: 1.2rem;
   }
@@ -647,17 +691,24 @@
   
   .booking-form {
     padding: 12px 10px;
+    grid-template-columns: 1fr !important;
     gap: 16px;
   }
 
-  .booking-form .form-group {
+  /* Force all form elements to single column on small mobile */
+  .booking-form .form-group,
+  .booking-form div[style*="grid-column"] {
+    grid-column: 1 !important;
     margin-bottom: 16px;
+    width: 100%;
   }
 
   .booking-form .form-control {
+    width: 100% !important;
     min-height: 44px;
     font-size: 16px;
     padding: 12px 14px;
+    box-sizing: border-box;
   }
 
   .booking-form textarea.form-control {
@@ -667,7 +718,24 @@
   .booking-form .form-check-label {
     font-size: 14px;
   }
-  
+
+  /* Force buttons container to single column on small mobile */
+  .booking-form div[style*="text-align: center"] {
+    grid-column: 1 !important;
+    text-align: center !important;
+    margin-top: 15px;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .booking-form div[style*="text-align: center"] .btn {
+    width: 100% !important;
+    margin: 4px 0 !important;
+    min-height: 44px;
+    font-size: 16px;
+  }
+
   .booking-success {
     padding: 12px 10px;
   }
