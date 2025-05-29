@@ -844,26 +844,31 @@ const BookingFlow = {
                 <div class="form-group">
                     <label for="booking-first-name">First Name *</label>
                     <input type="text" class="form-control" id="booking-first-name" required>
+                    <div class="invalid-feedback"></div>
                 </div>
 
                 <div class="form-group">
                     <label for="booking-last-name">Last Name *</label>
                     <input type="text" class="form-control" id="booking-last-name" required>
+                    <div class="invalid-feedback"></div>
                 </div>
 
                 <div class="form-group">
                     <label for="booking-email">Email *</label>
                     <input type="email" class="form-control" id="booking-email" required>
+                    <div class="invalid-feedback"></div>
                 </div>
 
                 <div class="form-group">
                     <label for="booking-phone">Phone Number *</label>
                     <input type="tel" class="form-control" id="booking-phone" required>
+                    <div class="invalid-feedback"></div>
                 </div>
 
                 <div class="form-group" style="grid-column: span 2;">
                     <label for="booking-notes">Additional Notes</label>
                     <textarea class="form-control" id="booking-notes" rows="3"></textarea>
+                    <div class="invalid-feedback"></div>
                 </div>
 
                 <div class="form-group" style="grid-column: span 2;">
@@ -872,6 +877,7 @@ const BookingFlow = {
                         <label class="form-check-label" for="booking-consent">
                             I confirm that I want to receive content from DK Dental Studio using any contact information I provide.
                         </label>
+                        <div class="invalid-feedback"></div>
                     </div>
                 </div>
 
@@ -882,8 +888,158 @@ const BookingFlow = {
             </form>
         `;
 
+        // Add real-time validation event listeners
+        this.attachFormValidationListeners();
+
         // Scroll to the form
         bookingFormContainer.scrollIntoView({ behavior: 'smooth' });
+    },
+
+    /**
+     * Attach real-time validation event listeners to form fields
+     */
+    attachFormValidationListeners() {
+        // First Name validation
+        const firstNameField = document.getElementById('booking-first-name');
+        if (firstNameField) {
+            firstNameField.addEventListener('blur', () => this.validateField('booking-first-name'));
+            firstNameField.addEventListener('input', () => this.clearFieldValidation('booking-first-name'));
+        }
+
+        // Last Name validation
+        const lastNameField = document.getElementById('booking-last-name');
+        if (lastNameField) {
+            lastNameField.addEventListener('blur', () => this.validateField('booking-last-name'));
+            lastNameField.addEventListener('input', () => this.clearFieldValidation('booking-last-name'));
+        }
+
+        // Email validation
+        const emailField = document.getElementById('booking-email');
+        if (emailField) {
+            emailField.addEventListener('blur', () => this.validateField('booking-email'));
+            emailField.addEventListener('input', () => this.clearFieldValidation('booking-email'));
+        }
+
+        // Phone validation
+        const phoneField = document.getElementById('booking-phone');
+        if (phoneField) {
+            phoneField.addEventListener('blur', () => this.validateField('booking-phone'));
+            phoneField.addEventListener('input', () => this.clearFieldValidation('booking-phone'));
+        }
+
+        // Notes validation
+        const notesField = document.getElementById('booking-notes');
+        if (notesField) {
+            notesField.addEventListener('input', () => this.validateField('booking-notes'));
+        }
+
+        // Consent validation
+        const consentField = document.getElementById('booking-consent');
+        if (consentField) {
+            consentField.addEventListener('change', () => this.validateField('booking-consent'));
+        }
+    },
+
+    /**
+     * Validate individual field and show feedback
+     */
+    validateField(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+
+        const value = field.type === 'checkbox' ? field.checked : field.value.trim();
+        let validationResult = { isValid: true };
+
+        // Validate based on field type
+        switch (fieldId) {
+            case 'booking-first-name':
+                if (!value) {
+                    validationResult = { isValid: false, message: 'First name is required.' };
+                } else if (value.length < 2) {
+                    validationResult = { isValid: false, message: 'First name must be at least 2 characters.' };
+                } else if (!/^[a-zA-Z\s\-']+$/.test(value)) {
+                    validationResult = { isValid: false, message: 'Only letters, spaces, hyphens, and apostrophes allowed.' };
+                }
+                break;
+
+            case 'booking-last-name':
+                if (!value) {
+                    validationResult = { isValid: false, message: 'Last name is required.' };
+                } else if (value.length < 2) {
+                    validationResult = { isValid: false, message: 'Last name must be at least 2 characters.' };
+                } else if (!/^[a-zA-Z\s\-']+$/.test(value)) {
+                    validationResult = { isValid: false, message: 'Only letters, spaces, hyphens, and apostrophes allowed.' };
+                }
+                break;
+
+            case 'booking-email':
+                if (!value) {
+                    validationResult = { isValid: false, message: 'Email address is required.' };
+                } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value)) {
+                    validationResult = { isValid: false, message: 'Please enter a valid email address.' };
+                }
+                break;
+
+            case 'booking-phone':
+                if (!value) {
+                    validationResult = { isValid: false, message: 'Phone number is required.' };
+                } else {
+                    const cleanPhone = value.replace(/[\s\-\(\)]/g, '');
+                    if (!/^(\+61|0)[2-9]\d{8}$/.test(cleanPhone)) {
+                        validationResult = { isValid: false, message: 'Please enter a valid Australian phone number.' };
+                    }
+                }
+                break;
+
+            case 'booking-notes':
+                if (value && value.length > 500) {
+                    validationResult = { isValid: false, message: 'Notes must be less than 500 characters.' };
+                }
+                break;
+
+            case 'booking-consent':
+                if (!value) {
+                    validationResult = { isValid: false, message: 'You must consent to receive communications.' };
+                }
+                break;
+        }
+
+        // Apply validation styling
+        this.applyFieldValidation(fieldId, validationResult);
+    },
+
+    /**
+     * Apply validation styling to field
+     */
+    applyFieldValidation(fieldId, validationResult) {
+        const field = document.getElementById(fieldId);
+        const feedbackDiv = field.parentElement.querySelector('.invalid-feedback');
+        
+        if (!field || !feedbackDiv) return;
+
+        // Remove existing validation classes
+        field.classList.remove('is-valid', 'is-invalid');
+
+        if (validationResult.isValid) {
+            field.classList.add('is-valid');
+            feedbackDiv.textContent = '';
+        } else {
+            field.classList.add('is-invalid');
+            feedbackDiv.textContent = validationResult.message;
+        }
+    },
+
+    /**
+     * Clear field validation styling
+     */
+    clearFieldValidation(fieldId) {
+        const field = document.getElementById(fieldId);
+        const feedbackDiv = field.parentElement.querySelector('.invalid-feedback');
+        
+        if (!field || !feedbackDiv) return;
+
+        field.classList.remove('is-valid', 'is-invalid');
+        feedbackDiv.textContent = '';
     },
 
     /**
@@ -923,16 +1079,34 @@ const BookingFlow = {
      * Submit booking form - matches Sample system functionality
      */
     submitBookingForm() {
-        // Get form values
-        const firstName = document.getElementById('booking-first-name').value;
-        const lastName = document.getElementById('booking-last-name').value;
-        const email = document.getElementById('booking-email').value;
-        const phone = document.getElementById('booking-phone').value;
-        const notes = document.getElementById('booking-notes').value;
+        // Get form values and trim whitespace
+        const firstName = document.getElementById('booking-first-name').value.trim();
+        const lastName = document.getElementById('booking-last-name').value.trim();
+        const email = document.getElementById('booking-email').value.trim();
+        const phone = document.getElementById('booking-phone').value.trim();
+        const notes = document.getElementById('booking-notes').value.trim();
+        const consent = document.getElementById('booking-consent').checked;
 
-        // Validate form
-        if (!firstName || !lastName || !email || !phone) {
-            alert('Please fill in all required fields.');
+        // Comprehensive validation
+        const validationResult = this.validateBookingForm({
+            firstName,
+            lastName,
+            email,
+            phone,
+            notes,
+            consent
+        });
+
+        if (!validationResult.isValid) {
+            alert(validationResult.message);
+            // Focus on the first invalid field
+            if (validationResult.field) {
+                const field = document.getElementById(validationResult.field);
+                if (field) {
+                    field.focus();
+                    field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
             return;
         }
 
@@ -964,6 +1138,93 @@ const BookingFlow = {
 
         // Create the booking using existing API
         this.createBookingRequest(bookingData);
+    },
+
+    /**
+     * Comprehensive form validation
+     */
+    validateBookingForm(data) {
+        const { firstName, lastName, email, phone, notes, consent } = data;
+
+        // Required field validation
+        if (!firstName) {
+            return { isValid: false, message: 'Please enter your first name.', field: 'booking-first-name' };
+        }
+
+        if (!lastName) {
+            return { isValid: false, message: 'Please enter your last name.', field: 'booking-last-name' };
+        }
+
+        if (!email) {
+            return { isValid: false, message: 'Please enter your email address.', field: 'booking-email' };
+        }
+
+        if (!phone) {
+            return { isValid: false, message: 'Please enter your phone number.', field: 'booking-phone' };
+        }
+
+        if (!consent) {
+            return { isValid: false, message: 'Please confirm your consent to receive communications from DK Dental Studio.', field: 'booking-consent' };
+        }
+
+        // Name validation
+        if (firstName.length < 2) {
+            return { isValid: false, message: 'First name must be at least 2 characters long.', field: 'booking-first-name' };
+        }
+
+        if (lastName.length < 2) {
+            return { isValid: false, message: 'Last name must be at least 2 characters long.', field: 'booking-last-name' };
+        }
+
+        // Name character validation (letters, spaces, hyphens, apostrophes only)
+        const namePattern = /^[a-zA-Z\s\-']+$/;
+        if (!namePattern.test(firstName)) {
+            return { isValid: false, message: 'First name can only contain letters, spaces, hyphens, and apostrophes.', field: 'booking-first-name' };
+        }
+
+        if (!namePattern.test(lastName)) {
+            return { isValid: false, message: 'Last name can only contain letters, spaces, hyphens, and apostrophes.', field: 'booking-last-name' };
+        }
+
+        // Email validation
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailPattern.test(email)) {
+            return { isValid: false, message: 'Please enter a valid email address (e.g., name@example.com).', field: 'booking-email' };
+        }
+
+        // Phone validation (Australian format)
+        const cleanPhone = phone.replace(/[\s\-\(\)]/g, ''); // Remove spaces, dashes, brackets
+        const phonePattern = /^(\+61|0)[2-9]\d{8}$/; // Australian phone number format
+        
+        if (!phonePattern.test(cleanPhone)) {
+            return { isValid: false, message: 'Please enter a valid Australian phone number (e.g., 02 9398 7578 or +61 2 9398 7578).', field: 'booking-phone' };
+        }
+
+        // Notes length validation (optional but if provided, reasonable length)
+        if (notes && notes.length > 500) {
+            return { isValid: false, message: 'Additional notes must be less than 500 characters.', field: 'booking-notes' };
+        }
+
+        // Email domain validation (basic check for common issues)
+        const emailDomain = email.split('@')[1];
+        if (emailDomain) {
+            // Check for common typos in domains
+            const commonDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com'];
+            const suspiciousDomains = ['gmial.com', 'yahooo.com', 'hotmial.com', 'outlok.com'];
+            
+            if (suspiciousDomains.some(domain => emailDomain.toLowerCase() === domain)) {
+                return { isValid: false, message: 'Please check your email address for typos.', field: 'booking-email' };
+            }
+
+            // Warn about unusual domains but allow them
+            if (!commonDomains.some(domain => emailDomain.toLowerCase() === domain) && 
+                !emailDomain.includes('.') || emailDomain.split('.').pop().length < 2) {
+                return { isValid: false, message: 'Please enter a valid email address with a proper domain (e.g., @gmail.com).', field: 'booking-email' };
+            }
+        }
+
+        // All validations passed
+        return { isValid: true };
     },
 
     updateServiceSelection(serviceId) {
