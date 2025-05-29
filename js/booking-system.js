@@ -454,6 +454,16 @@ const CalendarRenderer = {
         
         if (prevButton) {
             prevButton.addEventListener('click', () => {
+                // Calculate the target month
+                const targetDate = new Date(BookingState.currentMonth);
+                targetDate.setMonth(targetDate.getMonth() - 1);
+                
+                // Check if target month is within cached range
+                if (!CacheManager.isMonthWithinCachedRange(targetDate.getFullYear(), targetDate.getMonth())) {
+                    CacheManager.showNavigationLimitPopup();
+                    return;
+                }
+                
                 BookingState.currentMonth.setMonth(BookingState.currentMonth.getMonth() - 1);
                 this.renderCalendar(BookingState.currentMonth);
             });
@@ -461,6 +471,16 @@ const CalendarRenderer = {
         
         if (nextButton) {
             nextButton.addEventListener('click', () => {
+                // Calculate the target month
+                const targetDate = new Date(BookingState.currentMonth);
+                targetDate.setMonth(targetDate.getMonth() + 1);
+                
+                // Check if target month is within cached range
+                if (!CacheManager.isMonthWithinCachedRange(targetDate.getFullYear(), targetDate.getMonth())) {
+                    CacheManager.showNavigationLimitPopup();
+                    return;
+                }
+                
                 BookingState.currentMonth.setMonth(BookingState.currentMonth.getMonth() + 1);
                 this.renderCalendar(BookingState.currentMonth);
             });
@@ -1343,6 +1363,28 @@ const CacheManager = {
         const end = BookingState.cache.loadedRange.end;
         
         return start && end && targetDate >= start && targetDate <= end;
+    },
+
+    // Check if a specific month is within the cached range
+    isMonthWithinCachedRange(year, month) {
+        if (!BookingState.cache.loadedRange.start || !BookingState.cache.loadedRange.end) {
+            return false;
+        }
+
+        // Check if the month overlaps with our cached range
+        const monthStart = new Date(year, month, 1);
+        const monthEnd = new Date(year, month + 1, 0); // Last day of month
+        
+        const cacheStart = BookingState.cache.loadedRange.start;
+        const cacheEnd = BookingState.cache.loadedRange.end;
+        
+        // Month is within range if it overlaps with cached period
+        return monthStart <= cacheEnd && monthEnd >= cacheStart;
+    },
+
+    // Show popup when user tries to navigate beyond cached range
+    showNavigationLimitPopup() {
+        alert('To schedule an appointment more than 6 weeks in advance, or outside our regular hours, please contact us on (02) 9398 7578.');
     },
 
     // Check if cache needs refresh (older than 1 hour or missing data)

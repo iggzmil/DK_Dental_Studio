@@ -206,6 +206,11 @@
   border: 1px solid #e9ecef;
 }
 
+.booking-form-container h4 {
+  color: #0576ee;
+  text-align: center;
+}
+
 .booking-form-content {
   max-width: 600px;
   margin: 0 auto;
