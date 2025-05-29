@@ -352,7 +352,8 @@ const CalendarRenderer = {
         // Add days of the month
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, month, day);
-            const dateString = date.toISOString().split('T')[0];
+            // Use local date formatting instead of toISOString() to avoid timezone shifts
+            const dateString = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
             const isToday = this.isToday(date);
             const isPast = this.isPast(date);
             
@@ -529,7 +530,8 @@ const AvailabilityManager = {
 
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, monthIndex, day);
-            const dateString = date.toISOString().split('T')[0];
+            // Use local date formatting instead of toISOString() to avoid timezone shifts
+            const dateString = `${year}-${(monthIndex + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
             const isPastDate = CalendarRenderer.isPast(date);
             const dayOfWeek = date.getDay();
             const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
