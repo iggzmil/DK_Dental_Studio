@@ -523,9 +523,20 @@ const AvailabilityManager = {
             // For future dates, get available hours based on service schedule
             let availableHours = [];
             
+            // Debug weekend processing
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                const dayName = dayOfWeek === 0 ? 'SUNDAY' : 'SATURDAY';
+                console.log(`🔍 CALC ${dayName} ${dateString}: Starting with availableHours=[]`);
+            }
+            
             if (ServiceManager.isServiceAvailableOnDate(serviceId, date)) {
                 // Business day - get potential hours
                 availableHours = ServiceManager.getAvailableHoursForDate(serviceId, date);
+                
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                    const dayName = dayOfWeek === 0 ? 'SUNDAY' : 'SATURDAY';
+                    console.log(`❌ ${dayName} ${dateString}: SHOULD NOT BE HERE! Got ${availableHours.length} hours from service`);
+                }
                 
                 // Filter out past slots if today
                 availableHours = ServiceManager.filterPastSlots(availableHours, date);
@@ -533,8 +544,19 @@ const AvailabilityManager = {
                 // Remove busy slots
                 const busyHours = BookingState.busySlots[dateString] || [];
                 availableHours = availableHours.filter(hour => !busyHours.includes(hour));
+            } else {
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                    const dayName = dayOfWeek === 0 ? 'SUNDAY' : 'SATURDAY';
+                    console.log(`✅ ${dayName} ${dateString}: Service not available, keeping availableHours=[]`);
+                }
             }
             // If not available (weekend), availableHours remains empty array
+
+            // Debug final result
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                const dayName = dayOfWeek === 0 ? 'SUNDAY' : 'SATURDAY';
+                console.log(`🎯 ${dayName} ${dateString}: Final availableHours=${availableHours.length} (${availableHours.join(', ')})`);
+            }
 
             // Update UI - this will show "Available", "Closed", or nothing based on the day and slots
             CalendarRenderer.updateDateAvailability(dateString, availableHours, false);
