@@ -435,7 +435,14 @@ const CalendarRenderer = {
         calendarHTML += `
                     </div>
                 </div>
-            </div>`;
+            </div>
+            
+            <!-- Time Slots Container (appears below calendar when date is selected) -->
+            <div id="time-slots-container" class="time-slots-container"></div>
+            
+            <!-- Booking Form Container (appears below time slots when time is selected) -->
+            <div id="booking-form-container" class="booking-form-container" style="display: none;"></div>
+        `;
 
         return calendarHTML;
     },
@@ -648,8 +655,24 @@ const BookingFlow = {
             return;
         }
 
+        // Clear any previous selections
+        this.clearTimeSlots();
+        this.clearBookingForm();
+        
+        // Update state
         BookingState.selectedDate = dateString;
+        BookingState.selectedTime = null;
         BookingState.currentStep = 'time-selection';
+        
+        // Highlight selected date in calendar
+        document.querySelectorAll('.calendar-day.selected').forEach(day => {
+            day.classList.remove('selected');
+        });
+        
+        const selectedDayElement = document.querySelector(`[data-date="${dateString}"]`);
+        if (selectedDayElement) {
+            selectedDayElement.classList.add('selected');
+        }
         
         this.showTimeSlotSelection(dateString, availableSlots);
     },
@@ -696,6 +719,17 @@ const BookingFlow = {
             }
         }
         
+        // Clear previous time slot selections
+        document.querySelectorAll('.time-slot.selected').forEach(slot => {
+            slot.classList.remove('selected');
+        });
+        
+        // Mark the selected time slot
+        const selectedSlot = document.querySelector(`.time-slot[data-time="${hour}"]`);
+        if (selectedSlot) {
+            selectedSlot.classList.add('selected');
+        }
+        
         // Slot is valid, proceed with selection
         BookingState.selectedTime = hour;
         BookingState.currentStep = 'booking-form';
@@ -704,8 +738,14 @@ const BookingFlow = {
     },
 
     showTimeSlotSelection(dateString, availableSlots) {
-        const container = document.getElementById('appointment-calendar');
-        if (!container) return;
+        const timeSlotsContainer = document.getElementById('time-slots-container');
+        if (!timeSlotsContainer) return;
+
+        // Clear any previous booking form
+        const bookingFormContainer = document.getElementById('booking-form-container');
+        if (bookingFormContainer) {
+            bookingFormContainer.style.display = 'none';
+        }
 
         const date = new Date(dateString + 'T00:00:00');
         const formattedDate = date.toLocaleDateString('en-AU', { 
@@ -715,35 +755,53 @@ const BookingFlow = {
             day: 'numeric' 
         });
 
-        let slotsHTML = `
-            <div class="time-slot-selection">
-                <div class="selection-header">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="BookingFlow.backToCalendar()">
-                        <i class="fas fa-arrow-left"></i> Back to Calendar
-                    </button>
-                    <h4>Select Time - ${formattedDate}</h4>
+        if (!availableSlots || availableSlots.length === 0) {
+            timeSlotsContainer.innerHTML = `
+                <h4 class="text-center mb-4">Available Times for ${formattedDate}</h4>
+                <div class="alert alert-info text-center">
+                    <p class="mb-0">No available appointments for this date. Please select another date.</p>
                 </div>
+            `;
+        } else {
+            // Sort time slots chronologically
+            const sortedSlots = [...availableSlots].sort((a, b) => a - b);
+
+            let slotsHTML = `
+                <h4 class="text-center mb-4">Available Times for ${formattedDate}</h4>
                 <div class="time-slots-grid">`;
 
-        availableSlots.forEach(hour => {
-            const timeString = `${hour.toString().padStart(2, '0')}:00`;
-            slotsHTML += `
-                <button type="button" class="btn btn-outline-primary time-slot-btn" 
-                        onclick="BookingFlow.selectTime(${hour})">
-                    ${timeString}
-                </button>`;
-        });
+            sortedSlots.forEach(hour => {
+                const timeString = `${hour.toString().padStart(2, '0')}:00`;
+                const displayTime = this.formatTime12Hour(hour);
+                slotsHTML += `
+                    <div class="time-slot" onclick="BookingFlow.selectTime(${hour})" 
+                         data-time="${hour}">
+                        ${displayTime}
+                    </div>
+                `;
+            });
 
-        slotsHTML += `
-                </div>
-            </div>`;
+            slotsHTML += `</div>`;
+            timeSlotsContainer.innerHTML = slotsHTML;
+        }
 
-        container.innerHTML = slotsHTML;
+        // Scroll to time slots smoothly
+        timeSlotsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    },
+
+    /**
+     * Format hour (24h) to 12h format for display
+     */
+    formatTime12Hour(hour) {
+        if (hour === 0) return '12:00 AM';
+        if (hour < 12) return `${hour}:00 AM`;
+        if (hour === 12) return '12:00 PM';
+        return `${hour - 12}:00 PM`;
     },
 
     showBookingForm() {
-        const container = document.getElementById('appointment-calendar');
-        if (!container) return;
+        const bookingFormContainer = document.getElementById('booking-form-container');
+        if (!bookingFormContainer) return;
 
         const selectedDate = new Date(BookingState.selectedDate + 'T00:00:00');
         const formattedDate = selectedDate.toLocaleDateString('en-AU', { 
@@ -752,29 +810,31 @@ const BookingFlow = {
             month: 'long', 
             day: 'numeric' 
         });
-        const timeString = `${BookingState.selectedTime.toString().padStart(2, '0')}:00`;
+        const displayTime = this.formatTime12Hour(BookingState.selectedTime);
         const serviceName = ServiceManager.getServiceName(BookingState.selectedService);
 
         const formHTML = `
-            <div class="booking-form-container">
+            <div class="booking-form-content">
                 <div class="booking-summary">
-                    <h4>Booking Summary</h4>
-                    <p><strong>Service:</strong> ${serviceName}</p>
-                    <p><strong>Date:</strong> ${formattedDate}</p>
-                    <p><strong>Time:</strong> ${timeString}</p>
-                    <p><strong>Duration:</strong> 1 hour</p>
+                    <h4 class="text-center mb-3">Complete Your Booking</h4>
+                    <div class="text-center mb-4">
+                        <p class="mb-1"><strong>Service:</strong> ${serviceName}</p>
+                        <p class="mb-1"><strong>Date:</strong> ${formattedDate}</p>
+                        <p class="mb-1"><strong>Time:</strong> ${displayTime}</p>
+                        <p class="mb-0"><strong>Duration:</strong> 1 hour</p>
+                    </div>
                 </div>
                 
                 <form id="booking-form" class="booking-form">
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="form-group">
+                            <div class="form-group mb-3">
                                 <label for="firstName">First Name *</label>
                                 <input type="text" class="form-control" id="firstName" name="firstName" required>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="form-group">
+                            <div class="form-group mb-3">
                                 <label for="lastName">Last Name *</label>
                                 <input type="text" class="form-control" id="lastName" name="lastName" required>
                             </div>
@@ -783,28 +843,28 @@ const BookingFlow = {
                     
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="form-group">
+                            <div class="form-group mb-3">
                                 <label for="email">Email Address *</label>
                                 <input type="email" class="form-control" id="email" name="email" required>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="form-group">
+                            <div class="form-group mb-3">
                                 <label for="phone">Phone Number *</label>
                                 <input type="tel" class="form-control" id="phone" name="phone" required>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="form-group">
+                    <div class="form-group mb-4">
                         <label for="notes">Additional Notes (Optional)</label>
                         <textarea class="form-control" id="notes" name="notes" rows="3" 
                                   placeholder="Any specific requirements or questions?"></textarea>
                     </div>
                     
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-outline-secondary" onclick="BookingFlow.backToTimeSelection()">
-                            <i class="fas fa-arrow-left"></i> Back
+                    <div class="form-actions text-center">
+                        <button type="button" class="btn btn-outline-secondary me-3" onclick="BookingFlow.clearBookingForm()">
+                            <i class="fas fa-times"></i> Cancel
                         </button>
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-calendar-check"></i> Confirm Booking
@@ -813,10 +873,14 @@ const BookingFlow = {
                 </form>
             </div>`;
 
-        container.innerHTML = formHTML;
+        bookingFormContainer.innerHTML = formHTML;
+        bookingFormContainer.style.display = 'block';
 
         // Attach form submission handler
         document.getElementById('booking-form').addEventListener('submit', this.handleBookingSubmission.bind(this));
+        
+        // Scroll to booking form smoothly
+        bookingFormContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
     },
 
     async handleBookingSubmission(e) {
@@ -881,8 +945,8 @@ const BookingFlow = {
     },
 
     showBookingConfirmation(result, customerData) {
-        const container = document.getElementById('appointment-calendar');
-        if (!container) return;
+        const bookingFormContainer = document.getElementById('booking-form-container');
+        if (!bookingFormContainer) return;
 
         const selectedDate = new Date(BookingState.selectedDate + 'T00:00:00');
         const formattedDate = selectedDate.toLocaleDateString('en-AU', { 
@@ -891,31 +955,37 @@ const BookingFlow = {
             month: 'long', 
             day: 'numeric' 
         });
-        const timeString = `${BookingState.selectedTime.toString().padStart(2, '0')}:00`;
+        const displayTime = this.formatTime12Hour(BookingState.selectedTime);
+        const serviceName = ServiceManager.getServiceName(BookingState.selectedService);
 
-        container.innerHTML = `
-            <div class="booking-confirmation">
-                <div class="alert alert-success text-center">
-                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                    <h4>Booking Confirmed!</h4>
-                    <p class="mb-3">Your appointment has been successfully booked.</p>
-                    
-                    <div class="confirmation-details">
-                        <p><strong>Service:</strong> ${ServiceManager.getServiceName(BookingState.selectedService)}</p>
-                        <p><strong>Date:</strong> ${formattedDate}</p>
-                        <p><strong>Time:</strong> ${timeString}</p>
-                        <p><strong>Name:</strong> ${customerData.firstName} ${customerData.lastName}</p>
-                    </div>
-                    
-                    <p class="mt-3">A confirmation email has been sent to <strong>${customerData.email}</strong></p>
-                    
-                    <div class="mt-4">
-                        <button type="button" class="btn btn-primary" onclick="location.reload()">
-                            Book Another Appointment
-                        </button>
-                    </div>
+        bookingFormContainer.innerHTML = `
+            <div class="booking-success">
+                <div class="text-center mb-4">
+                    <i class="fas fa-check-circle text-success" style="font-size: 48px;"></i>
+                </div>
+                <h4 class="text-center mb-3">Booking Request Submitted!</h4>
+                <p class="text-center mb-3">We've received your appointment request for <strong>${serviceName}</strong> on <strong>${formattedDate}</strong> at <strong>${displayTime}</strong>.</p>
+                <p class="text-center mb-4">A confirmation email has been sent to <strong>${customerData.email}</strong>.</p>
+                
+                <div class="alert alert-info">
+                    <h6 class="mb-2"><i class="fas fa-info-circle"></i> What happens next:</h6>
+                    <ul class="mb-0">
+                        <li>Our team will review your booking request</li>
+                        <li>You'll receive a confirmation email with appointment details</li>
+                        <li>You'll receive a reminder email 24 hours before your appointment</li>
+                        <li>If you need to change your appointment, please call us at <a href="tel:0293987578">(02) 9398 7578</a></li>
+                    </ul>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <button type="button" class="btn btn-primary" onclick="BookingFlow.resetBooking()">
+                        <i class="fas fa-plus"></i> Book Another Appointment
+                    </button>
                 </div>
             </div>`;
+
+        // Scroll to confirmation message
+        bookingFormContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
     },
 
     updateServiceSelection(serviceId) {
@@ -930,14 +1000,58 @@ const BookingFlow = {
         BookingState.selectedDate = null;
         BookingState.selectedTime = null;
         BookingState.currentStep = 'calendar';
+        
+        // Clear time slots and booking form
+        this.clearTimeSlots();
+        this.clearBookingForm();
+        
         CalendarRenderer.renderCalendar(BookingState.currentMonth);
     },
 
     backToTimeSelection() {
         BookingState.selectedTime = null;
         BookingState.currentStep = 'time-selection';
+        
+        // Clear booking form and show time slots again
+        this.clearBookingForm();
+        
         const availableSlots = BookingState.availableSlots[BookingState.selectedDate];
         this.showTimeSlotSelection(BookingState.selectedDate, availableSlots);
+    },
+
+    clearTimeSlots() {
+        const timeSlotsContainer = document.getElementById('time-slots-container');
+        if (timeSlotsContainer) {
+            timeSlotsContainer.innerHTML = '';
+        }
+    },
+
+    clearBookingForm() {
+        const bookingFormContainer = document.getElementById('booking-form-container');
+        if (bookingFormContainer) {
+            bookingFormContainer.style.display = 'none';
+            bookingFormContainer.innerHTML = '';
+        }
+    },
+
+    resetBooking() {
+        // Reset booking state
+        BookingState.selectedDate = null;
+        BookingState.selectedTime = null;
+        BookingState.currentStep = 'calendar';
+        
+        // Clear all containers
+        this.clearTimeSlots();
+        this.clearBookingForm();
+        
+        // Re-render calendar to refresh availability data
+        CalendarRenderer.renderCalendar(BookingState.currentMonth);
+        
+        // Scroll back to top of calendar
+        const calendarContainer = document.getElementById('appointment-calendar');
+        if (calendarContainer) {
+            calendarContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 };
 
