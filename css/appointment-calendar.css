@@ -488,13 +488,17 @@
     font-size: 14px;
   }
   
+  /* Enhanced mobile booking form layout */
   .booking-form-container {
     margin-top: 20px;
-    padding: 20px;
+    padding: 20px 15px;
+    max-width: 100%;
+    box-sizing: border-box;
   }
   
   .booking-form-content {
     padding: 0;
+    max-width: 100%;
   }
   
   .booking-summary {
@@ -503,12 +507,45 @@
   }
   
   .booking-form {
-    padding: 20px;
+    padding: 20px 15px;
     grid-template-columns: 1fr;
+    gap: 20px;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .booking-form .form-group {
+    margin-bottom: 20px;
+    width: 100%;
+  }
+
+  .booking-form .form-control {
+    width: 100%;
+    min-height: 44px;
+    font-size: 16px;
+    padding: 12px 15px;
+    box-sizing: border-box;
+  }
+
+  .booking-form textarea.form-control {
+    min-height: 100px;
+    resize: vertical;
+  }
+
+  .booking-form .form-check {
+    margin-top: 15px;
+    margin-bottom: 15px;
+  }
+
+  .booking-form .form-check-label {
+    font-size: 15px;
+    line-height: 1.5;
   }
   
   .booking-success {
-    padding: 20px;
+    padding: 20px 15px;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 }
 
@@ -523,9 +560,10 @@
     font-size: 13px;
   }
   
+  /* Enhanced mobile form for tablets/large phones */
   .booking-form-container {
     margin-top: 15px;
-    padding: 15px;
+    padding: 15px 12px;
   }
   
   .booking-summary {
@@ -538,11 +576,26 @@
   }
   
   .booking-form {
-    padding: 15px;
+    padding: 15px 12px;
+    gap: 18px;
+  }
+
+  .booking-form .form-group {
+    margin-bottom: 18px;
+  }
+
+  .booking-form .form-control {
+    min-height: 42px;
+    font-size: 16px;
+    padding: 11px 14px;
+  }
+
+  .booking-form textarea.form-control {
+    min-height: 90px;
   }
   
   .booking-success {
-    padding: 15px;
+    padding: 15px 12px;
   }
   
   .booking-success h4 {
@@ -581,9 +634,10 @@
     font-size: 12px;
   }
   
+  /* Optimized mobile form for small screens */
   .booking-form-container {
     margin-top: 10px;
-    padding: 10px;
+    padding: 12px 10px;
   }
   
   .booking-summary {
@@ -592,17 +646,38 @@
   }
   
   .booking-form {
-    padding: 12px;
+    padding: 12px 10px;
+    gap: 16px;
+  }
+
+  .booking-form .form-group {
+    margin-bottom: 16px;
+  }
+
+  .booking-form .form-control {
+    min-height: 44px;
+    font-size: 16px;
+    padding: 12px 14px;
+  }
+
+  .booking-form textarea.form-control {
+    min-height: 80px;
+  }
+
+  .booking-form .form-check-label {
+    font-size: 14px;
   }
   
   .booking-success {
-    padding: 12px;
+    padding: 12px 10px;
   }
   
   .form-actions .btn {
     display: block;
     width: 100%;
-    margin: 5px 0;
+    margin: 8px 0;
+    min-height: 44px;
+    font-size: 16px;
   }
 
   /* 5-day calendar for small mobile */
