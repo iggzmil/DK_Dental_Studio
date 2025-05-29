@@ -102,6 +102,11 @@ const ServiceManager = {
         const dayName = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
         const schedule = service.schedule[dayName];
         
+        // Debug weekend service availability
+        if (dayName === 'saturday' || dayName === 'sunday') {
+            console.log(`🔍 SERVICE CHECK ${dayName.toUpperCase()}: schedule=${schedule}, returning ${schedule !== null}`);
+        }
+        
         return schedule !== null;
     },
 
