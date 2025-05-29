@@ -294,15 +294,15 @@
 }
 
 .booking-form .form-check {
-  display: flex;
-  align-items: flex-start;
-  margin-top: 10px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+  gap: 10px;
 }
 
 .booking-form .form-check-input {
-  margin-right: 8px;
   margin-top: 2px;
-  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
 }
 
 .booking-form .form-check-input.is-invalid {
@@ -314,9 +314,8 @@
 }
 
 .booking-form .form-check-label {
-  font-size: 14px;
-  line-height: 1.4;
-  color: #333;
+  font-size: 15px;
+  line-height: 1.5;
 }
 
 /* Spinner styles for processing state */
@@ -621,6 +620,24 @@
     min-height: 90px;
   }
 
+  /* Fix checkbox styling for tablets */
+  .booking-form .form-check {
+    margin-top: 15px;
+    margin-bottom: 15px;
+    gap: 10px;
+  }
+
+  .booking-form .form-check-input {
+    margin-top: 2px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .booking-form .form-check-label {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
   /* Force buttons container to single column on tablets */
   .booking-form div[style*="text-align: center"] {
     grid-column: 1 !important;
@@ -715,8 +732,22 @@
     min-height: 80px;
   }
 
+  /* Fix checkbox styling for small mobile */
+  .booking-form .form-check {
+    margin-top: 15px;
+    margin-bottom: 15px;
+    gap: 10px;
+  }
+
+  .booking-form .form-check-input {
+    margin-top: 2px;
+    width: 18px;
+    height: 18px;
+  }
+
   .booking-form .form-check-label {
     font-size: 14px;
+    line-height: 1.6;
   }
 
   /* Force buttons container to single column on small mobile */
