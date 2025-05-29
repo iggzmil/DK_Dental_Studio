@@ -409,13 +409,20 @@ const CalendarRenderer = {
         const indicator = document.getElementById(`avail-${dateString}`);
         if (!indicator) return;
 
-        const date = new Date(dateString + 'T00:00:00');
+        // Parse date in local timezone to avoid dayOfWeek calculation errors
+        const [year, month, day] = dateString.split('-').map(Number);
+        const date = new Date(year, month - 1, day); // month is 0-indexed in Date constructor
         const dayOfWeek = date.getDay();
         
         // Track all calls for Saturday dates
         if (dayOfWeek === 6) {
             console.log(`🔍 updateDateAvailability CALL for ${dateString}: slots=${availableSlots.length}, isPast=${isPastDate}`);
             console.trace(`📍 Call stack for Saturday ${dateString}:`);
+            
+            // Also log to debug panel if available
+            if (window.DebugPanel && typeof window.DebugPanel.addLog === 'function') {
+                window.DebugPanel.addLog(`🔍 updateDateAvailability CALL for ${dateString}: slots=${availableSlots.length}, isPast=${isPastDate}`);
+            }
         }
 
         // For past dates, show no text
@@ -446,6 +453,17 @@ const CalendarRenderer = {
                 
                 if (dayOfWeek === 6) {
                     console.log(`✅ DEBUG SAT ${dateString}: SET TO CLOSED - classes now: ${indicator.parentElement.className}`);
+                    
+                    // Check if the class gets removed later
+                    setTimeout(() => {
+                        const laterCheck = document.querySelector(`[data-date="${dateString}"]`);
+                        if (laterCheck) {
+                            console.log(`🕐 LATER CHECK SAT ${dateString}: classes are now: ${laterCheck.className}`);
+                            if (window.DebugPanel && typeof window.DebugPanel.addLog === 'function') {
+                                window.DebugPanel.addLog(`🕐 LATER CHECK SAT ${dateString}: classes are now: ${laterCheck.className}`);
+                            }
+                        }
+                    }, 1000);
                 }
             } else {
                 // Business day with no slots - show nothing (blank but potentially bookable)
