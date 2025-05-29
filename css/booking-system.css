@@ -40,6 +40,7 @@
     margin: 0;
     font-size: 1.4rem;
     font-weight: 600;
+    color: white;
 }
 
 .calendar-grid {
@@ -57,7 +58,7 @@
     padding: 15px 5px;
     text-align: center;
     font-weight: 600;
-    color: #6c757d;
+    color: #0576ee;
     font-size: 0.9rem;
 }
 
@@ -97,6 +98,12 @@
     cursor: not-allowed;
 }
 
+.calendar-day.past-date {
+    background: #f8f9fa;
+    color: #adb5bd;
+    cursor: not-allowed;
+}
+
 .calendar-day.today {
     background: #e3f2fd;
     border: 2px solid #0576ee;
@@ -109,6 +116,11 @@
 
 .calendar-day.unavailable {
     background: #fff5f5;
+}
+
+.calendar-day.closed {
+    background: #f8f9fa;
+    color: #6c757d;
 }
 
 .day-number {
@@ -137,20 +149,23 @@
     100% { transform: rotate(360deg); }
 }
 
-.has-slots {
+/* Availability text indicators */
+.available-text {
     background: #d4edda;
     color: #155724;
-    padding: 2px 6px;
+    padding: 2px 8px;
     border-radius: 12px;
     font-weight: 600;
+    font-size: 0.7rem;
 }
 
-.no-slots {
+.closed-text {
     background: #f8d7da;
     color: #721c24;
-    padding: 2px 6px;
+    padding: 2px 8px;
     border-radius: 12px;
     font-size: 0.7rem;
+    font-weight: 500;
 }
 
 /* ========================================

@@ -316,7 +316,10 @@ const CalendarRenderer = {
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
         const daysInMonth = lastDay.getDate();
-        const startingDayOfWeek = firstDay.getDay();
+        // Adjust for Monday start (0=Sunday, 1=Monday, etc.)
+        // Convert JavaScript's 0=Sunday to 0=Monday by subtracting 1 and handling Sunday wrap-around
+        let startingDayOfWeek = firstDay.getDay() - 1;
+        if (startingDayOfWeek < 0) startingDayOfWeek = 6; // Sunday becomes 6
 
         let calendarHTML = `
             <div class="calendar-widget">
@@ -331,13 +334,13 @@ const CalendarRenderer = {
                 </div>
                 <div class="calendar-grid">
                     <div class="calendar-weekdays">
-                        <div class="weekday">Sun</div>
                         <div class="weekday">Mon</div>
                         <div class="weekday">Tue</div>
                         <div class="weekday">Wed</div>
                         <div class="weekday">Thu</div>
                         <div class="weekday">Fri</div>
                         <div class="weekday">Sat</div>
+                        <div class="weekday">Sun</div>
                     </div>
                     <div class="calendar-days">`;
 
@@ -402,17 +405,40 @@ const CalendarRenderer = {
         });
     },
 
-    updateDateAvailability(dateString, availableSlots) {
+    updateDateAvailability(dateString, availableSlots, isPastDate = false) {
         const indicator = document.getElementById(`avail-${dateString}`);
         if (!indicator) return;
 
-        if (availableSlots.length === 0) {
-            indicator.innerHTML = '<span class="no-slots">Unavailable</span>';
-            indicator.parentElement.classList.add('unavailable');
+        // For past dates, show no text
+        if (isPastDate) {
+            indicator.innerHTML = '';
+            indicator.parentElement.classList.add('past-date');
+            return;
+        }
+
+        // For future dates, determine if it's a business day or weekend
+        const date = new Date(dateString + 'T00:00:00');
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+        
+        // Check if this is a business day by looking at the service schedule
+        const isBusinessDay = dayName !== 'saturday' && dayName !== 'sunday';
+        
+        if (isBusinessDay) {
+            // Business day - show "Available" if there are slots, otherwise don't show anything
+            if (availableSlots.length > 0) {
+                indicator.innerHTML = '<span class="available-text">Available</span>';
+                indicator.parentElement.classList.add('available');
+                indicator.parentElement.classList.remove('unavailable');
+            } else {
+                indicator.innerHTML = '';
+                indicator.parentElement.classList.add('unavailable');
+                indicator.parentElement.classList.remove('available');
+            }
         } else {
-            indicator.innerHTML = `<span class="has-slots">${availableSlots.length} slot${availableSlots.length !== 1 ? 's' : ''}</span>`;
-            indicator.parentElement.classList.add('available');
-            indicator.parentElement.classList.remove('unavailable');
+            // Weekend - show "Closed"
+            indicator.innerHTML = '<span class="closed-text">Closed</span>';
+            indicator.parentElement.classList.add('closed');
+            indicator.parentElement.classList.remove('available', 'unavailable');
         }
     },
 
@@ -461,10 +487,18 @@ const AvailabilityManager = {
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, monthIndex, day);
             const dateString = date.toISOString().split('T')[0];
+            const isPastDate = CalendarRenderer.isPast(date);
 
-            // Check if service is available on this day
+            // For past dates, always show no text regardless of service
+            if (isPastDate) {
+                CalendarRenderer.updateDateAvailability(dateString, [], true);
+                continue;
+            }
+
+            // For future dates, check service availability
             if (!ServiceManager.isServiceAvailableOnDate(serviceId, date)) {
-                CalendarRenderer.updateDateAvailability(dateString, []);
+                // This is a weekend or non-business day - show "Closed" 
+                CalendarRenderer.updateDateAvailability(dateString, [], false);
                 continue;
             }
 
@@ -478,8 +512,8 @@ const AvailabilityManager = {
             const busyHours = BookingState.busySlots[dateString] || [];
             availableHours = availableHours.filter(hour => !busyHours.includes(hour));
 
-            // Update UI
-            CalendarRenderer.updateDateAvailability(dateString, availableHours);
+            // Update UI - this will show "Available" for business days with slots
+            CalendarRenderer.updateDateAvailability(dateString, availableHours, false);
 
             // Store in state
             BookingState.availableSlots[dateString] = availableHours;
