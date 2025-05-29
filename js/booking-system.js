@@ -407,7 +407,10 @@ const CalendarRenderer = {
 
     updateDateAvailability(dateString, availableSlots, isPastDate = false) {
         const indicator = document.getElementById(`avail-${dateString}`);
-        if (!indicator) return;
+        if (!indicator) {
+            console.log(`❌ NO INDICATOR FOUND for ${dateString}`);
+            return;
+        }
 
         // For past dates, show no text
         if (isPastDate) {
@@ -418,6 +421,12 @@ const CalendarRenderer = {
 
         const date = new Date(dateString + 'T00:00:00');
         const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+        
+        // Debug weekend processing
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            const dayName = dayOfWeek === 0 ? 'SUNDAY' : 'SATURDAY';
+            console.log(`🔍 ${dayName} ${dateString}: availableSlots=${availableSlots.length}`);
+        }
 
         // For future dates, check if there are available slots
         if (availableSlots.length > 0) {
@@ -432,6 +441,9 @@ const CalendarRenderer = {
                 indicator.innerHTML = '<span class="closed-text">Closed</span>';
                 indicator.parentElement.classList.add('closed');
                 indicator.parentElement.classList.remove('available', 'unavailable');
+                
+                const dayName = dayOfWeek === 0 ? 'SUNDAY' : 'SATURDAY';
+                console.log(`✅ ${dayName} ${dateString}: Set to closed, classes=${indicator.parentElement.className}`);
             } else {
                 // Business day with no slots - show nothing (blank but potentially bookable)
                 indicator.innerHTML = '';

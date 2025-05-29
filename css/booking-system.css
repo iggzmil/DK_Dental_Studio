@@ -118,11 +118,6 @@
     background: #fff5f5;
 }
 
-.calendar-day.closed {
-    background: #f8f9fa;
-    color: #6c757d;
-}
-
 .day-number {
     font-weight: 600;
     font-size: 1.1rem;

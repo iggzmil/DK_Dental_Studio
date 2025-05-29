@@ -94,17 +94,17 @@
 }
 
 .calendar-day.closed {
-  background-color: #f8f9fa !important;
-  color: #aaa !important;
-  cursor: not-allowed !important;
+  background-color: #f8f9fa;
+  color: #aaa;
+  cursor: not-allowed;
 }
 
 .calendar-day.closed .availability {
-  color: #aaa !important;
+  color: #aaa;
 }
 
 .calendar-day.closed .day-number {
-  color: #aaa !important;
+  color: #aaa;
 }
 
 .calendar-day.available {
