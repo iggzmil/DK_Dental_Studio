@@ -416,6 +416,15 @@ const CalendarRenderer = {
             return;
         }
 
+        const date = new Date(dateString + 'T00:00:00');
+        const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+
+        // Debug weekend days
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            console.log(`Weekend Debug - ${dayName} (${dayOfWeek}): dateString=${dateString}, availableSlots=${availableSlots.length}, isPastDate=${isPastDate}`);
+        }
+
         // For future dates, check if there are available slots
         if (availableSlots.length > 0) {
             // Business day with slots - show "Available"
@@ -424,11 +433,9 @@ const CalendarRenderer = {
             indicator.parentElement.classList.remove('unavailable', 'closed');
         } else {
             // No slots available - determine if weekend (closed) or business day (blank)
-            const date = new Date(dateString + 'T00:00:00');
-            const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
-            
             if (dayOfWeek === 0 || dayOfWeek === 6) {
                 // Weekend - show "Closed"
+                console.log(`Setting ${dayName} as closed`);
                 indicator.innerHTML = '<span class="closed-text">Closed</span>';
                 indicator.parentElement.classList.add('closed');
                 indicator.parentElement.classList.remove('available', 'unavailable');
@@ -486,6 +493,13 @@ const AvailabilityManager = {
             const date = new Date(year, monthIndex, day);
             const dateString = date.toISOString().split('T')[0];
             const isPastDate = CalendarRenderer.isPast(date);
+            const dayOfWeek = date.getDay();
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+
+            // Debug weekend processing
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                console.log(`Processing ${dayName} ${dateString}: isPast=${isPastDate}, serviceAvailable=${ServiceManager.isServiceAvailableOnDate(serviceId, date)}`);
+            }
 
             // For past dates, always show no text regardless of service
             if (isPastDate) {
