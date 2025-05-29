@@ -521,6 +521,15 @@ const AvailabilityManager = {
             // Force weekends to have no available hours (double-check)
             if (dayOfWeek === 0 || dayOfWeek === 6) {
                 availableHours = [];
+                
+                // Debug the actual HTML being generated
+                setTimeout(() => {
+                    const dayElement = document.querySelector(`[data-date="${dateString}"]`);
+                    if (dayElement) {
+                        const dayName = dayOfWeek === 0 ? 'SUNDAY' : 'SATURDAY';
+                        console.log(`${dayName} ${dateString}:`, dayElement.outerHTML);
+                    }
+                }, 100);
             }
 
             // Update UI - this will show "Available", "Closed", or nothing based on the day and slots
