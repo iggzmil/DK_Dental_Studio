@@ -1985,4 +1985,82 @@
   display: flex !important;
 }
 
+/* ===== MOBILE LANDSCAPE ORIENTATION FIXES ===== */
+/* 
+ * Fixes for mobile navigation when device rotates to landscape
+ * Issue 1: Phone number disappears in landscape due to d-sm-none
+ * Issue 2: Dropdown menu gets cut off in landscape orientation
+ */
+
+/* Fix 1: Phone number visibility in landscape orientation */
+@media (max-width: 991px) and (orientation: landscape) {
+  .mobile-phone-link {
+    display: flex !important; /* Override d-sm-none in landscape */
+  }
+}
+
+/* Alternative fix for phone number using height-based media query */
+@media (max-height: 500px) and (max-width: 991px) {
+  .mobile-phone-link {
+    display: flex !important; /* Show phone number in short landscape screens */
+  }
+}
+
+/* Comprehensive fix: Override Bootstrap's d-sm-none in mobile landscape */
+@media (max-width: 767px) {
+  .mobile-phone-link.d-block.d-sm-none {
+    display: flex !important; /* Always show on mobile devices regardless of orientation */
+  }
+}
+
+/* Fix 2: Dropdown menu positioning for landscape orientation */
+@media (max-width: 991px) and (orientation: landscape) {
+  .header .navbar-collapse.show {
+    position: fixed; /* Changed from absolute to fixed */
+    top: 60px; /* Position below the header */
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100vw - 40px);
+    max-width: 600px;
+    max-height: calc(100vh - 80px); /* Ensure it doesn't exceed viewport */
+    overflow-y: auto; /* Allow scrolling if content is too tall */
+    z-index: 9999; /* Ensure it's above other content */
+    background-color: white;
+    border-radius: var(--dk-border-radius);
+    box-shadow: var(--dk-shadow-hover);
+    padding: 15px;
+    border: 1px solid #e9ecef;
+  }
+}
+
+/* Alternative fix using height-based media query for very short screens */
+@media (max-height: 500px) and (max-width: 991px) {
+  .header .navbar-collapse.show {
+    position: fixed;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100vw - 40px);
+    max-width: 600px;
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+    z-index: 9999;
+    background-color: white;
+    border-radius: var(--dk-border-radius);
+    box-shadow: var(--dk-shadow-hover);
+    padding: 15px;
+    border: 1px solid #e9ecef;
+  }
+
+  /* Reduce spacing in landscape mode to fit more content */
+  .header .navbar-nav .nav-item {
+    margin: 4px 0; /* Reduced from 8px */
+  }
+
+  .header .navbar-nav .nav-link {
+    padding: 8px 15px; /* Reduced from 12px 20px */
+    font-size: 0.95rem; /* Slightly smaller text */
+  }
+}
+
 
