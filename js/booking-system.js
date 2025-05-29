@@ -561,13 +561,20 @@ const CalendarRenderer = {
             });
         }
 
-        // Date selection
-        document.querySelectorAll('.calendar-day:not(.past):not(.empty)').forEach(dayElement => {
+        // Date selection - only allow clicking on available days
+        document.querySelectorAll('.calendar-day:not(.past):not(.empty):not(.closed):not(.unavailable)').forEach(dayElement => {
             dayElement.addEventListener('click', (e) => {
                 const dateString = e.currentTarget.dataset.date;
-                if (dateString) {
-                    BookingFlow.selectDate(dateString);
+                if (!dateString) return;
+                
+                // Double-check that this date has available slots before proceeding
+                const availableSlots = BookingState.availableSlots[dateString];
+                if (!availableSlots || availableSlots.length === 0) {
+                    // This day should not be clickable - ignore the click
+                    return;
                 }
+                
+                BookingFlow.selectDate(dateString);
             });
         });
     },
@@ -595,16 +602,17 @@ const CalendarRenderer = {
             indicator.parentElement.classList.add('available');
             indicator.parentElement.classList.remove('unavailable', 'closed');
         } else {
-            // No slots available - determine if weekend (closed) or business day (blank)
+            // No slots available - determine if weekend (closed) or business day (unavailable)
             if (dayOfWeek === 0 || dayOfWeek === 6) {
                 // Weekend - show "Closed"
                 indicator.innerHTML = '<span class="closed-text">Closed</span>';
                 indicator.parentElement.classList.add('closed');
                 indicator.parentElement.classList.remove('available', 'unavailable');
             } else {
-                // Business day with no slots - show nothing (blank but potentially bookable)
+                // Business day with no slots - mark as unavailable
                 indicator.innerHTML = '';
-                indicator.parentElement.classList.remove('available', 'unavailable', 'closed');
+                indicator.parentElement.classList.add('unavailable');
+                indicator.parentElement.classList.remove('available', 'closed');
             }
         }
     },

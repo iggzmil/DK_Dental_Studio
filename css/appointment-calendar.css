@@ -1123,4 +1123,18 @@
   .booking-unavailable-container h5 {
     font-size: 1.2rem;
   }
+}
+
+.calendar-day.unavailable {
+  background-color: #f8f9fa;
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+.calendar-day.unavailable .availability {
+  color: #aaa;
+}
+
+.calendar-day.unavailable .day-number {
+  color: #aaa;
 } 
