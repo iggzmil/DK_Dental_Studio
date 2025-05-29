@@ -416,29 +416,32 @@ const CalendarRenderer = {
             return;
         }
 
-        // For future dates, determine if it's a business day or weekend
-        const date = new Date(dateString + 'T00:00:00');
-        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-        
-        // Check if this is a business day by looking at the service schedule
-        const isBusinessDay = dayName !== 'saturday' && dayName !== 'sunday';
-        
-        if (isBusinessDay) {
-            // Business day - show "Available" if there are slots, otherwise don't show anything
-            if (availableSlots.length > 0) {
-                indicator.innerHTML = '<span class="available-text">Available</span>';
-                indicator.parentElement.classList.add('available');
-                indicator.parentElement.classList.remove('unavailable');
+        // For future dates, check if there are available slots
+        if (availableSlots.length > 0) {
+            // Show "Available" if there are slots
+            indicator.innerHTML = '<span class="available-text">Available</span>';
+            indicator.parentElement.classList.add('available');
+            indicator.parentElement.classList.remove('unavailable', 'closed');
+        } else {
+            // No slots available - could be weekend or fully booked business day
+            // We need to determine if this is a business day or weekend
+            const date = new Date(dateString + 'T00:00:00');
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+            
+            // Check if this is a weekend by looking at the day name
+            const isWeekend = dayName === 'saturday' || dayName === 'sunday';
+            
+            if (isWeekend) {
+                // Weekend - show "Closed"
+                indicator.innerHTML = '<span class="closed-text">Closed</span>';
+                indicator.parentElement.classList.add('closed');
+                indicator.parentElement.classList.remove('available', 'unavailable');
             } else {
+                // Business day with no slots - show nothing (fully booked)
                 indicator.innerHTML = '';
                 indicator.parentElement.classList.add('unavailable');
-                indicator.parentElement.classList.remove('available');
+                indicator.parentElement.classList.remove('available', 'closed');
             }
-        } else {
-            // Weekend - show "Closed"
-            indicator.innerHTML = '<span class="closed-text">Closed</span>';
-            indicator.parentElement.classList.add('closed');
-            indicator.parentElement.classList.remove('available', 'unavailable');
         }
     },
 
@@ -495,24 +498,23 @@ const AvailabilityManager = {
                 continue;
             }
 
-            // For future dates, check service availability
-            if (!ServiceManager.isServiceAvailableOnDate(serviceId, date)) {
-                // This is a weekend or non-business day - show "Closed" 
-                CalendarRenderer.updateDateAvailability(dateString, [], false);
-                continue;
-            }
-
-            // Get potential hours for this service/date
-            let availableHours = ServiceManager.getAvailableHoursForDate(serviceId, date);
+            // For future dates, get available hours based on service schedule
+            let availableHours = [];
             
-            // Filter out past slots if today
-            availableHours = ServiceManager.filterPastSlots(availableHours, date);
+            if (ServiceManager.isServiceAvailableOnDate(serviceId, date)) {
+                // Business day - get potential hours
+                availableHours = ServiceManager.getAvailableHoursForDate(serviceId, date);
+                
+                // Filter out past slots if today
+                availableHours = ServiceManager.filterPastSlots(availableHours, date);
 
-            // Remove busy slots
-            const busyHours = BookingState.busySlots[dateString] || [];
-            availableHours = availableHours.filter(hour => !busyHours.includes(hour));
+                // Remove busy slots
+                const busyHours = BookingState.busySlots[dateString] || [];
+                availableHours = availableHours.filter(hour => !busyHours.includes(hour));
+            }
+            // If not available (weekend), availableHours remains empty array
 
-            // Update UI - this will show "Available" for business days with slots
+            // Update UI - this will show "Available", "Closed", or nothing based on the day and slots
             CalendarRenderer.updateDateAvailability(dateString, availableHours, false);
 
             // Store in state
