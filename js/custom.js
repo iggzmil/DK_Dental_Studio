@@ -267,70 +267,9 @@ window.initChatIcon = function() {
  * ========================================
  */
 window.initSmoothAccordion = function() {
-  /**
-   * Initialize smooth accordion functionality
-   */
-  function setupSmoothAccordion() {
-    // Target all accordion buttons
-    const accordionButtons = document.querySelectorAll('.accordion .btn-link');
-    
-    // Add event listeners to each button
-    accordionButtons.forEach(button => {
-      button.addEventListener('click', handleAccordionClick);
-    });
-
-    // Add CSS classes for transitions to all accordion content elements
-    const accordionContents = document.querySelectorAll('.accordion .collapse');
-    accordionContents.forEach(content => {
-      content.style.transition = 'all 0.3s ease-in-out';
-    });
-  }
-
-  /**
-   * Handle accordion button clicks for smooth animation
-   */
-  function handleAccordionClick(event) {
-    const button = event.currentTarget;
-    const targetId = button.getAttribute('data-bs-target') || button.getAttribute('href');
-    
-    if (!targetId) return;
-    
-    const targetContent = document.querySelector(targetId);
-    if (!targetContent) return;
-
-    // Smooth transition effect
-    targetContent.addEventListener('show.bs.collapse', function() {
-      this.style.maxHeight = '0px';
-      this.style.overflow = 'hidden';
-      
-      // Animate to full height
-      setTimeout(() => {
-        this.style.maxHeight = this.scrollHeight + 'px';
-      }, 10);
-    });
-
-    targetContent.addEventListener('shown.bs.collapse', function() {
-      this.style.maxHeight = 'none';
-      this.style.overflow = 'visible';
-    });
-
-    targetContent.addEventListener('hide.bs.collapse', function() {
-      this.style.maxHeight = this.scrollHeight + 'px';
-      this.style.overflow = 'hidden';
-      
-      // Animate to zero height
-      setTimeout(() => {
-        this.style.maxHeight = '0px';
-      }, 10);
-    });
-  }
-
-  // Initialize when DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupSmoothAccordion);
-  } else {
-    setupSmoothAccordion();
-  }
+  // Let Bootstrap handle accordion functionality natively
+  // Just ensure the page is ready for Bootstrap to initialize
+  console.log('Accordion initialization: Bootstrap will handle accordion functionality natively');
 };
 
 /**
