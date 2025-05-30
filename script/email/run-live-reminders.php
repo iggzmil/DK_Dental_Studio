@@ -23,34 +23,38 @@ if ($confirmCode !== $expectedCode) {
     exit;
 }
 
-// Set log-only mode to false (LIVE MODE)
-define('LOG_ONLY_MODE', false);
-
-// Display all errors for monitoring
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 // Alert that we're in LIVE MODE
 echo "RUNNING GOOGLE CALENDAR REMINDER SYSTEM IN **LIVE MODE**\n";
 echo "-----------------------------------------------------\n";
 echo "WARNING: ACTUAL EMAILS WILL BE SENT TO CUSTOMERS\n";
 echo "-----------------------------------------------------\n\n";
 
-// Allow testing with a specific date (optional)
+// CRITICAL: Define TEST_DATE FIRST, before any other processing
 $testDate = isset($_GET['date']) ? $_GET['date'] : null; 
 
 if ($testDate) {
-    echo "Using specific date for testing: $testDate\n\n";
-    // Override the reminder system's date calculation to use our test date
+    // Define TEST_DATE immediately
     define('TEST_DATE', $testDate);
+    echo "Using specific date for testing: $testDate\n";
+    echo "TEST_DATE defined as: " . TEST_DATE . "\n";
+    echo "Expected day: " . date('l', strtotime(TEST_DATE)) . "\n\n";
 } else {
     echo "Using tomorrow's date for reminders\n\n";
 }
+
+// Set log-only mode to false (LIVE MODE) - AFTER TEST_DATE
+define('LOG_ONLY_MODE', false);
+
+// Display all errors for monitoring
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 // Include the Google Calendar reminder system
 require_once __DIR__ . '/google_calendar_reminders.php';
 
 echo "\n-----------------------------------------------------\n";
 echo "FINISHED RUNNING IN **LIVE MODE**\n";
-echo "Check the log file at: " . $logFile . "\n";
+if (isset($logFile)) {
+    echo "Check the log file at: " . $logFile . "\n";
+}
 echo "Emails have been sent to the recipients listed above\n"; 
