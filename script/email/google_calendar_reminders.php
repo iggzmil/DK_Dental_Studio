@@ -150,7 +150,8 @@ function isValidBusinessHourAppointment($appointmentDateTime, $service = null) {
 // Log script start
 logMessage("Starting Google Calendar appointment reminder check" . (LOG_ONLY_MODE ? " (LOG-ONLY MODE)" : ""));
 
-// Check if we should send reminders today based on weekend logic
+// IMPORTANT: Check weekend logic FIRST, before any OAuth processing
+// This needs to happen early so TEST_DATE (if defined) is respected
 if (!shouldSendRemindersToday()) {
     logMessage("Reminder system completed - no reminders sent due to weekend schedule");
     exit(0);
@@ -233,11 +234,6 @@ if (!$accessToken) {
     exit(1);
 }
 
-// Calendar IDs 
-$calendarIds = [
-    'primary' => 'info@dkdental.au' // Just use one calendar to avoid duplicates
-];
-
 // Get tomorrow's date range (or use test date if specified)
 if (defined('TEST_DATE')) {
     $today = new DateTime(TEST_DATE);
@@ -247,6 +243,11 @@ if (defined('TEST_DATE')) {
 } else {
     $tomorrow = new DateTime('tomorrow');
 }
+
+// Calendar IDs 
+$calendarIds = [
+    'primary' => 'info@dkdental.au' // Just use one calendar to avoid duplicates
+];
 
 $tomorrowStart = $tomorrow->format('Y-m-d') . 'T00:00:00Z';
 $tomorrowEnd = $tomorrow->format('Y-m-d') . 'T23:59:59Z';
