@@ -18,6 +18,7 @@
     initChatIcon();
     initSmoothAccordion();
     initializeProcessToggles();
+    initIndexPageFeatures();
   });
 
 })();
@@ -267,9 +268,66 @@ window.initChatIcon = function() {
  * ========================================
  */
 window.initSmoothAccordion = function() {
-  // Let Bootstrap handle accordion functionality natively
-  // Just ensure the page is ready for Bootstrap to initialize
-  console.log('Accordion initialization: Bootstrap will handle accordion functionality natively');
+  // Initialize Bootstrap 5 collapse components
+  if (typeof bootstrap !== 'undefined' && bootstrap.Collapse) {
+    // Use native Bootstrap 5 Collapse component
+    const collapseElements = document.querySelectorAll('.collapse');
+    collapseElements.forEach(function(collapseEl) {
+      new bootstrap.Collapse(collapseEl, {
+        toggle: false
+      });
+    });
+    console.log('Bootstrap 5 Collapse initialized for', collapseElements.length, 'elements');
+    return;
+  }
+  
+  // Fallback: Manual accordion implementation using Bootstrap 4 syntax
+  const accordionElements = document.querySelectorAll('[data-toggle="collapse"]');
+  
+  accordionElements.forEach(function(element) {
+    element.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      const targetSelector = this.getAttribute('data-target');
+      const target = document.querySelector(targetSelector);
+      
+      if (!target) return;
+      
+      const isExpanded = target.classList.contains('show');
+      const parent = this.getAttribute('data-parent');
+      
+      // If there's a parent, close other accordion items
+      if (parent) {
+        const parentElement = document.querySelector(parent);
+        if (parentElement) {
+          const otherCollapses = parentElement.querySelectorAll('.collapse.show');
+          otherCollapses.forEach(function(collapse) {
+            if (collapse !== target) {
+              collapse.classList.remove('show');
+              const otherButton = parentElement.querySelector('[data-target="#' + collapse.id + '"]');
+              if (otherButton) {
+                otherButton.classList.add('collapsed');
+                otherButton.setAttribute('aria-expanded', 'false');
+              }
+            }
+          });
+        }
+      }
+      
+      // Toggle the target
+      if (isExpanded) {
+        target.classList.remove('show');
+        this.classList.add('collapsed');
+        this.setAttribute('aria-expanded', 'false');
+      } else {
+        target.classList.add('show');
+        this.classList.remove('collapsed');
+        this.setAttribute('aria-expanded', 'true');
+      }
+    });
+  });
+  
+  console.log('Manual accordion functionality initialized for', accordionElements.length, 'elements');
 };
 
 /**
@@ -330,4 +388,22 @@ window.initializeProcessToggles = function() {
   window.toggleCleanSection = function() {
     toggleSection('cleanDetails', 'cleanToggleBtn');
   };
+};
+
+/**
+ * ========================================
+ * INDEX PAGE SPECIFIC FUNCTIONALITY
+ * ========================================
+ */
+window.initIndexPageFeatures = function() {
+  // Only run on index page
+  if (window.location.pathname === '/' || window.location.pathname.endsWith('/index.html') || window.location.pathname.endsWith('/')) {
+    // Footer logo back-to-top functionality for index page only
+    $('.footer-back-to-top').on('click', function(e) {
+      e.preventDefault();
+      $('html, body').animate({
+        scrollTop: 0
+      }, 800);
+    });
+  }
 }; 
