@@ -8,3 +8,8 @@
 [2025-05-29 23:51:05] Today is Thursday - WILL send reminders for tomorrow's appointments
 [2025-05-29 23:51:05] ERROR: Failed to refresh token. HTTP Code: 0, Response: 
 [2025-05-29 23:51:05] Failed to obtain access token. Exiting.
+[2025-05-30 00:10:27] Starting Google Calendar appointment reminder check (LOG-ONLY MODE)
+[2025-05-30 00:10:27] Using test date for weekend logic: 2024-06-19
+[2025-05-30 00:10:27] Today is Wednesday - WILL send reminders for tomorrow's appointments
+[2025-05-30 00:10:27] ERROR: Failed to refresh token. HTTP Code: 0, Response: 
+[2025-05-30 00:10:27] Failed to obtain access token. Exiting.

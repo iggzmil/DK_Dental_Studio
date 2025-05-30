@@ -39,7 +39,14 @@ function logMessage($message) {
  * - Monday-Thursday: Send reminders for next business day
  */
 function shouldSendRemindersToday() {
-    $today = new DateTime();
+    // Use TEST_DATE if defined, otherwise use current date
+    if (defined('TEST_DATE')) {
+        $today = new DateTime(TEST_DATE);
+        logMessage("Using test date for weekend logic: " . TEST_DATE);
+    } else {
+        $today = new DateTime();
+    }
+    
     $dayOfWeek = (int)$today->format('w'); // 0=Sunday, 1=Monday, ..., 6=Saturday
     $dayName = $today->format('l');
     
@@ -233,8 +240,10 @@ $calendarIds = [
 
 // Get tomorrow's date range (or use test date if specified)
 if (defined('TEST_DATE')) {
-    $tomorrow = new DateTime(TEST_DATE);
-    logMessage("Using test date: " . $tomorrow->format('Y-m-d'));
+    $today = new DateTime(TEST_DATE);
+    $tomorrow = clone $today;
+    $tomorrow->add(new DateInterval('P1D')); // Add 1 day to get tomorrow
+    logMessage("Using test date as 'today': " . $today->format('Y-m-d') . " (looking for appointments on: " . $tomorrow->format('Y-m-d') . ")");
 } else {
     $tomorrow = new DateTime('tomorrow');
 }
